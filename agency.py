@@ -24,6 +24,7 @@ from deepagents import create_deep_agent, SubAgent
 from deepagents.backends import FilesystemBackend
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
+from memory.titans_memory import TitansMemory
 
 CLAUDE_MODEL = "claude-sonnet-4-6"
 MEMORY_FILE  = "memory/AGENTS.md"
@@ -147,6 +148,14 @@ You are the orchestrator and the final judgment layer."""
     print(f"{'═'*65}")
     print(final)
     print(f"{'═'*65}\n")
+
+    # Record outcome in Titans-weighted memory
+    verdict = "NO-GO" if "no-go" in final.lower() else \
+              "CONDITIONAL GO" if "conditional" in final.lower() else "GO"
+    mem = TitansMemory()
+    outcome = mem.record_outcome(goal, verdict)
+    mem.inject_into_agents_md()
+    print(f"  🧠  Memory updated: {verdict} (surprise={outcome.surprise:.2f}) — {mem.summary()}")
 
     return final
 
