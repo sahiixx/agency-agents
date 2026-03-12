@@ -1,0 +1,35 @@
+version: 2
+updates:
+  # Python — deepagents SDK
+  - package-ecosystem: "pip"
+    directory: "/deepagents/libs/deepagents"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      langchain:
+        patterns:
+          - "langchain*"
+      anthropic:
+        patterns:
+          - "anthropic*"
+
+  # Python — root requirements
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "security"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "security"
