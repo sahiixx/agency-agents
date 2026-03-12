@@ -48,6 +48,8 @@ except ImportError as e:
     sys.exit(1)
 
 from memory.titans_memory import TitansMemory
+from mcp_tools import MCP_TOOLS
+from observability import AgencyTracer
 
 # ── Config ────────────────────────────────────────────────────────────────────
 CLAUDE_MODEL = "claude-sonnet-4-6"
@@ -100,26 +102,44 @@ def build_subagent(name: str, llm: ChatAnthropic) -> SubAgent:
         "name":          name,
         "description":   description,
         "system_prompt": load_agent(path),
-        "tools":         [],
+        "tools":         MCP_TOOLS,      # ← all agents get MCP tools
         "model":         llm,
     }
 
 
+# ── Parallel execution groups ─────────────────────────────────────────────────
+# Agents in the same group run concurrently; groups run sequentially.
+# Core always runs last as the verdict gate.
+
+PARALLEL_GROUPS = {
+    "full":     [["pm"], ["backend", "frontend", "security"], ["qa"], ["core"]],
+    "saas":     [["pm"], ["copywriter", "frontend"],          ["qa"], ["core"]],
+    "research": [["pm", "ai"],                                ["qa"], ["core"]],
+}
+
+
+def _parallel_group_label(group: list[str]) -> str:
+    return " ∥ ".join(group) if len(group) > 1 else group[0]
+
+
 # ── Core mission runner ───────────────────────────────────────────────────────
 
-def run_mission(goal: str, agent_names: list) -> str:
+def run_mission(goal: str, agent_names: list, preset: str = "full") -> str:
     invalid = [n for n in agent_names if n not in AGENT_REGISTRY]
     if invalid:
         print(f"❌  Unknown agents: {invalid}")
         print(f"   Available: {list(AGENT_REGISTRY.keys())}")
         sys.exit(1)
 
-    llm = get_llm()
+    llm     = get_llm()
+    tracer  = AgencyTracer(mission=goal, preset=preset)
+    groups  = PARALLEL_GROUPS.get(preset, [[a] for a in agent_names])
 
     print(f"\n{'='*65}")
     print(f"  MISSION: {goal}")
-    print(f"  Engine:  {CLAUDE_MODEL}")
+    print(f"  Engine:  {CLAUDE_MODEL}  |  MCP tools: {len(MCP_TOOLS)}")
     print(f"  Agents:  {', '.join(agent_names)}")
+    print(f"  Groups:  {' → '.join(_parallel_group_label(g) for g in groups)}")
     print(f"{'='*65}\n")
 
     # Build subagents (all except core)
@@ -127,7 +147,8 @@ def run_mission(goal: str, agent_names: list) -> str:
     subagents = [build_subagent(n, llm) for n in specialist_names]
     for sa in subagents:
         status = "OK" if sa["system_prompt"] else "MISSING"
-        print(f"  [{status}]  {sa['name']} ({len(sa['system_prompt']):,} chars)")
+        print(f"  [{status}]  {sa['name']} ({len(sa['system_prompt']):,} chars)  "
+              f"[{len(MCP_TOOLS)} MCP tools]")
 
     # FilesystemBackend so MemoryMiddleware reads from local disk
     with warnings.catch_warnings():
@@ -139,7 +160,7 @@ def run_mission(goal: str, agent_names: list) -> str:
     try:
         orchestrator = create_deep_agent(
             model=llm,
-            tools=[],
+            tools=MCP_TOOLS,             # ← orchestrator also gets MCP tools
             system_prompt=load_agent(AGENT_REGISTRY["core"][0]),
             subagents=subagents,
             memory=[MEMORY_FILE],
@@ -151,35 +172,51 @@ def run_mission(goal: str, agent_names: list) -> str:
         print(f"  ERROR building graph: {type(e).__name__}: {e}")
         return None
 
+    # Describe parallel groups to the orchestrator
+    group_desc = "\n".join(
+        f"  Phase {i+1}: [{_parallel_group_label(g)}] — run {'concurrently' if len(g)>1 else 'sequentially'}"
+        for i, g in enumerate(groups)
+    )
+
     brief = f"""MISSION: {goal}
 
-You have specialist subagents available — listed in your system prompt under "Available subagent types".
-Use the `task` tool to delegate to them by name.
+You have specialist subagents available via the `task` tool.
+You also have MCP tools: web_search, read_file, write_output, code_lint, memory_recall, get_datetime.
 
-Steps:
-1. Delegate planning to `pm` first — structured breakdown
-2. Delegate implementation to relevant specialists in parallel
-3. Delegate quality review to `qa`
-4. Synthesize all outputs
-5. Constitutional review — accuracy, safety, completeness
-6. Return final GO / CONDITIONAL GO / NO-GO verdict with complete deliverable
+PARALLEL EXECUTION PLAN:
+{group_desc}
+
+Instructions:
+1. Follow the phase plan above — delegate parallel agents simultaneously
+2. Use web_search for any current data you need
+3. Use memory_recall to check if we've done similar missions before
+4. Synthesize all specialist outputs into one cohesive deliverable
+5. Use write_output to save the final deliverable as a file
+6. Constitutional review — accuracy, safety, completeness, consistency
+7. Return final verdict: GO / CONDITIONAL GO / NO-GO with clear rationale
 
 Delegate everything. You are the orchestrator and final judge."""
 
     print(f"  Orchestrating...\n")
 
-    try:
-        response = orchestrator.invoke(
-            {"messages": [HumanMessage(content=brief)]},
-            config={"recursion_limit": 50},
-        )
-        final = response["messages"][-1].content
-    except KeyboardInterrupt:
-        print("\n  Mission interrupted.")
-        return None
-    except Exception as e:
-        print(f"\n  Mission failed: {type(e).__name__}: {e}")
-        return None
+    with tracer.span("orchestrator"):
+        try:
+            response = orchestrator.invoke(
+                {"messages": [HumanMessage(content=brief)]},
+                config={"recursion_limit": 50},
+            )
+            final = response["messages"][-1].content
+            # Estimate tokens from response length (no callback needed)
+            tracer.add_tokens(
+                input_tokens=len(brief) // 4,
+                output_tokens=len(final) // 4,
+            )
+        except KeyboardInterrupt:
+            print("\n  Mission interrupted.")
+            return None
+        except Exception as e:
+            print(f"\n  Mission failed: {type(e).__name__}: {e}")
+            return None
 
     print(f"\n{'='*65}")
     print(f"  VERDICT — CLAUDE REASONING CORE")
@@ -193,6 +230,13 @@ Delegate everything. You are the orchestrator and final judge."""
         "CONDITIONAL GO" if "conditional" in final.lower() else
         "GO"
     )
+
+    # Finish tracing + print observability report
+    tracer.finish(verdict=verdict)
+    tracer.print_summary()
+    trace_path = tracer.save_trace()
+    print(f"  Trace: {trace_path}")
+
     try:
         mem = TitansMemory()
         outcome = mem.record_outcome(goal, verdict)
@@ -257,7 +301,7 @@ Examples:
     if "core" in agent_names:
         agent_names = [a for a in agent_names if a != "core"] + ["core"]
 
-    run_mission(args.mission, agent_names)
+    run_mission(args.mission, agent_names, preset=args.preset)
 
 
 if __name__ == "__main__":
