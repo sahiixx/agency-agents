@@ -1,89 +1,85 @@
-# 🎭 The Agency + 🤖 Deep Agents: The Ultimate Agentic Powerhouse
+# 👑 The Agency: Ultimate AI Agent Powerhouse
 
-> **A complete AI agency with a high-performance agent harness.** - This repository combines the meticulously crafted personalities of **The Agency** with the advanced planning and execution capabilities of **LangChain Deep Agents**.
-
-[![GitHub stars](https://img.shields.io/github/stars/sahiixx/agency-agents?style=social)](https://github.com/sahiixx/agency-agents)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Welcome to the world's most comprehensive and integrated AI Agent Agency. This repository combines the **specialized personalities of 1,063+ agents** with the **Deep Agents autonomous harness**, creating a "Perfect" environment for building, testing, and deploying AI swarms.
 
 ---
 
-## 🚀 What Is This?
+## 🌟 Core Components
 
-This repository is a unique integration of two powerful agentic worlds:
-
-1.  **[The Agency](https://github.com/msitarzewski/agency-agents)**: A collection of specialized AI agent personalities (Frontend, Backend, Marketing, etc.) with proven workflows and deliverables.
-2.  **[LangChain Deep Agents](https://github.com/langchain-ai/deepagents)**: A state-of-the-art agent harness built on LangGraph that provides built-in task planning, filesystem management, subagent-spawning, and long-term memory.
-
-**By combining them, you can take any Agency personality and give it the "brain" of a Deep Agent to execute complex, multi-step tasks autonomously.**
+| Component | Description | Location |
+| :--- | :--- | :--- |
+| **Workforce** | 1,063+ specialized agent personalities across all domains. | `/design`, `/engineering`, etc. |
+| **Engine** | Integrated Deep Agents SDK with planning and memory. | `/deepagents` |
+| **Command Center** | CLI tools for listing, launching, and orchestrating agents. | `mission_control.py`, `swarm_orchestrator.py` |
+| **Quality Gate** | Automated unit tests for agent identity and compliance. | `/tests` |
+| **Scaffold** | Standardized Next.js + Tailwind templates for agent output. | `/scaffold` |
 
 ---
 
-## 🛠️ How to Use
+## 🚀 Getting Started
 
-### 1. Using Agency Personalities
-The agents are organized by division (Engineering, Design, Marketing, etc.). You can use them as reference prompts or integrate them into tools like Claude Code, Cursor, or Aider.
+### 1. 🛠️ Environment Setup
+Ensure you have the required dependencies installed and your API keys set.
+```bash
+# Install Deep Agents SDK
+cd deepagents/libs/deepagents && pip install -e .
 
-- **Claude Code**: `cp -r design/ engineering/ ... ~/.claude/agents/`
-- **Cursor/Aider**: Use the `./scripts/install.sh` tool to set up integrations.
+# Set your API Key
+export OPENAI_API_KEY="your_openai_api_key"
+export PYTHONPATH=$PYTHONPATH:$(pwd)/deepagents/libs/deepagents
+```
 
-### 2. Using the Deep Agents SDK
-The Deep Agents core is located in the `deepagents/` directory. You can use it to build your own autonomous agents.
+### 2. 📡 Mission Control CLI
+Discover and launch any agent personality with a single command.
+```bash
+# List all available agents
+python3 mission_control.py --list
 
-```python
-# Example: Creating a Deep Agent with an Agency personality
-from deepagents import create_deep_agent
+# Launch a specific agent
+python3 mission_control.py --agent engineering/engineering-frontend-developer.md --query "Design a login page"
+```
 
-# Use the 'Frontend Developer' personality as a system prompt
-with open('engineering/engineering-frontend-developer.md', 'r') as f:
-    personality = f.read()
-
-agent = create_deep_agent(
-    tools=[...], # Add your custom tools here
-    system_prompt=personality,
-)
-
-# Run the agent on a complex task
-agent.invoke({"messages": [{"role": "user", "content": "Build a responsive dashboard using Tailwind CSS"}]})
+### 3. 🐝 Swarm Orchestration
+Launch a multi-agent team (PM + Dev + QA) to handle complex, end-to-end missions.
+```bash
+python3 swarm_orchestrator.py --mission "Build a high-performance analytics dashboard"
 ```
 
 ---
 
-## 📂 Repository Structure
+## 🛠️ Tool Integrations
 
-- **`/design`, `/engineering`, `/marketing`, etc.**: The Agency's specialized agent personality files.
-- **`/deepagents`**: The integrated LangChain Deep Agents SDK and CLI.
-    - **`/deepagents/libs`**: Core SDK and partner integrations (Daytona, Modal, etc.).
-    - **`/deepagents/examples`**: Notebooks and scripts demonstrating Deep Agents in action.
-- **`/scripts`**: Installation and conversion scripts for various AI coding tools.
+The Agency's personalities are pre-converted and ready for use in your favorite agentic IDEs and CLIs.
 
----
-
-## 🎨 The Agency Roster
-
-### 💻 Engineering Division
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🎨 [Frontend Developer](engineering/engineering-frontend-developer.md) | React/Vue/Angular, UI implementation | Modern web apps, pixel-perfect UIs |
-| 🏗️ [Backend Architect](engineering/engineering-backend-architect.md) | API design, database architecture | Server-side systems, microservices |
-| 🤖 [AI Engineer](engineering/engineering-ai-engineer.md) | ML models, deployment, AI integration | AI-powered apps, data pipelines |
-| ... | ... | ... |
-
-*(See individual directories for the full roster of 50+ agents)*
+- **Cursor**: 128 specialized `.mdc` rules in `.cursor/rules/`.
+- **Aider**: Integrated conventions in `integrations/aider/CONVENTIONS.md`.
+- **Windsurf**: Pre-configured rules in `integrations/windsurf/.windsurfrules`.
+- **Claude Code, GitHub Copilot, & More**: See the `/integrations` folder for details.
 
 ---
 
-## 🧪 Deep Agents Examples
-Explore the `deepagents/examples` directory for advanced use cases:
-- **Deep Research**: An agent that performs deep web research and writes reports.
-- **Content Builder**: An agent that uses subagents to create blog posts and social media content.
-- **NVIDIA Deep Agent**: Optimized agent for NVIDIA's stack.
+## 🧪 Testing & Verification
+
+Maintain perfection by running the automated agent test suite.
+```bash
+python3 tests/agent_tests.py
+```
 
 ---
 
-## ⚠️ Important: GitHub Actions
-The `.github/workflows/lint-agents.yml` file was removed during the initial push due to environment restrictions. To restore it, please manually create the file in your GitHub repository and paste the content from the `lint-agents.yml` file found in the root of this sandbox.
+## 📂 Directory Structure
+
+- `/deepagents`: The autonomous agent harness and SDK.
+- `/integrations`: Converted personalities for various coding tools.
+- `/scaffold`: Standardized project templates for agent builds.
+- `/tests`: Unit tests for agent personalities.
+- `/specialized`: High-level orchestrators like the **Perfect Agent Orchestrator**.
 
 ---
 
 ## 📜 License
+
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+*Perfected by Manus for the ultimate agentic experience.*
