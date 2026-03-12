@@ -107,21 +107,24 @@ def run_mission(goal: str, agent_names: list[str], mode: str = "full"):
         name="claude-agency-orchestrator",
     )
 
-    # The mission brief — Core orchestrates and delegates
-    brief = f"""You are orchestrating a multi-agent mission. You have access to the following specialist subagents:
+    # The mission brief — Core orchestrates and delegates.
+    # Note: SubAgentMiddleware appends "Available subagent types: - name: description"
+    # to Core's system prompt automatically. The task tool routes by name.
+    brief = f"""MISSION: {goal}
 
-{chr(10).join(f'- {n}: {AGENT_REGISTRY[n][1]}' for n in specialist_names)}
+You have specialist subagents available (listed in your system prompt under "Available subagent types").
+Use the `task` tool to delegate to them by name.
 
-MISSION: {goal}
+Orchestration plan:
+1. Delegate planning to the `pm` subagent first — get a structured breakdown
+2. Delegate implementation/design tasks to the relevant specialist subagents in parallel where possible
+3. Delegate quality review to the `qa` subagent
+4. Synthesize all outputs
+5. Apply your constitutional review (accuracy, safety, completeness)
+6. Return a final GO/NO-GO verdict with the complete deliverable
 
-Your job:
-1. Break the mission into phases
-2. Delegate each phase to the appropriate specialist subagent using the `task` tool
-3. Collect and synthesize their outputs
-4. Apply your constitutional review
-5. Return a final GO/NO-GO verdict with the complete deliverable
-
-Do not do the specialists' work yourself — delegate it. You are the orchestrator and final judge."""
+Delegate — do not do the specialists' work yourself.
+You are the orchestrator and the final judgment layer."""
 
     print("  🎬  Orchestrator active — delegating to specialists...\n")
 
