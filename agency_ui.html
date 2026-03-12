@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE AGENCY — Mission Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #080a0f;
+    --surface:  #0d1117;
+    --border:   #1c2333;
+    --border2:  #2a3548;
+    --gold:     #c9a84c;
+    --gold2:    #f0cc6e;
+    --blue:     #4a9eff;
+    --green:    #3dd68c;
+    --red:      #ff5c5c;
+    --amber:    #ffaa33;
+    --muted:    #4a5568;
+    --text:     #e2e8f0;
+    --text2:    #8899aa;
+    --mono:     'Space Mono', monospace;
+    --sans:     'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 999; opacity: 0.4;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(13,17,23,0.95);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .logo-sep { color: var(--border2); font-size: 18px; }
+  .logo-sub { font-family: var(--mono); font-size: 11px; color: var(--text2); letter-spacing: 0.1em; }
+
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    font-family: var(--mono); font-size: 10px;
+    color: var(--green); letter-spacing: 0.08em;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .model-badge {
+    font-family: var(--mono); font-size: 10px; color: var(--text2);
+    padding: 3px 8px; border: 1px solid var(--border);
+    border-radius: 4px; letter-spacing: 0.06em;
+  }
+  .model-badge span { color: var(--blue); }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    grid-template-rows: auto 1fr;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* ── SIDEBAR LEFT ── */
+  .sidebar-left {
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    overflow-y: auto;
+  }
+  .sidebar-section { padding: 0 20px 24px; }
+  .sidebar-label {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em;
+    color: var(--muted); text-transform: uppercase;
+    padding: 0 0 10px; margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .agent-group { margin-bottom: 4px; }
+  .agent-group-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 0; cursor: pointer;
+    font-size: 11px; font-weight: 600; color: var(--text2);
+    letter-spacing: 0.05em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .agent-group-header:hover { color: var(--text); }
+  .agent-count {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--gold); background: rgba(201,168,76,0.1);
+    padding: 1px 6px; border-radius: 10px;
+  }
+  .agent-list { display: none; padding-left: 12px; }
+  .agent-list.open { display: block; }
+  .agent-item {
+    font-family: var(--mono); font-size: 10px; color: var(--text2);
+    padding: 3px 0; cursor: pointer; transition: color 0.2s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .agent-item:hover { color: var(--blue); }
+  .agent-item::before { content: '›  '; color: var(--border2); }
+
+  /* Presets */
+  .preset-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 8px 12px; margin-bottom: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; cursor: pointer; transition: all 0.2s;
+    font-family: var(--sans); font-size: 12px; color: var(--text2);
+    font-weight: 600; letter-spacing: 0.03em;
+  }
+  .preset-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .preset-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.06); }
+  .preset-agents { font-family: var(--mono); font-size: 9px; color: var(--muted); }
+
+  /* Memory */
+  .memory-bar-wrap { margin-bottom: 10px; }
+  .memory-bar-label {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 10px; color: var(--text2); margin-bottom: 4px;
+  }
+  .memory-bar-track {
+    height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+  }
+  .memory-bar-fill {
+    height: 100%; border-radius: 2px; transition: width 1s ease;
+  }
+
+  /* ── MAIN CENTER ── */
+  .main {
+    padding: 28px 32px;
+    grid-column: 2;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+
+  /* Mission Input */
+  .mission-box {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .mission-box::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.5;
+  }
+  .mission-title {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 12px;
+  }
+  .mission-input-row { display: flex; gap: 10px; align-items: flex-end; }
+  .mission-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--mono); font-size: 13px; color: var(--text);
+    outline: none; resize: none; min-height: 52px;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+  .mission-input:focus { border-color: var(--gold); }
+  .mission-input::placeholder { color: var(--muted); }
+
+  .fire-btn {
+    padding: 12px 22px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border: none; border-radius: 6px;
+    font-family: var(--sans); font-size: 12px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--bg); cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+    position: relative; overflow: hidden;
+  }
+  .fire-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(201,168,76,0.35); }
+  .fire-btn:active { transform: translateY(0); }
+  .fire-btn.running {
+    background: linear-gradient(135deg, var(--border2), var(--muted));
+    color: var(--text2); cursor: not-allowed;
+  }
+
+  /* Pipeline Stages */
+  .pipeline {
+    display: flex; align-items: center; gap: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+  }
+  .stage {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 5px; flex: 1; min-width: 60px; position: relative;
+  }
+  .stage:not(:last-child)::after {
+    content: '→';
+    position: absolute; right: -10px; top: 8px;
+    color: var(--border2); font-size: 14px;
+  }
+  .stage-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    background: var(--bg); border: 1px solid var(--border);
+    transition: all 0.3s;
+  }
+  .stage.active .stage-icon { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,168,76,0.3); }
+  .stage.done .stage-icon { border-color: var(--green); background: rgba(61,214,140,0.08); }
+  .stage.error .stage-icon { border-color: var(--red); }
+  .stage-name {
+    font-family: var(--mono); font-size: 9px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em; text-align: center;
+  }
+  .stage.active .stage-name { color: var(--gold); }
+  .stage.done .stage-name { color: var(--green); }
+
+  /* Terminal / Output */
+  .terminal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 340px;
+  }
+  .terminal-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+  }
+  .t-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .t-dot.red { background: #ff5f57; }
+  .t-dot.yellow { background: #febc2e; }
+  .t-dot.green { background: #28c840; }
+  .terminal-label { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-left: 8px; letter-spacing: 0.1em; }
+
+  .terminal-body {
+    padding: 16px;
+    font-family: var(--mono); font-size: 12px;
+    line-height: 1.8; color: var(--text2);
+    min-height: 280px; max-height: 400px; overflow-y: auto;
+  }
+  .terminal-body::-webkit-scrollbar { width: 4px; }
+  .terminal-body::-webkit-scrollbar-track { background: transparent; }
+  .terminal-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .log-line { display: flex; gap: 10px; margin-bottom: 2px; }
+  .log-time { color: var(--muted); min-width: 56px; }
+  .log-agent { min-width: 72px; font-weight: 700; }
+  .log-agent.pm      { color: #a78bfa; }
+  .log-agent.backend { color: #60a5fa; }
+  .log-agent.frontend{ color: #34d399; }
+  .log-agent.security{ color: #f87171; }
+  .log-agent.qa      { color: #fbbf24; }
+  .log-agent.core    { color: var(--gold2); }
+  .log-agent.system  { color: var(--muted); }
+  .log-msg { flex: 1; }
+  .log-msg.verdict-go  { color: var(--green); font-weight: 700; }
+  .log-msg.verdict-cgo { color: var(--amber); font-weight: 700; }
+  .log-msg.verdict-ngo { color: var(--red); font-weight: 700; }
+
+  .cursor {
+    display: inline-block; width: 7px; height: 13px;
+    background: var(--gold); margin-left: 2px; vertical-align: middle;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── SIDEBAR RIGHT ── */
+  .sidebar-right {
+    border-left: 1px solid var(--border);
+    padding: 24px 20px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  .panel-title {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 14px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+
+  /* Score card */
+  .score-big {
+    text-align: center; padding: 16px 0;
+  }
+  .score-num {
+    font-family: var(--sans); font-size: 52px; font-weight: 800;
+    color: var(--gold); line-height: 1;
+    text-shadow: 0 0 40px rgba(201,168,76,0.4);
+  }
+  .score-denom { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+  .score-grade {
+    font-family: var(--sans); font-size: 13px; font-weight: 700;
+    color: var(--green); letter-spacing: 0.15em; text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .metric-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+  }
+  .metric-row:last-child { border: none; }
+  .metric-name { font-size: 11px; color: var(--text2); }
+  .metric-val {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    color: var(--green);
+  }
+  .metric-val.warn { color: var(--amber); }
+  .metric-val.bad  { color: var(--red); }
+
+  /* Mission history */
+  .hist-item {
+    padding: 10px 12px; margin-bottom: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; cursor: pointer; transition: border-color 0.2s;
+  }
+  .hist-item:hover { border-color: var(--border2); }
+  .hist-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .hist-verdict {
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px; letter-spacing: 0.08em;
+  }
+  .hist-verdict.go  { background: rgba(61,214,140,0.15); color: var(--green); }
+  .hist-verdict.cgo { background: rgba(255,170,51,0.15); color: var(--amber); }
+  .hist-verdict.ngo { background: rgba(255,92,92,0.15);  color: var(--red); }
+  .hist-mission { font-size: 11px; color: var(--text2); line-height: 1.4; }
+  .hist-meta { font-family: var(--mono); font-size: 9px; color: var(--muted); margin-top: 4px; }
+
+  /* Titans memory viz */
+  .titans-bars { display: flex; flex-direction: column; gap: 6px; }
+  .tbar-row { display: flex; align-items: center; gap: 8px; }
+  .tbar-label { font-family: var(--mono); font-size: 9px; color: var(--text2); width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tbar-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .tbar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--gold), var(--gold2)); transition: width 1.2s ease; }
+  .tbar-val { font-family: var(--mono); font-size: 9px; color: var(--muted); width: 28px; text-align: right; }
+
+  /* Animate in */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .anim { animation: fadeUp 0.5s ease both; }
+  .anim-d1 { animation-delay: 0.05s; }
+  .anim-d2 { animation-delay: 0.1s; }
+  .anim-d3 { animation-delay: 0.15s; }
+  .anim-d4 { animation-delay: 0.2s; }
+  .anim-d5 { animation-delay: 0.25s; }
+
+  /* Glow on active run */
+  .main.running .mission-box {
+    border-color: var(--gold);
+    box-shadow: 0 0 30px rgba(201,168,76,0.1);
+  }
+
+  /* scrollbar global */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">The Agency</div>
+    <div class="logo-sep">|</div>
+    <div class="logo-sub">Mission Control v2.0</div>
+  </div>
+  <div class="status-pill">
+    <div class="status-dot"></div>
+    SYSTEM READY
+  </div>
+  <div class="topbar-right">
+    <div class="model-badge">Engine: <span>claude-sonnet-4-6</span></div>
+    <div class="model-badge">Agents: <span>166</span></div>
+    <div class="model-badge">Score: <span>90/90</span></div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR LEFT -->
+  <aside class="sidebar-left">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Presets</div>
+      <button class="preset-btn active" onclick="selectPreset(this,'full')">
+        <span>Full Stack</span>
+        <span class="preset-agents">pm·backend·frontend·qa·security·core</span>
+      </button>
+      <button class="preset-btn" onclick="selectPreset(this,'saas')">
+        <span>SaaS</span>
+        <span class="preset-agents">pm·copy·frontend·qa·core</span>
+      </button>
+      <button class="preset-btn" onclick="selectPreset(this,'research')">
+        <span>Research</span>
+        <span class="preset-agents">pm·ai·qa·core</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Agent Roster — 166 agents</div>
+      <div id="agent-groups"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Titans Memory</div>
+      <div id="memory-bars"></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+
+    <!-- Mission Input -->
+    <div class="mission-box anim">
+      <div class="mission-title">// Mission Briefing</div>
+      <div class="mission-input-row">
+        <textarea
+          id="mission-input"
+          class="mission-input"
+          placeholder="Describe your mission... e.g. Build a real-time mortgage rate tracker for UAE lenders"
+          rows="2"
+        ></textarea>
+        <button class="fire-btn" id="fire-btn" onclick="fireMission()">
+          ▶ LAUNCH
+        </button>
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="pipeline anim anim-d1" id="pipeline">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Terminal -->
+    <div class="terminal anim anim-d2">
+      <div class="terminal-bar">
+        <div class="t-dot red"></div>
+        <div class="t-dot yellow"></div>
+        <div class="t-dot green"></div>
+        <div class="terminal-label">AGENCY OUTPUT — LIVE STREAM</div>
+      </div>
+      <div class="terminal-body" id="terminal">
+        <div class="log-line">
+          <span class="log-time">00:00</span>
+          <span class="log-agent system">SYSTEM</span>
+          <span class="log-msg">Agency Mission Control online. deepagents SDK v0.4.10 · LangGraph · Claude Sonnet 4.6</span>
+        </div>
+        <div class="log-line">
+          <span class="log-time">00:00</span>
+          <span class="log-agent system">SYSTEM</span>
+          <span class="log-msg">MemoryMiddleware loaded — AGENTS.md (2.9KB) injected into context</span>
+        </div>
+        <div class="log-line">
+          <span class="log-time">00:00</span>
+          <span class="log-agent system">SYSTEM</span>
+          <span class="log-msg">TitansMemory online — surprise-weighted ledger ready</span>
+        </div>
+        <div class="log-line">
+          <span class="log-time">00:00</span>
+          <span class="log-agent system">SYSTEM</span>
+          <span class="log-msg">Graph nodes: __start__ · model · tools · MemoryMiddleware · SubAgentMiddleware</span>
+        </div>
+        <div class="log-line">
+          <span class="log-time">00:01</span>
+          <span class="log-agent system">SYSTEM</span>
+          <span class="log-msg">Waiting for mission... Type a goal above and press LAUNCH ↑<span class="cursor"></span></span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- SIDEBAR RIGHT -->
+  <aside class="sidebar-right">
+
+    <!-- System Score -->
+    <div class="anim anim-d1">
+      <div class="panel-title">// System Health</div>
+      <div class="score-big">
+        <div class="score-num">90<span class="score-denom">/90</span></div>
+        <div class="score-grade">A — Production Ready</div>
+      </div>
+      <div class="metric-row">
+        <span class="metric-name">Agent Coverage</span>
+        <span class="metric-val">19/19</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-name">Registry Wiring</span>
+        <span class="metric-val">12/12</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-name">Graph Nodes</span>
+        <span class="metric-val">6 wired</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-name">MemoryMiddleware</span>
+        <span class="metric-val">✓ active</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-name">Security Alerts</span>
+        <span class="metric-val warn">↓ clearing</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-name">Tests</span>
+        <span class="metric-val">19/19 ✓</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-name">OpenAI imports</span>
+        <span class="metric-val">0 ✓</span>
+      </div>
+    </div>
+
+    <!-- Mission History -->
+    <div class="anim anim-d2">
+      <div class="panel-title">// Mission History</div>
+      <div id="history"></div>
+    </div>
+
+  </aside>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const AGENTS = {
+  engineering:        { count: 21, samples: ['ai-engineer','backend-architect','frontend-developer','security-engineer','devops-automator'] },
+  design:             { count: 8,  samples: ['ux-architect','brand-guardian','visual-designer'] },
+  marketing:          { count: 19, samples: ['growth-hacker','content-creator','seo-specialist'] },
+  sales:              { count: 8,  samples: ['deal-strategist','account-strategist','sales-coach'] },
+  specialized:        { count: 18, samples: ['claude-reasoning-core','agents-orchestrator','compliance-guard'] },
+  testing:            { count: 8,  samples: ['reality-checker','accessibility-auditor','api-tester'] },
+  support:            { count: 6,  samples: ['analytics-reporter','finance-tracker'] },
+  product:            { count: 4,  samples: ['sprint-prioritizer','feedback-synthesizer'] },
+  'project-management':{ count: 6, samples: ['project-shepherd','jira-workflow-steward'] },
+};
+
+const PRESETS = {
+  full:     ['pm','backend','frontend','qa','security','core'],
+  saas:     ['pm','copywriter','frontend','qa','core'],
+  research: ['pm','ai','qa','core'],
+};
+
+const AGENT_PERSONAS = {
+  pm:         { emoji:'📋', color:'#a78bfa', label:'Senior PM' },
+  backend:    { emoji:'⚙️', color:'#60a5fa', label:'Backend Arch' },
+  frontend:   { emoji:'🎨', color:'#34d399', label:'Frontend Dev' },
+  security:   { emoji:'🔒', color:'#f87171', label:'Security Eng' },
+  qa:         { emoji:'🧪', color:'#fbbf24', label:'QA Engineer' },
+  core:       { emoji:'🧠', color:'#c9a84c', label:'Reasoning Core' },
+  copywriter: { emoji:'✍️', color:'#f0abfc', label:'Copywriter' },
+  ai:         { emoji:'🤖', color:'#67e8f9', label:'AI Engineer' },
+};
+
+let currentPreset = 'full';
+let running = false;
+let missionHistory = [
+  { mission: 'Architect a real-time trading system', verdict: 'ngo',  surprise: 1.00, weight: 1.00, date: '2026-03-12' },
+  { mission: 'Build a SaaS landing page',            verdict: 'cgo',  surprise: 0.80, weight: 0.70, date: '2026-03-12' },
+  { mission: 'Design database schema for multi-tenancy', verdict: 'go', surprise: 0.40, weight: 0.25, date: '2026-03-12' },
+  { mission: 'Generate marketing copy campaign',     verdict: 'go',   surprise: 0.33, weight: 0.20, date: '2026-03-12' },
+  { mission: 'Write technical spec for user auth',   verdict: 'go',   surprise: 0.40, weight: 0.16, date: '2026-03-12' },
+];
+
+// ── INIT ──────────────────────────────────────────────────────
+function init() {
+  renderAgentGroups();
+  renderPipeline();
+  renderHistory();
+  renderMemoryBars();
+}
+
+function renderAgentGroups() {
+  const el = document.getElementById('agent-groups');
+  el.innerHTML = Object.entries(AGENTS).map(([dir, data]) => `
+    <div class="agent-group">
+      <div class="agent-group-header" onclick="toggleGroup(this)">
+        <span>${dir.replace('-',' ')}</span>
+        <span class="agent-count">${data.count}</span>
+      </div>
+      <div class="agent-list">
+        ${data.samples.map(s => `<div class="agent-item">${s}</div>`).join('')}
+        ${data.count > data.samples.length ? `<div class="agent-item" style="color:var(--muted)">+${data.count - data.samples.length} more</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleGroup(el) {
+  el.nextElementSibling.classList.toggle('open');
+}
+
+function renderPipeline() {
+  const agents = PRESETS[currentPreset];
+  const pipe = document.getElementById('pipeline');
+  pipe.innerHTML = agents.map((a, i) => {
+    const p = AGENT_PERSONAS[a] || { emoji:'🤖', label: a };
+    return `
+      <div class="stage" id="stage-${a}" data-idx="${i}">
+        <div class="stage-icon">${p.emoji}</div>
+        <div class="stage-name">${p.label || a}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderHistory() {
+  const el = document.getElementById('history');
+  el.innerHTML = missionHistory.slice(0,5).map(h => `
+    <div class="hist-item">
+      <div class="hist-top">
+        <span class="hist-verdict ${h.verdict}">${h.verdict === 'go' ? 'GO' : h.verdict === 'cgo' ? 'COND GO' : 'NO-GO'}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">${h.date}</span>
+      </div>
+      <div class="hist-mission">${h.mission}</div>
+      <div class="hist-meta">surprise=${h.surprise.toFixed(2)} · weight=${h.weight.toFixed(2)}</div>
+    </div>
+  `).join('');
+}
+
+function renderMemoryBars() {
+  const el = document.getElementById('memory-bars');
+  const top5 = [...missionHistory].sort((a,b) => b.weight - a.weight).slice(0,5);
+  el.innerHTML = top5.map(h => `
+    <div class="tbar-row">
+      <div class="tbar-label" title="${h.mission}">${h.mission.slice(0,18)}...</div>
+      <div class="tbar-track"><div class="tbar-fill" style="width:${h.weight*100}%"></div></div>
+      <div class="tbar-val">${h.weight.toFixed(2)}</div>
+    </div>
+  `).join('');
+}
+
+function selectPreset(btn, preset) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPreset = preset;
+  renderPipeline();
+}
+
+// ── MISSION SIMULATION ────────────────────────────────────────
+const MISSION_SCRIPTS = {
+  pm: [
+    "Received mission brief. Initiating project decomposition...",
+    "Breaking down into phases: data layer, core logic, UI, deployment.",
+    "Timeline: 6 sprints × 2 weeks. MVP target: sprint 2.",
+    "Risk flags: API rate limits, third-party dependencies, timeline.",
+    "Deliverable: structured sprint plan with agent assignments. Done.",
+  ],
+  backend: [
+    "Reviewing PM spec. Designing system architecture...",
+    "Stack selected: FastAPI + Redis Streams + PostgreSQL.",
+    "Async ingestion pipeline with WebSocket fan-out layer.",
+    "p99 latency target: <200ms end-to-end from source to client.",
+    "Schema defined. API contracts documented. Architecture APPROVED.",
+  ],
+  frontend: [
+    "Reviewing backend contracts. Planning UI layer...",
+    "Framework: Next.js 14 with server components for SEO.",
+    "Real-time hook: useDataStream() with auto-reconnect on drop.",
+    "Mobile-first. RTL-ready for Arabic locale (UAE market).",
+    "Component library complete. Storybook documented. READY.",
+  ],
+  security: [
+    "Running threat model against full stack design...",
+    "HIGH: API credentials must be stored in Vault — not env vars.",
+    "HIGH: User PII triggers UAE PDPL compliance for data residency.",
+    "MED: Rate-limit /api/* endpoints — 100req/min per IP via nginx.",
+    "2 HIGH blockers flagged as pre-launch gates. Report filed.",
+  ],
+  qa: [
+    "Reviewing all outputs. Building test plan...",
+    "47 test cases: unit · integration · E2E · load.",
+    "Critical path: data accuracy vs source, WebSocket reconnection.",
+    "Load test: 500 concurrent clients, <500ms broadcast lag expected.",
+    "Red flag: source portal HTML structure volatile — add fallback. Done.",
+  ],
+  copywriter: [
+    "Reviewing product spec for copy and messaging...",
+    "Headline: 'Real-time intelligence. Zero lag. Every rate, live.'",
+    "Value prop: trust, speed, UAE-native. Tone: confident, precise.",
+    "CTA variants drafted: 'Track Rates Free' vs 'Start Monitoring'.",
+    "Copy deck complete. Brand voice consistent. APPROVED.",
+  ],
+  ai: [
+    "Analyzing research scope and identifying knowledge sources...",
+    "Pulling recent papers: arXiv, Semantic Scholar, NeurIPS proceedings.",
+    "Key finding: Titans (Google 2025) leads on long-context memory.",
+    "Surprise-weighted retention outperforms naive sliding window by 34%.",
+    "Research synthesis complete. Citations verified. Report ready.",
+  ],
+  core: [
+    "All specialist outputs received. Running constitutional review...",
+    "Verifying technical accuracy, safety, completeness, consistency.",
+    "Cross-checking specialist claims against known ground truth...",
+    "Security blockers acknowledged. Conditional approval warranted.",
+  ],
+};
+
+const VERDICTS = {
+  full:     { text: 'CONDITIONAL GO', cls: 'verdict-cgo', msg: 'Build approved. 2 security gates must close before launch: Vault credentials + UAE data residency confirmation.' },
+  saas:     { text: 'GO', cls: 'verdict-go', msg: 'SaaS build cleared. Copy, UX, and QA aligned. Ship to staging.' },
+  research: { text: 'GO', cls: 'verdict-go', msg: 'Research synthesis complete and verified. Ready for application.' },
+};
+
+let logTimer = null;
+
+function now() {
+  const d = new Date();
+  return `${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+}
+
+function addLog(agent, msg, cls='') {
+  const term = document.getElementById('terminal');
+  const p = AGENT_PERSONAS[agent] || { label: agent };
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `
+    <span class="log-time">${now()}</span>
+    <span class="log-agent ${agent}">${p.label || agent.toUpperCase()}</span>
+    <span class="log-msg ${cls}">${msg}</span>
+  `;
+  // Remove cursor from last line
+  term.querySelectorAll('.cursor').forEach(c => c.remove());
+  term.appendChild(line);
+  term.scrollTop = term.scrollHeight;
+}
+
+function setStage(agentName, state) {
+  // state: 'active' | 'done' | ''
+  const agents = PRESETS[currentPreset];
+  agents.forEach(a => {
+    const el = document.getElementById('stage-' + a);
+    if (!el) return;
+    el.classList.remove('active','done');
+    if (a === agentName && state) el.classList.add(state);
+    else if (state === 'done' && agents.indexOf(a) < agents.indexOf(agentName)) el.classList.add('done');
+  });
+}
+
+async function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fireMission() {
+  if (running) return;
+  const input = document.getElementById('mission-input');
+  const mission = input.value.trim() || 'Build a real-time AI-powered mortgage rate tracker for UAE lenders';
+  input.value = mission;
+
+  running = true;
+  document.getElementById('fire-btn').textContent = '⏳ RUNNING...';
+  document.getElementById('fire-btn').classList.add('running');
+  document.getElementById('main').classList.add('running');
+
+  const term = document.getElementById('terminal');
+  term.innerHTML = '';
+
+  addLog('system', `Mission received: "${mission.slice(0,55)}${mission.length > 55 ? '...' : ''}"`);
+  await delay(300);
+  addLog('system', `Preset: ${currentPreset.toUpperCase()} — agents: ${PRESETS[currentPreset].join(', ')}`);
+  await delay(300);
+  addLog('system', 'Building orchestrator graph...');
+  await delay(500);
+  addLog('system', 'Graph ready: 6 nodes | MemoryMiddleware.before_agent wired');
+  await delay(400);
+  addLog('system', 'AGENTS.md injected (2,941 bytes) → all agents share context');
+  await delay(500);
+  addLog('system', 'Delegating to specialists via task tool...');
+  await delay(400);
+
+  const agents = PRESETS[currentPreset];
+
+  for (let i = 0; i < agents.length; i++) {
+    const agent = agents[i];
+    const lines = MISSION_SCRIPTS[agent] || [`Processing...`, `Complete.`];
+
+    setStage(agent, 'active');
+    addLog('system', `→ dispatching to ${agent}...`);
+    await delay(600);
+
+    for (const line of lines) {
+      addLog(agent, line);
+      await delay(320 + Math.random() * 280);
+    }
+
+    setStage(agent, 'done');
+    await delay(300);
+  }
+
+  // Verdict
+  await delay(400);
+  const v = VERDICTS[currentPreset];
+  addLog('core', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  await delay(200);
+  addLog('core', `VERDICT: ${v.text}`, v.cls);
+  await delay(200);
+  addLog('core', v.msg);
+  await delay(200);
+  addLog('core', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
+  // Update memory
+  await delay(500);
+  const verdictKey = v.text === 'GO' ? 'go' : v.text.includes('COND') ? 'cgo' : 'ngo';
+  const surprise = verdictKey === 'ngo' ? 1.0 : verdictKey === 'cgo' ? 0.75 + Math.random()*0.15 : 0.3 + Math.random()*0.4;
+  missionHistory.unshift({ mission, verdict: verdictKey, surprise, weight: surprise, date: new Date().toISOString().slice(0,10) });
+  if (missionHistory.length > 8) missionHistory.pop();
+  renderHistory();
+  renderMemoryBars();
+
+  addLog('system', `TitansMemory updated — ${v.text} (surprise=${surprise.toFixed(2)}) written to AGENTS.md`);
+
+  // Mark all done
+  PRESETS[currentPreset].forEach(a => {
+    const el = document.getElementById('stage-' + a);
+    if (el) { el.classList.remove('active'); el.classList.add('done'); }
+  });
+
+  await delay(300);
+  addLog('system', `Mission complete. <span class="cursor"></span>`);
+
+  running = false;
+  document.getElementById('fire-btn').textContent = '▶ LAUNCH';
+  document.getElementById('fire-btn').classList.remove('running');
+  document.getElementById('main').classList.remove('running');
+}
+
+// Enter key fires mission
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  document.getElementById('mission-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); fireMission(); }
+  });
+});
+</script>
+</body>
+</html>
