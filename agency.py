@@ -19,7 +19,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
 
+import warnings
 from deepagents import create_deep_agent, SubAgent
+from deepagents.backends import FilesystemBackend
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 
@@ -96,14 +98,20 @@ def run_mission(goal: str, agent_names: list[str], mode: str = "full"):
     core_prompt = load(AGENT_REGISTRY["core"][0])
 
     # Build the orchestrating agent with:
+    # - backend: FilesystemBackend so MemoryMiddleware reads local disk (not StateBackend)
     # - memory: shared agency context loaded at startup
     # - subagents: all specialist agents it can spawn
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        fs_backend = FilesystemBackend(root_dir=str(REPO_ROOT), virtual_mode=False)
+
     orchestrator = create_deep_agent(
         model=llm,
         tools=[],
         system_prompt=core_prompt,
         subagents=subagents,
         memory=[MEMORY_FILE],
+        backend=fs_backend,
         name="claude-agency-orchestrator",
     )
 
