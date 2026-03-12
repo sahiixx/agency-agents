@@ -1,74 +1,73 @@
-import os
-import sys
-import argparse
+#!/usr/bin/env python3
+"""
+SaaS Dominance Swarm — Claude-powered 4-agent pipeline.
+PM → Copywriter → Frontend Dev → QA → Claude Reasoning Core verdict
+"""
+import os, sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).parent
+sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+
 from deepagents import create_deep_agent
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 
-# Add Deep Agents to PYTHONPATH
-sys.path.append(os.path.join(os.getcwd(), "deepagents/libs/deepagents"))
+CLAUDE_MODEL = "claude-sonnet-4-6"
+
+def get_claude():
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("❌  ANTHROPIC_API_KEY not set."); sys.exit(1)
+    return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
+
+def load(path): return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
+
+def run_agent(llm, prompt, query, name):
+    agent = create_deep_agent(model=llm, tools=[], system_prompt=prompt, name=name)
+    return agent.invoke({"messages": [HumanMessage(content=query)]})["messages"][-1].content
 
 class SaasSwarm:
-    def __init__(self, model="gpt-4.1-mini"):
-        self.llm = ChatOpenAI(model=model)
-        self.agents = {}
-        self._load_agents()
-
-    def _load_agents(self):
-        """Loads the core Agency personalities for the SaaS mission."""
-        agent_paths = {
-            "pm": "project-management/project-manager-senior.md",
-            "frontend": "engineering/engineering-frontend-developer.md",
-            "qa": "testing/testing-reality-checker.md",
-            "copy": "marketing/marketing-growth-hacker.md"
+    def __init__(self):
+        self.llm = get_claude()
+        self.agents = {
+            "pm":     load("project-management/project-manager-senior.md"),
+            "copy":   load("marketing/marketing-growth-hacker.md"),
+            "frontend": load("engineering/engineering-frontend-developer.md"),
+            "qa":     load("testing/testing-reality-checker.md"),
+            "core":   load("specialized/specialized-claude-reasoning-core.md"),
         }
-        for role, path in agent_paths.items():
-            if os.path.exists(path):
-                with open(path, "r") as f:
-                    self.agents[role] = f.read()
-            else:
-                print(f"Warning: Personality file not found: {path}")
 
-    def run_mission(self, mission_goal):
-        """Executes a 4-agent SaaS dominance mission."""
-        print(f"\n🚀 SaaS Dominance Mission Start: {mission_goal}")
+    def run_mission(self, goal: str):
+        print(f"\n{'═'*60}\n  🚀  SaaS Dominance Mission: {goal}\n  🧠  Engine: Claude {CLAUDE_MODEL}\n{'═'*60}\n")
 
-        # 1. Project Manager: Plan
-        print("\n--- [Phase 1] PM Strategic Planning ---")
-        pm_agent = create_deep_agent(tools=[], system_prompt=self.agents["pm"], model=self.llm)
-        plan_response = pm_agent.invoke({"messages": [HumanMessage(content=f"Create a high-performance SaaS architecture plan for: {mission_goal}")]})
-        plan = plan_response["messages"][-1].content
-        print(f"PM Plan Ready.")
+        print("  📋  [1/5] PM — Strategic Planning...")
+        plan = run_agent(self.llm, self.agents["pm"], f"Create a SaaS architecture plan for: {goal}", "pm")
+        print(f"  ✅  Plan ready\n")
 
-        # 2. Copywriter: Marketing Content
-        print("\n--- [Phase 2] Copywriter Content Generation ---")
-        copy_agent = create_deep_agent(tools=[], system_prompt=self.agents["copy"], model=self.llm)
-        copy_response = copy_agent.invoke({"messages": [HumanMessage(content=f"Write high-conversion marketing copy for this SaaS based on the plan:\n{plan}")]})
-        copy_content = copy_response["messages"][-1].content
-        print(f"Copywriter Content Ready.")
+        print("  ✍️   [2/5] Growth Hacker — Marketing Copy...")
+        copy = run_agent(self.llm, self.agents["copy"], f"Write high-conversion landing page copy for this SaaS:\n{plan}", "copy")
+        print(f"  ✅  Copy ready\n")
 
-        # 3. Frontend Developer: Implementation
-        print("\n--- [Phase 3] Frontend Developer Implementation ---")
-        dev_agent = create_deep_agent(tools=[], system_prompt=self.agents["frontend"], model=self.llm)
-        dev_response = dev_agent.invoke({"messages": [HumanMessage(content=f"Implement the UI for the SaaS landing page using this plan and copy:\nPlan: {plan}\nCopy: {copy_content}")]})
-        code = dev_response["messages"][-1].content
-        
-        # Extract and save code
-        os.makedirs("scaffold/nextjs-tailwind/pages", exist_ok=True)
-        with open("scaffold/nextjs-tailwind/pages/saas-landing.tsx", "w") as f:
-            f.write(code)
-        print(f"Frontend Implementation Saved to 'scaffold/nextjs-tailwind/pages/saas-landing.tsx'.")
+        print("  💻  [3/5] Frontend Dev — UI Implementation...")
+        code = run_agent(self.llm, self.agents["frontend"], f"Implement the landing page UI.\nPlan: {plan}\nCopy: {copy}", "frontend")
 
-        # 4. QA Tester: Verification
-        print("\n--- [Phase 4] QA Reality Check ---")
-        qa_agent = create_deep_agent(tools=[], system_prompt=self.agents["qa"], model=self.llm)
-        qa_response = qa_agent.invoke({"messages": [HumanMessage(content=f"Audit this SaaS landing page for SEO, accessibility, and conversion optimization:\n{code}")]})
-        audit = qa_response["messages"][-1].content
-        print(f"QA Audit Complete.")
+        out_dir = REPO_ROOT / "scaffold/nextjs-tailwind/pages"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "saas-landing.tsx").write_text(code)
+        print(f"  ✅  Code saved to scaffold/nextjs-tailwind/pages/saas-landing.tsx\n")
 
-        print("\n🏁 SaaS Dominance Mission Complete.")
-        return {"plan": plan, "copy": copy_content, "code": code, "audit": audit}
+        print("  🧪  [4/5] QA — Reality Check...")
+        qa = run_agent(self.llm, self.agents["qa"], f"Audit for SEO, accessibility, and conversion:\n{code}", "qa")
+        print(f"  ✅  QA done\n")
+
+        print("  🧠  [5/5] Claude Reasoning Core — Final Verdict...")
+        verdict = run_agent(self.llm, self.agents["core"],
+            f"Mission: {goal}\n\nPlan:\n{plan[:800]}\n\nCopy:\n{copy[:800]}\n\nCode:\n{code[:800]}\n\nQA:\n{qa[:600]}\n\nGive GO/NO-GO verdict with key findings.", "core")
+
+        print(f"\n{'═'*60}\n  🧠  FINAL VERDICT\n{'═'*60}")
+        print(verdict)
+        print(f"{'═'*60}\n  🏁  SaaS Dominance Mission Complete.\n{'═'*60}\n")
 
 if __name__ == "__main__":
-    swarm = SaasSwarm()
-    swarm.run_mission("Build a high-conversion SaaS Landing Page for an AI Agent Agency.")
+    SaasSwarm().run_mission("Build a high-conversion SaaS Landing Page for an AI Agent Agency.")

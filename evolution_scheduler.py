@@ -1,74 +1,117 @@
-import os
-import random
-import subprocess
-import sys
-import datetime
+#!/usr/bin/env python3
+"""
+Evolution Scheduler — Randomly selects an agent and runs Claude Reasoning Core
+to critique and improve it, then commits the improved version to git.
+"""
+import os, sys, random, subprocess, datetime
+from pathlib import Path
 
-# Add Deep Agents to PYTHONPATH
-REPO_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(REPO_DIR, "deepagents/libs/deepagents"))
+REPO_ROOT = Path(__file__).parent
+sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+
+from deepagents import create_deep_agent
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage
+
+CLAUDE_MODEL = "claude-sonnet-4-6"
+EXCLUDED = {'.git', 'node_modules', 'deepagents', 'integrations', 'scaffold', 'tests', 'scripts'}
+SKIP_FILES = {'README.md', 'CONTRIBUTING.md', 'LICENSE.md', 'AGENTS.md', 'README_DEEPAGENTS.md', 'README_CLAUDE.md'}
+
+def get_claude():
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("❌  ANTHROPIC_API_KEY not set."); sys.exit(1)
+    return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
 
 def get_all_agents():
-    """Recursively finds all agent personality files in the repository."""
     agents = []
-    excluded_dirs = {'.git', 'node_modules', 'deepagents', 'integrations', 'scaffold', 'tests', 'scripts'}
-    for root, dirs, files in os.walk(REPO_DIR):
-        dirs[:] = [d for d in dirs if d not in excluded_dirs]
-        for file in files:
-            if file.endswith('.md') and file not in ['README.md', 'CONTRIBUTING.md', 'LICENSE.md', 'AGENTS.md', 'README_DEEPAGENTS.md']:
-                agents.append(os.path.join(root, file))
+    for root, dirs, files in os.walk(REPO_ROOT):
+        dirs[:] = [d for d in dirs if d not in EXCLUDED]
+        for f in files:
+            if f.endswith('.md') and f not in SKIP_FILES:
+                agents.append(Path(root) / f)
     return agents
 
-def run_evolution(agent_path):
-    """Runs the Sovereign Ecosystem evolution cycle on a specific agent."""
-    print(f"[{datetime.datetime.now()}] Evolving agent: {agent_path}")
+def evolve_agent(llm, agent_path: Path) -> str:
+    """Use Claude Reasoning Core to critique and rewrite an agent's personality."""
+    core_prompt = (REPO_ROOT / "specialized/specialized-claude-reasoning-core.md").read_text()
+    original = agent_path.read_text()
+
+    query = f"""You are reviewing and improving an agent personality file.
+
+ORIGINAL AGENT:
+{original}
+
+Your task:
+1. Identify weaknesses: vague instructions, missing edge cases, unclear scope, or anything that would make this agent less effective
+2. Rewrite the full agent file with improvements — same format, same frontmatter, but sharper, clearer, more capable
+3. Return ONLY the improved agent file content, nothing else
+
+Be surgical. Preserve what works. Improve what doesn't."""
+
+    agent = create_deep_agent(model=llm, tools=[], system_prompt=core_prompt, name="evolution-core")
+    response = agent.invoke({"messages": [HumanMessage(content=query)]})
+    return response["messages"][-1].content
+
+def run_tests():
     try:
-        subprocess.run([sys.executable, "sovereign_ecosystem.py", "--agent", agent_path], check=True)
+        subprocess.run([sys.executable, "tests/agent_tests.py"], check=True, cwd=REPO_ROOT)
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"Error during evolution: {e}")
+    except subprocess.CalledProcessError:
         return False
 
-def run_benchmarks():
-    """Runs the Agent Test Suite to ensure perfection after evolution."""
-    print(f"[{datetime.datetime.now()}] Running benchmarks...")
-    try:
-        subprocess.run([sys.executable, "tests/agent_tests.py"], check=True)
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"Benchmarks failed: {e}")
-        return False
-
-def commit_changes(agent_path):
-    """Commits the evolution changes to GitHub."""
-    agent_name = os.path.basename(agent_path)
-    print(f"[{datetime.datetime.now()}] Committing improvements for {agent_name}...")
-    try:
-        subprocess.run(["git", "add", agent_path], check=True)
-        subprocess.run(["git", "commit", "-m", f"Eternal Evolution: Optimized and benchmarked {agent_name}"], check=True)
-        subprocess.run(["git", "push", "origin", "main"], check=True)
-        print("GitHub synchronization successful.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error during git operations: {e}")
+def commit(agent_path: Path):
+    name = agent_path.name
+    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    cmds = [
+        ["git", "add", str(agent_path.relative_to(REPO_ROOT))],
+        ["git", "commit", "-m", f"🧠 Claude Evolution: {name} [{ts}]"],
+    ]
+    for cmd in cmds:
+        subprocess.run(cmd, check=True, cwd=REPO_ROOT)
+    print(f"  ✅  Committed: {name}")
 
 def main():
+    llm = get_claude()
     agents = get_all_agents()
+
     if not agents:
-        print("No agents found to evolve.")
+        print("No agents found."); return
+
+    target = random.choice(agents)
+    print(f"\n{'═'*60}")
+    print(f"  🧬  Evolution Cycle — {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print(f"  🎯  Target: {target.relative_to(REPO_ROOT)}")
+    print(f"  🧠  Engine: Claude {CLAUDE_MODEL}")
+    print(f"{'═'*60}\n")
+
+    original = target.read_text()
+
+    print("  🔬  Running Claude Reasoning Core critique & rewrite...")
+    improved = evolve_agent(llm, target)
+
+    if len(improved) < 200:
+        print("  ⚠️   Output too short — skipping write. Likely a refusal or error.")
         return
 
-    # Select a random agent to evolve
-    target_agent = random.choice(agents)
-    
-    if run_evolution(target_agent):
-        if run_benchmarks():
-            commit_changes(target_agent)
-            print(f"🏁 Evolution cycle for {target_agent} completed perfectly.")
-        else:
-            print("⚠️ Evolution cycle failed benchmarks. Reverting changes...")
-            subprocess.run(["git", "checkout", target_agent], check=True)
+    # Backup original
+    backup = target.with_suffix(".md.bak")
+    backup.write_text(original)
+
+    # Write improvement
+    target.write_text(improved)
+    print(f"  ✅  Agent improved ({len(original):,} → {len(improved):,} chars)\n")
+
+    print("  🧪  Running test suite...")
+    if run_tests():
+        print("  ✅  Tests passed")
+        commit(target)
+        backup.unlink(missing_ok=True)
+        print(f"\n  🏁  Evolution complete: {target.name}")
     else:
-        print("❌ Evolution cycle failed.")
+        print("  ❌  Tests failed — reverting")
+        target.write_text(original)
+        backup.unlink(missing_ok=True)
 
 if __name__ == "__main__":
     main()
