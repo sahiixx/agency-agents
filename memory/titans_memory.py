@@ -78,13 +78,20 @@ class TitansMemory:
 
     def _load_ledger(self):
         if LEDGER_FILE.exists():
-            data = json.loads(LEDGER_FILE.read_text())
-            self.ledger = [MissionOutcome.from_dict(d) for d in data]
+            try:
+                data = json.loads(LEDGER_FILE.read_text())
+                self.ledger = [MissionOutcome.from_dict(d) for d in data]
+            except (json.JSONDecodeError, KeyError, TypeError):
+                # Corrupt ledger — start fresh, keep backup
+                backup = LEDGER_FILE.with_suffix(".json.bak")
+                LEDGER_FILE.rename(backup)
+                self.ledger = []
 
     def _save_ledger(self):
-        LEDGER_FILE.write_text(
-            json.dumps([o.to_dict() for o in self.ledger], indent=2)
-        )
+        """Atomic write — write to tmp then rename to avoid corruption."""
+        tmp = LEDGER_FILE.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps([o.to_dict() for o in self.ledger], indent=2))
+        tmp.replace(LEDGER_FILE)
 
     def compute_surprise(self, verdict: str, recent_verdicts: list[str]) -> float:
         """
@@ -130,6 +137,9 @@ class TitansMemory:
             recent = [e.verdict for e in self.ledger[-10:]]
             surprise_score = self.compute_surprise(verdict, recent)
 
+        # Clamp to valid range
+        surprise_score = max(0.0, min(1.0, surprise_score))
+
         # Add new outcome
         outcome = MissionOutcome(mission, verdict, surprise_score)
         self.ledger.append(outcome)
@@ -164,11 +174,17 @@ class TitansMemory:
 
         current = MEMORY_FILE.read_text()
 
+        # Backup before rewriting
+        MEMORY_FILE.with_suffix(".md.bak").write_text(current)
+
         # Remove old Mission Memory section if present
         if "## Mission Memory" in current:
             current = current[:current.index("## Mission Memory")]
 
-        MEMORY_FILE.write_text(current.rstrip() + "\n" + lessons)
+        # Atomic write
+        tmp = MEMORY_FILE.with_suffix(".md.tmp")
+        tmp.write_text(current.rstrip() + "\n" + lessons)
+        tmp.replace(MEMORY_FILE)
 
     def summary(self) -> str:
         """Human-readable memory summary."""

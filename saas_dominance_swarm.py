@@ -25,7 +25,11 @@ def load(path): return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exis
 
 def run_agent(llm, prompt, query, name):
     agent = create_deep_agent(model=llm, tools=[], system_prompt=prompt, name=name)
-    return agent.invoke({"messages": [HumanMessage(content=query)]})["messages"][-1].content
+    try:
+        return agent.invoke({"messages": [HumanMessage(content=query)]})["messages"][-1].content
+    except Exception as e:
+        print(f"  ❌  Agent '{name}' failed: {type(e).__name__}: {e}")
+        return f"[{name} failed: {e}]"
 
 class SaasSwarm:
     def __init__(self):

@@ -22,8 +22,8 @@ jobs:
       - name: Install deepagents SDK
         run: |
           cd deepagents/libs/deepagents
-          pip install -e . --quiet
-          pip install langchain-anthropic anthropic --quiet
+          pip install -e . --quiet --break-system-packages
+          pip install langchain-anthropic anthropic --quiet --break-system-packages
 
       - name: Run structural tests
         run: |
@@ -77,8 +77,8 @@ jobs:
       - name: Install dependencies
         run: |
           cd deepagents/libs/deepagents
-          pip install -e . --quiet
-          pip install langchain-anthropic anthropic --quiet
+          pip install -e . --quiet --break-system-packages
+          pip install langchain-anthropic anthropic --quiet --break-system-packages
 
       - name: Run live LLM tests
         if: env.ANTHROPIC_API_KEY != ''

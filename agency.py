@@ -137,11 +137,19 @@ You are the orchestrator and the final judgment layer."""
 
     print("  🎬  Orchestrator active — delegating to specialists...\n")
 
-    response = orchestrator.invoke({
-        "messages": [HumanMessage(content=brief)]
-    })
-
-    final = response["messages"][-1].content
+    try:
+        response = orchestrator.invoke(
+            {"messages": [HumanMessage(content=brief)]},
+            config={"recursion_limit": 50},
+        )
+        final = response["messages"][-1].content
+    except KeyboardInterrupt:
+        print("\n  ⚠️   Mission interrupted by user.")
+        return None
+    except Exception as e:
+        print(f"\n  ❌  Mission failed: {type(e).__name__}: {e}")
+        print("      Check your ANTHROPIC_API_KEY and network connection.")
+        return None
 
     print(f"\n{'═'*65}")
     print("  🧠  MISSION COMPLETE — CLAUDE REASONING CORE VERDICT")

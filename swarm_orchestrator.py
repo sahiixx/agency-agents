@@ -44,8 +44,12 @@ def load(path: str) -> str:
 
 def run_agent(llm, system_prompt: str, query: str, name: str) -> str:
     agent = create_deep_agent(model=llm, tools=[], system_prompt=system_prompt, name=name)
-    response = agent.invoke({"messages": [HumanMessage(content=query)]})
-    return response["messages"][-1].content
+    try:
+        response = agent.invoke({"messages": [HumanMessage(content=query)]}, config={"recursion_limit": 50})
+        return response["messages"][-1].content
+    except Exception as e:
+        print(f"  ❌  Agent '{name}' failed: {type(e).__name__}: {e}")
+        return f"[{name} failed: {e}]"
 
 
 class AgencySwarm:
