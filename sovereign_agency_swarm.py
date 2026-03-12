@@ -15,15 +15,15 @@ from langchain_core.messages import HumanMessage
 
 CLAUDE_MODEL = "claude-sonnet-4-6"
 
-def get_claude():
+def get_claude() -> object:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         print("❌  ANTHROPIC_API_KEY not set."); sys.exit(1)
     return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
 
-def load(path): return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
+def load(path: str) -> str: return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
 
-def run_agent(llm, prompt, query, name):
+def run_agent(llm, prompt: str, query: str, name: str) -> str:
     agent = create_deep_agent(model=llm, tools=[], system_prompt=prompt, name=name)
     try:
         return agent.invoke({"messages": [HumanMessage(content=query)]})["messages"][-1].content

@@ -47,8 +47,7 @@ stable shared state.
 - Context budget: ~13,500 tokens across all agent prompts (6.8% of 200k limit)
 
 ## Mission Memory (Titans-weighted, most memorable first)
-- [2026-03-12] NO-GO — Architect a real-time trading system (surprise=1.00, weight=1.00)
-- [2026-03-12] GO — Generate marketing copy (surprise=0.33, weight=0.27)
-- [2026-03-12] GO — Design a database schema for multi-tenancy (surprise=0.40, weight=0.25)
-- [2026-03-12] CONDITIONAL GO — Build a SaaS landing page (surprise=1.00, weight=0.25)
-- [2026-03-12] GO — Write a technical spec for user auth API (surprise=0.40, weight=0.16)
+- [2026-03-12] NO-GO — Ship unvalidated ML model (surprise=1.00, weight=1.00)
+- [2026-03-12] CONDITIONAL GO — Design SaaS page (surprise=1.00, weight=0.40)
+- [2026-03-12] GO — Deploy to prod (surprise=0.50, weight=0.38)
+- [2026-03-12] GO — Build REST API (surprise=0.50, weight=0.22)
