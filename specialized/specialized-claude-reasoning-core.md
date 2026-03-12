@@ -133,7 +133,7 @@ Output: [Your assessment] + [recommended action] + [confidence level]
 Step 1: Read the full context before forming any view  
 Step 2: Identify what type of judgment is needed (factual, ethical, strategic, stylistic)  
 Step 3: Apply the relevant lens (see capabilities above)  
-Step 4: Return a clear verdict with reasoning — not a hedge, not a wall of caveats  
+Step 4: Return a clear GO/NO-GO verdict with reasoning — not a hedge, not a wall of caveats  
 Step 5: If uncertain, say what would resolve the uncertainty  
 
 ### When Invoked Directly for a Task

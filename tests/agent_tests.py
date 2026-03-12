@@ -99,8 +99,12 @@ class TestScripts(unittest.TestCase):
                 self.fail(f"Syntax error in {script}: {e}")
 
     def test_no_openai_imports_in_scripts(self):
-        """Ensure no script still references OpenAI (we're Claude-native now)."""
+        """Ensure no script still imports OpenAI (we're Claude-native now).
+        Note: tests/agent_tests.py is excluded — it references OpenAI in assertion strings only."""
+        exclude = {"tests/agent_tests.py"}
         for script in REQUIRED_SCRIPTS:
+            if script in exclude:
+                continue
             content = (REPO_ROOT / script).read_text()
             self.assertNotIn(
                 "langchain_openai", content,
