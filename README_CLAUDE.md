@@ -1,88 +1,119 @@
-# 🧠 Claude Integration — Reasoning Core & Constitutional AI
+# The Agency — Claude Integration
 
-This fork of The Agency has been upgraded to run entirely on **Claude (Anthropic)** as the AI backbone.
-
----
-
-## What Changed
-
-| File | Change |
-|---|---|
-| `mission_control.py` | Rewritten to use `claude-sonnet-4-6` via `langchain-anthropic`. Adds `--reason` and `--info` commands. |
-| `swarm_orchestrator.py` | Rewritten with Claude-native pipeline: PM → Dev → QA → Security → **Reasoning Core verdict** |
-| `specialized/specialized-claude-reasoning-core.md` | New agent: Claude operating as the swarm's judgment layer |
+A swarm of 130+ specialized AI agents running entirely on **Claude Sonnet 4.6**.
+Each agent is a `.md` file. Python scripts chain them into multi-agent pipelines.
 
 ---
 
-## Setup
+## Quick Start
 
 ```bash
-# Install deepagents SDK
-cd deepagents/libs/deepagents && pip install -e . && cd ../../..
+# 1. Install everything (one command)
+bash setup.sh
 
-# Install Anthropic support
+# Or manually:
+pip install -e deepagents/libs/deepagents
 pip install langchain-anthropic anthropic
 
-# Set your key
-export ANTHROPIC_API_KEY="your_key_here"
-export PYTHONPATH=$PYTHONPATH:$(pwd)/deepagents/libs/deepagents
+# 2. Set your API key
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# 3. Run
+python3 agency.py --list-agents
+python3 agency.py --mission "Build a REST API for user auth"
 ```
 
 ---
 
-## Usage
+## Architecture
+
+```
+agency.py                    ← Unified entry point (use this)
+├── MemoryMiddleware          ← Loads memory/AGENTS.md at startup
+├── SubAgentMiddleware        ← Core spawns specialists via task tool
+├── FilesystemBackend         ← Reads local agent files
+└── TitansMemory              ← Surprise-weighted memory across runs
+
+memory/
+├── AGENTS.md                 ← Shared context injected into every agent
+└── titans_memory.py          ← Titans-inspired memory manager (NeurIPS 2025)
+
+specialized/
+└── specialized-claude-reasoning-core.md  ← Final GO/NO-GO gate
+
+Other scripts (sequential pipelines):
+  swarm_orchestrator.py       ← PM → Dev → QA → Security → Core
+  saas_dominance_swarm.py     ← PM → Copy → Frontend → QA → Core
+  sovereign_agency_swarm.py   ← PM → Backend → AI → Frontend → QA → Core
+  sovereign_ecosystem.py      ← Observer → Refiner → Core → DevOps
+  swarm_stress_test.py        ← Stress test: generates Dashboard.tsx
+  evolution_scheduler.py      ← Self-improvement: critiques + rewrites agents
+  mission_control.py          ← CLI: list/launch any single agent
+  run_custom_agent.py         ← Single agent with custom tools
+  run_deep_research.py        ← Research agent with web/academic tools
+```
+
+---
+
+## Agent Presets
+
+| Preset     | Agents                                     | Use for                  |
+|------------|--------------------------------------------|--------------------------|
+| `full`     | pm, backend, frontend, qa, security, core  | General engineering work |
+| `saas`     | pm, copywriter, frontend, qa, core         | SaaS / marketing builds  |
+| `research` | pm, ai, qa, core                           | Research & analysis      |
 
 ```bash
-# List all 146 agents
-python3 mission_control.py --list
-
-# Filter by domain
-python3 mission_control.py --list --filter engineering
-
-# Launch any agent
-python3 mission_control.py --launch engineering/engineering-frontend-developer.md \
-  --query "Build a login form in React"
-
-# Invoke Claude Reasoning Core directly (judgment, ethics, synthesis)
-python3 mission_control.py --reason \
-  --query "Review this copy for ethical issues: ..."
-
-# Show agent details
-python3 mission_control.py --info specialized/specialized-claude-reasoning-core.md
-
-# Run the full swarm pipeline
-python3 swarm_orchestrator.py --mission "Build a high-performance analytics dashboard"
-
-# Fast mode (skip security scan)
-python3 swarm_orchestrator.py --mission "Build a landing page" --mode fast
+python3 agency.py --mission "Design a SaaS landing page" --preset saas
+python3 agency.py --mission "Research AI memory" --preset research
+python3 agency.py --mission "Audit security" --agents security,qa,core
 ```
 
 ---
 
-## Swarm Pipeline
+## How Memory Works
 
-```
-User Mission
-    │
-    ▼
-[PM Agent]          → Creates execution plan
-    │
-    ▼
-[Frontend Dev]      → Implements the UI
-    │
-    ▼
-[QA Agent]          → Audits implementation
-    │
-    ▼
-[Security Engineer] → Threat review (full mode)
-    │
-    ▼
-[🧠 Claude Core]    → Constitutional review → GO / NO-GO verdict
-```
+Based on [Titans (Google, NeurIPS 2025)](https://arxiv.org/abs/2501.00663):
 
-Every agent in the swarm is powered by `claude-sonnet-4-6`.
-The Reasoning Core is the final gate before any output is considered complete.
+- **Attention** = short-term memory: precise, limited to context window
+- **AGENTS.md** = long-term memory: persists across all runs
+- **Surprise metric**: unexpected verdicts (NO-GO, new patterns) decay slower
+- **Forgetting**: routine outcomes decay and are pruned automatically
+
+After each mission, `TitansMemory` records the verdict and writes the most
+memorable outcomes back into `AGENTS.md` — agents learn across runs.
 
 ---
 
-*The Agency — now running on Claude.*
+## Agent Directories
+
+| Directory            | Agents                                      |
+|----------------------|---------------------------------------------|
+| `engineering/`       | Frontend, backend, DevOps, security, AI     |
+| `design/`            | UX, brand, visual, systems                  |
+| `marketing/`         | SEO, content, growth, social                |
+| `sales/`             | Account, pipeline, proposals                |
+| `specialized/`       | Orchestrators, Claude Core, compliance      |
+| `testing/`           | QA, accessibility, performance              |
+| `support/`           | Analytics, finance, legal                   |
+| `product/`           | Strategy, research, prioritization          |
+| `project-management/`| Planning, sprint, delivery                  |
+
+---
+
+## CI/CD
+
+`.github/workflows/ci.yml` runs on every push:
+- **Structural tests** (no API key needed): always run
+- **Live LLM tests**: run on push to `main` if `ANTHROPIC_API_KEY` secret is set
+
+Add secret: repo Settings → Secrets → `ANTHROPIC_API_KEY`
+
+---
+
+## Tests
+
+```bash
+python3 tests/agent_tests.py          # 19 structural tests (offline)
+ANTHROPIC_API_KEY=... python3 tests/agent_tests.py   # + 4 live LLM tests
+```
