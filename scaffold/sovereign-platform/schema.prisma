@@ -1,0 +1,220 @@
+Here is the Prisma schema and a structured outline of the API routes aligning with your AI Agent Management Platform plan.
+
+```prisma
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Agent {
+  id            String     @id @default(uuid())
+  name          String     @unique
+  status        AgentStatus @default(idle)
+  lastHeartbeat DateTime
+  metadata      Json?      // JSONB
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deployments   Deployment[]
+  telemetry     AgentTelemetry[]
+  swarms       SwarmAgent[]
+}
+
+model AgentSwarm {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  agents      SwarmAgent[]
+  tasks       Task[]
+}
+
+model SwarmAgent {
+  swarm    AgentSwarm @relation(fields: [swarmId], references: [id])
+  swarmId  String
+  agent    Agent     @relation(fields: [agentId], references: [id])
+  agentId  String
+
+  @@id([swarmId, agentId])
+}
+
+model Task {
+  id        String      @id @default(uuid())
+  swarm     AgentSwarm  @relation(fields: [swarmId], references: [id])
+  swarmId   String
+  taskType  String
+  payload   Json
+  status    TaskStatus  @default(pending)
+  result    Json? 
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Deployment {
+  id          String      @id @default(uuid())
+  agent       Agent       @relation(fields: [agentId], references: [id])
+  agentId     String
+  version     String
+  status      DeploymentStatus @default(pending)
+  deployedAt  DateTime?
+  log         String?
+  createdAt   DateTime    @default(now())
+}
+
+model AgentTelemetry {
+  id          String   @id @default(uuid())
+  agent       Agent    @relation(fields: [agentId], references: [id])
+  agentId     String
+  cpuUsage    Float?
+  memoryUsage Float?
+  networkIo   Json?
+  timestamp   DateTime @default(now())
+}
+
+enum AgentStatus {
+  idle
+  running
+  error
+  offline
+}
+
+enum TaskStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+enum DeploymentStatus {
+  pending
+  in_progress
+  successful
+  failed
+}
+```
+
+---
+
+# API Routes Outline
+
+### Agents
+- `GET /api/agents`  
+  List all agents with their current status and metadata.
+
+- `GET /api/agents/:id`  
+  Get details of a single agent.
+
+- `POST /api/agents`  
+  Create/register a new agent.  
+  Request body:  
+  ```json
+  {
+    "name": "AgentName",
+    "metadata": {...} // optional JSON
+  }
+  ```
+
+- `PUT /api/agents/:id`  
+  Update agent info or status.  
+  Request body can include properties such as `status`, `metadata`, `lastHeartbeat`.
+
+- `DELETE /api/agents/:id`  
+  Remove an agent.
+
+---
+
+### Swarms
+- `GET /api/swarms`  
+  List all swarms.
+
+- `POST /api/swarms`  
+  Create a new swarm.  
+  Request body:  
+  ```json
+  {
+    "name": "SwarmName",
+    "description": "Optional description"
+  }
+  ```
+
+- `GET /api/swarms/:id`  
+  Get swarm details including member agents.
+
+- `PUT /api/swarms/:id`  
+  Update swarm info.
+
+- `DELETE /api/swarms/:id`  
+  Delete a swarm.
+
+- `POST /api/swarms/:id/agents`  
+  Add agent(s) to swarm.  
+  Request body:  
+  ```json
+  {
+    "agent_ids": ["agent-uuid-1", "agent-uuid-2"]
+  }
+  ```
+
+- `DELETE /api/swarms/:id/agents/:agentId`  
+  Remove agent from swarm.
+
+---
+
+### Tasks
+- `GET /api/tasks`  
+  List all tasks with their statuses.
+
+- `POST /api/tasks`  
+  Create a new task assigned to a swarm.  
+  Request body:  
+  ```json
+  {
+    "swarm_id": "swarm-uuid",
+    "task_type": "data_analysis",
+    "payload": {...}
+  }
+  ```
+
+- `GET /api/tasks/:id`  
+  Retrieve task status and result.
+
+- `PUT /api/tasks/:id`  
+  Update task status/result (used by agents/reporters).
+
+---
+
+### Deployments
+- `GET /api/deployments`  
+  List all deployment records.
+
+- `POST /api/deployments`  
+  Trigger a deployment on an agent.  
+  Request body:  
+  ```json
+  {
+    "agent_id": "agent-uuid",
+    "version": "1.0.0"
+  }
+  ```
+
+- `GET /api/deployments/:id`  
+  Get deployment logs and status.
+
+---
+
+### Telemetry (Monitoring)
+- `GET /api/telemetry/agents/:agentId`  
+  Retrieve recent telemetry data (historical) for an agent.
+
+- WebSocket or SSE endpoint: `/ws/telemetry`  
+  Streams real-time telemetry and live status updates of agents.
+
+---
+
+If you want, I can proceed to generate detailed OpenAPI specifications or code scaffold snippets for either Express or NestJS next.
