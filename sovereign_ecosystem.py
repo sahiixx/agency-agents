@@ -1,76 +1,100 @@
-import os
-import sys
-import argparse
+#!/usr/bin/env python3
+"""
+Sovereign Ecosystem — Claude-powered self-evolution cycle.
+Observer audits an agent → Refiner rewrites it → Claude Core approves → DevOps verifies.
+"""
+import os, sys, argparse
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).parent
+sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+
 from deepagents import create_deep_agent
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 
-# Add Deep Agents to PYTHONPATH
-sys.path.append(os.path.join(os.getcwd(), "deepagents/libs/deepagents"))
+CLAUDE_MODEL = "claude-sonnet-4-6"
+
+def get_claude():
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("❌  ANTHROPIC_API_KEY not set."); sys.exit(1)
+    return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
+
+def load(path): return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
+
+def run_agent(llm, prompt, query, name):
+    agent = create_deep_agent(model=llm, tools=[], system_prompt=prompt, name=name)
+    return agent.invoke({"messages": [HumanMessage(content=query)]})["messages"][-1].content
 
 class SovereignEcosystem:
-    def __init__(self, model="gpt-4.1-mini"):
-        self.llm = ChatOpenAI(model=model)
-        self.agents = {}
-        self._load_agents()
-
-    def _load_agents(self):
-        """Loads the core Agency personalities for the Ecosystem mission."""
-        agent_paths = {
-            "observer": "testing/testing-reality-checker.md",
-            "refiner": "specialized/specialized-perfect-agent-orchestrator.md",
-            "devops": "engineering/engineering-ai-engineer.md"
+    def __init__(self):
+        self.llm = get_claude()
+        self.agents = {
+            "observer": load("testing/testing-reality-checker.md"),
+            "refiner":  load("specialized/specialized-perfect-agent-orchestrator.md"),
+            "core":     load("specialized/specialized-claude-reasoning-core.md"),
+            "devops":   load("engineering/engineering-ai-engineer.md"),
         }
-        for role, path in agent_paths.items():
-            if os.path.exists(path):
-                with open(path, "r") as f:
-                    self.agents[role] = f.read()
-            else:
-                print(f"Warning: Personality file not found: {path}")
 
-    def run_evolution_cycle(self, target_agent_path):
-        """Executes a self-evolution cycle on a target agent."""
-        print(f"\n🌌 Sovereign Ecosystem: Evolution Cycle Start for '{target_agent_path}'")
+    def run_evolution_cycle(self, target_agent_path: str):
+        target = REPO_ROOT / target_agent_path
+        if not target.exists():
+            print(f"❌  Agent not found: {target_agent_path}"); return False
 
-        if not os.path.exists(target_agent_path):
-            print(f"Error: Target agent not found: {target_agent_path}")
-            return False
+        current = target.read_text()
+        print(f"\n{'═'*60}")
+        print(f"  🌌  Sovereign Ecosystem — Evolution Cycle")
+        print(f"  🎯  Target: {target_agent_path}")
+        print(f"  🧠  Engine: Claude {CLAUDE_MODEL}")
+        print(f"{'═'*60}\n")
 
-        with open(target_agent_path, "r") as f:
-            current_personality = f.read()
+        # Phase 1: Observer audits
+        print("  🔍  [1/4] Observer — Auditing personality...")
+        audit = run_agent(self.llm, self.agents["observer"],
+            f"Audit this agent personality for weaknesses, gaps, and outdated practices:\n\n{current}",
+            "observer")
+        print("  ✅  Audit complete\n")
 
-        # 1. Observer: Audit Performance
-        print("\n--- [Phase 1] Observer: Auditing Personality ---")
-        observer = create_deep_agent(tools=[], system_prompt=self.agents["observer"], model=self.llm)
-        audit_response = observer.invoke({"messages": [HumanMessage(content=f"Audit this agent personality for weaknesses, missing capabilities, or outdated practices:\n{current_personality}")]})
-        audit_report = audit_response["messages"][-1].content
-        print("Observer Audit Report Ready.")
+        # Phase 2: Refiner rewrites
+        print("  ✏️   [2/4] Refiner — Optimizing personality...")
+        optimized = run_agent(self.llm, self.agents["refiner"],
+            f"Rewrite this agent personality to address all audit findings. Return ONLY the improved file.\n\nOriginal:\n{current}\n\nAudit:\n{audit}",
+            "refiner")
 
-        # 2. Refiner: Optimize Personality
-        print("\n--- [Phase 2] Refiner: Optimizing Personality ---")
-        refiner = create_deep_agent(tools=[], system_prompt=self.agents["refiner"], model=self.llm)
-        refine_response = refiner.invoke({"messages": [HumanMessage(content=f"Rewrite this agent personality to address the following audit findings and make it 'perfect':\nOriginal: {current_personality}\nAudit: {audit_report}")]})
-        optimized_personality = refine_response["messages"][-1].content
-        
-        # Save the optimized personality back to the file
-        with open(target_agent_path, "w") as f:
-            f.write(optimized_personality)
-        print(f"Refiner: '{target_agent_path}' has been optimized and updated.")
+        if len(optimized) < 300:
+            print("  ⚠️   Refiner output too short — aborting"); return False
 
-        # 3. DevOps: Deploy Update
-        print("\n--- [Phase 3] DevOps: Verifying Deployment Readiness ---")
-        devops = create_deep_agent(tools=[], system_prompt=self.agents["devops"], model=self.llm)
-        deploy_response = devops.invoke({"messages": [HumanMessage(content=f"Verify that this updated agent is ready for production deployment:\n{optimized_personality}")]})
-        deploy_report = deploy_response["messages"][-1].content
-        print("DevOps Deployment Readiness Verified.")
+        # Phase 3: Claude Reasoning Core approves
+        print("  🧠  [3/4] Claude Reasoning Core — Constitutional review...")
+        verdict = run_agent(self.llm, self.agents["core"],
+            f"Review this rewritten agent personality. Is it safe to deploy? GO/NO-GO.\n\nOriginal:\n{current[:800]}\n\nOptimized:\n{optimized[:800]}",
+            "claude-reasoning-core")
 
-        print("\n🏁 Evolution Cycle Complete. The Agency has self-improved.")
+        if "no-go" in verdict.lower() or "no go" in verdict.lower():
+            print(f"  ❌  Core says NO-GO — aborting\n  Reason: {verdict[:300]}"); return False
+        print("  ✅  Core approved\n")
+
+        # Phase 4: Write + DevOps verify
+        backup = target.with_suffix(".md.bak")
+        backup.write_text(current)
+        target.write_text(optimized)
+        print(f"  💾  [4/4] Written to {target_agent_path}")
+
+        devops_check = run_agent(self.llm, self.agents["devops"],
+            f"Verify this updated agent is production-ready:\n{optimized[:1000]}",
+            "devops")
+        print(f"  ✅  DevOps verified\n")
+        backup.unlink(missing_ok=True)
+
+        print(f"{'═'*60}\n  🏁  Evolution complete: {target.name}\n{'═'*60}\n")
         return True
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Sovereign Ecosystem Controller")
-    parser.add_argument("--agent", type=str, required=True, help="Path to the agent personality to evolve")
+def main():
+    parser = argparse.ArgumentParser(description="🌌 Sovereign Ecosystem — Agent Evolution")
+    parser.add_argument("--agent", required=True, help="Path to agent .md file to evolve")
     args = parser.parse_args()
+    SovereignEcosystem().run_evolution_cycle(args.agent)
 
-    ecosystem = SovereignEcosystem()
-    ecosystem.run_evolution_cycle(args.agent)
+if __name__ == "__main__":
+    main()

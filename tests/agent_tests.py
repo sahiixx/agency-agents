@@ -36,6 +36,9 @@ REQUIRED_SCRIPTS = [
     "evolution_scheduler.py",
     "run_custom_agent.py",
     "run_deep_research.py",
+    "sovereign_ecosystem.py",
+    "swarm_stress_test.py",
+    "agency.py",
 ]
 
 # ─── Structural Tests (no API key needed) ─────────────────────────────────────
@@ -130,7 +133,7 @@ class TestScripts(unittest.TestCase):
 
     def test_reasoning_core_integrated_in_swarms(self):
         """Verify swarms reference the reasoning core."""
-        swarms = ["swarm_orchestrator.py", "saas_dominance_swarm.py", "sovereign_agency_swarm.py"]
+        swarms = ["swarm_orchestrator.py", "saas_dominance_swarm.py", "sovereign_agency_swarm.py", "agency.py"]
         for script in swarms:
             content = (REPO_ROOT / script).read_text()
             self.assertIn(
