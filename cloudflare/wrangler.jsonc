@@ -1,0 +1,65 @@
+// wrangler.jsonc — The Agency Mission Control
+{
+  "name": "agency-mission-control",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-03-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+
+  // Durable Objects — SQLite-backed (new_sqlite_classes)
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MISSION_ROOM",
+        "class_name": "MissionRoom"
+      }
+    ]
+  },
+
+  // DO migrations — SQLite class
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["MissionRoom"]
+    }
+  ],
+
+  // Workflows — durable multi-agent execution
+  "workflows": [
+    {
+      "name": "mission-workflow",
+      "binding": "MISSION_WORKFLOW",
+      "class_name": "MissionWorkflow"
+    }
+  ],
+
+  // KV — Titans memory ledger (mission history, surprise weights)
+  "kv_namespaces": [
+    {
+      "binding": "AGENCY_KV",
+      "id": "REPLACE_WITH_KV_ID"
+    }
+  ],
+
+  // D1 — structured observability traces
+  "d1_databases": [
+    {
+      "binding": "AGENCY_DB",
+      "database_name": "agency-traces",
+      "database_id": "REPLACE_WITH_D1_ID"
+    }
+  ],
+
+  // Secrets (set via: wrangler secret put ANTHROPIC_API_KEY)
+  // Never bake secrets into wrangler.jsonc
+  // Required secrets:
+  //   ANTHROPIC_API_KEY  — your sk-ant-... key
+  //
+  // Optional vars:
+  "vars": {
+    "CLAUDE_MODEL": "claude-sonnet-4-6"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "agency-mission-control",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev":    "wrangler dev --port 8787",
+    "deploy": "wrangler deploy",
+    "tail":   "wrangler tail",
+    "setup":  "bash setup-cf.sh"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250307.0",
+    "typescript": "^5.5.4",
+    "wrangler": "^3.114.7"
+  }
+}
