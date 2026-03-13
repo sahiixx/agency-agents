@@ -50,6 +50,13 @@ except ImportError as e:
 from memory.titans_memory import TitansMemory
 from mcp_tools import MCP_TOOLS
 from observability import AgencyTracer
+from a2a_protocol import (
+    start_agency_a2a_servers,
+    register_servers,
+    make_a2a_tools,
+    A2AClient,
+    BASE_PORT,
+)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 CLAUDE_MODEL = "claude-sonnet-4-6"
@@ -142,13 +149,23 @@ def run_mission(goal: str, agent_names: list, preset: str = "full") -> str:
     print(f"  Groups:  {' → '.join(_parallel_group_label(g) for g in groups)}")
     print(f"{'='*65}\n")
 
-    # Build subagents (all except core)
+    # Start A2A servers for this mission's agents
+    print(f"  Starting A2A servers...")
+    port_map = start_agency_a2a_servers(agent_names, AGENT_REGISTRY, REPO_ROOT)
+    register_servers(port_map)
+    a2a_urls  = [f"http://localhost:{p}" for p in port_map.values()]
+    a2a_tools = make_a2a_tools(a2a_urls)
+    all_tools  = MCP_TOOLS + a2a_tools
+    print(f"  A2A: {len(a2a_tools)} agent servers live | Total tools: {len(all_tools)}\n")
+
+    # Build subagents (all except core) — give each MCP + A2A tools
     specialist_names = [n for n in agent_names if n != "core"]
     subagents = [build_subagent(n, llm) for n in specialist_names]
     for sa in subagents:
+        sa["tools"] = all_tools   # override with full tool set
         status = "OK" if sa["system_prompt"] else "MISSING"
         print(f"  [{status}]  {sa['name']} ({len(sa['system_prompt']):,} chars)  "
-              f"[{len(MCP_TOOLS)} MCP tools]")
+              f"[{len(all_tools)} tools: MCP+A2A]")
 
     # FilesystemBackend so MemoryMiddleware reads from local disk
     with warnings.catch_warnings():
@@ -160,7 +177,7 @@ def run_mission(goal: str, agent_names: list, preset: str = "full") -> str:
     try:
         orchestrator = create_deep_agent(
             model=llm,
-            tools=MCP_TOOLS,             # ← orchestrator also gets MCP tools
+            tools=all_tools,             # ← MCP + A2A tools
             system_prompt=load_agent(AGENT_REGISTRY["core"][0]),
             subagents=subagents,
             memory=[MEMORY_FILE],
@@ -177,20 +194,27 @@ def run_mission(goal: str, agent_names: list, preset: str = "full") -> str:
         f"  Phase {i+1}: [{_parallel_group_label(g)}] — run {'concurrently' if len(g)>1 else 'sequentially'}"
         for i, g in enumerate(groups)
     )
+    a2a_desc = "\n".join(
+        f"  {name:12} → http://localhost:{port}"
+        for name, port in port_map.items()
+    )
 
     brief = f"""MISSION: {goal}
 
-You have specialist subagents available via the `task` tool.
-You also have MCP tools: web_search, read_file, write_output, code_lint, memory_recall, get_datetime.
+You have specialist subagents via `task` tool, MCP tools, and A2A agent servers.
+
+MCP TOOLS: web_search, read_file, write_output, code_lint, memory_recall, get_datetime
+A2A SERVERS (call any external or internal agent via A2A protocol):
+{a2a_desc}
 
 PARALLEL EXECUTION PLAN:
 {group_desc}
 
 Instructions:
-1. Follow the phase plan above — delegate parallel agents simultaneously
-2. Use web_search for any current data you need
-3. Use memory_recall to check if we've done similar missions before
-4. Synthesize all specialist outputs into one cohesive deliverable
+1. Follow the phase plan — delegate parallel agents simultaneously
+2. Use web_search for current data, memory_recall for past mission context
+3. A2A servers let you call agents from any external framework too
+4. Synthesize all outputs into one cohesive deliverable
 5. Use write_output to save the final deliverable as a file
 6. Constitutional review — accuracy, safety, completeness, consistency
 7. Return final verdict: GO / CONDITIONAL GO / NO-GO with clear rationale
