@@ -1,6 +1,7 @@
 // wrangler.jsonc — The Agency Mission Control
 {
   "name": "agency-mission-control",
+  "account_id": "24995059e06a19905ae5cfba75128c60",
   "main": "src/index.ts",
   "compatibility_date": "2025-03-07",
   "compatibility_flags": ["nodejs_compat"],
@@ -40,7 +41,7 @@
   "kv_namespaces": [
     {
       "binding": "AGENCY_KV",
-      "id": "REPLACE_WITH_KV_ID"
+      "id": "cfc0c11f10764e24bdb1bc04d943a492"
     }
   ],
 
@@ -49,7 +50,7 @@
     {
       "binding": "AGENCY_DB",
       "database_name": "agency-traces",
-      "database_id": "REPLACE_WITH_D1_ID"
+      "database_id": "c9835a49-cebf-44fa-89e1-07724d3e13fe"
     }
   ],
 
