@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Agency — Swarm Visualization</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05070d;
+  --gold: #c9a84c;
+  --gold2: #f0cc6e;
+  --blue: #4a9eff;
+  --green: #3dd68c;
+  --red: #ff5c5c;
+  --amber: #ffaa33;
+  --purple: #a78bfa;
+  --cyan: #22d3ee;
+  --mono: 'Space Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  font-family: var(--sans);
+  color: #e2e8f0;
+  overflow: hidden;
+  width: 100vw; height: 100vh;
+  user-select: none;
+}
+
+canvas { position: absolute; inset: 0; }
+
+/* HUD */
+.hud {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* top bar */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  background: rgba(5,7,13,.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(201,168,76,.15);
+  pointer-events: all;
+  z-index: 20;
+}
+.logo { font-size: 14px; font-weight: 800; letter-spacing: .22em; color: var(--gold); text-transform: uppercase; }
+.logo-sub { font-family: var(--mono); font-size: 10px; color: #4a5568; letter-spacing: .1em; margin-left: 12px; }
+
+.status-row { display: flex; gap: 10px; align-items: center; }
+.pill {
+  font-family: var(--mono); font-size: 10px;
+  padding: 3px 9px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.1);
+  color: #8899aa; letter-spacing: .06em;
+}
+.pill.live { border-color: var(--green); color: var(--green); }
+.pill.live::before { content:'● '; animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity:0; } }
+
+.btn-row { display: flex; gap: 8px; }
+.ctrl-btn {
+  font-family: var(--mono); font-size: 10px;
+  padding: 4px 12px; border-radius: 4px;
+  border: 1px solid rgba(201,168,76,.3);
+  background: rgba(201,168,76,.06);
+  color: var(--gold); cursor: pointer;
+  letter-spacing: .08em; text-transform: uppercase;
+  transition: all .2s; pointer-events: all;
+}
+.ctrl-btn:hover { background: rgba(201,168,76,.15); border-color: var(--gold); }
+.ctrl-btn.active { background: rgba(201,168,76,.2); border-color: var(--gold2); color: var(--gold2); }
+
+/* bottom info strip */
+.bottom-strip {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 44px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  background: rgba(5,7,13,.85);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255,255,255,.06);
+  pointer-events: none;
+  z-index: 20;
+}
+.metric { font-family: var(--mono); font-size: 10px; color: #4a5568; }
+.metric span { color: var(--gold2); }
+
+/* log panel */
+.log-panel {
+  position: fixed; right: 0; top: 52px; bottom: 44px;
+  width: 300px;
+  background: rgba(5,7,13,.9);
+  border-left: 1px solid rgba(255,255,255,.06);
+  backdrop-filter: blur(12px);
+  padding: 12px;
+  overflow-y: auto;
+  transition: transform .3s ease;
+  pointer-events: all;
+  z-index: 15;
+}
+.log-panel.hidden { transform: translateX(100%); }
+.log-panel::-webkit-scrollbar { width: 3px; }
+.log-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+.log-title { font-family: var(--mono); font-size: 9px; letter-spacing: .2em; color: #4a5568; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.log-entry { font-family: var(--mono); font-size: 10px; line-height: 1.7; margin-bottom: 2px; opacity: 0; animation: fadeIn .2s ease forwards; }
+@keyframes fadeIn { to { opacity: 1; } }
+.log-ts { color: #4a5568; }
+.log-ag { font-weight: 700; }
+.log-msg { color: #8899aa; }
+
+/* verdict overlay */
+.verdict-overlay {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(5,7,13,.7);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  opacity: 0; pointer-events: none;
+  transition: opacity .5s ease;
+}
+.verdict-overlay.show { opacity: 1; pointer-events: all; }
+.verdict-box {
+  text-align: center;
+  padding: 48px 64px;
+  border: 1px solid rgba(201,168,76,.3);
+  border-radius: 16px;
+  background: rgba(5,7,13,.95);
+  position: relative; overflow: hidden;
+}
+.verdict-box::before {
+  content: '';
+  position: absolute; inset: -2px;
+  border-radius: 16px;
+  background: conic-gradient(from 0deg, var(--gold), transparent, var(--gold));
+  opacity: .15;
+  animation: spin 4s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.verdict-label { font-family: var(--mono); font-size: 10px; letter-spacing: .3em; color: #4a5568; text-transform: uppercase; margin-bottom: 12px; }
+.verdict-word { font-size: 64px; font-weight: 800; letter-spacing: .05em; line-height: 1; }
+.verdict-word.GO { color: var(--green); text-shadow: 0 0 60px rgba(61,214,140,.5); }
+.verdict-word.COND { color: var(--amber); text-shadow: 0 0 60px rgba(255,170,51,.4); }
+.verdict-word.NOGO { color: var(--red); text-shadow: 0 0 60px rgba(255,92,92,.4); }
+.verdict-sub { font-family: var(--mono); font-size: 11px; color: #8899aa; margin-top: 12px; max-width: 360px; line-height: 1.6; }
+.verdict-close { margin-top: 20px; font-family: var(--mono); font-size: 10px; color: #4a5568; cursor: pointer; pointer-events: all; letter-spacing: .1em; }
+.verdict-close:hover { color: var(--gold); }
+
+/* preset selector */
+.preset-panel {
+  position: fixed; left: 24px; top: 68px;
+  pointer-events: all;
+  z-index: 15;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.preset-pill {
+  font-family: var(--mono); font-size: 9px;
+  padding: 4px 10px; border-radius: 4px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(5,7,13,.7);
+  color: #4a5568; cursor: pointer;
+  letter-spacing: .08em; text-transform: uppercase;
+  transition: all .2s;
+}
+.preset-pill:hover { border-color: rgba(201,168,76,.3); color: #8899aa; }
+.preset-pill.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,.08); }
+</style>
+</head>
+<body>
+
+<!-- CANVAS -->
+<canvas id="c"></canvas>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center">
+    <div class="logo">The Agency</div>
+    <div class="logo-sub">Swarm Visualization</div>
+  </div>
+  <div class="status-row">
+    <div class="pill live" id="status-pill">SIMULATING</div>
+    <div class="pill" id="phase-pill">PHASE 1</div>
+  </div>
+  <div class="btn-row">
+    <button class="ctrl-btn active" id="btn-log" onclick="toggleLog()">Logs</button>
+    <button class="ctrl-btn" id="btn-pause" onclick="togglePause()">Pause</button>
+    <button class="ctrl-btn" onclick="restart()">Restart</button>
+  </div>
+</div>
+
+<!-- PRESET PANEL -->
+<div class="preset-panel">
+  <div class="preset-pill active" onclick="setPreset('full',this)">Full Stack</div>
+  <div class="preset-pill" onclick="setPreset('saas',this)">SaaS</div>
+  <div class="preset-pill" onclick="setPreset('research',this)">Research</div>
+</div>
+
+<!-- LOG PANEL -->
+<div class="log-panel" id="log-panel">
+  <div class="log-title">// Live Agent Log</div>
+  <div id="log-entries"></div>
+</div>
+
+<!-- BOTTOM STRIP -->
+<div class="bottom-strip">
+  <div class="metric">Mission: <span id="m-mission">Gold Loan LTV Calculator — UAE Lenders</span></div>
+  <div style="display:flex;gap:24px">
+    <div class="metric">Packets: <span id="m-packets">0</span></div>
+    <div class="metric">Tokens: <span id="m-tokens">0</span></div>
+    <div class="metric">Cost: <span id="m-cost">$0.0000</span></div>
+    <div class="metric">Time: <span id="m-time">0.0s</span></div>
+  </div>
+</div>
+
+<!-- VERDICT OVERLAY -->
+<div class="verdict-overlay" id="verdict-overlay">
+  <div class="verdict-box">
+    <div class="verdict-label">// Claude Reasoning Core — Final Verdict</div>
+    <div class="verdict-word" id="verdict-word">GO</div>
+    <div class="verdict-sub" id="verdict-sub"></div>
+    <div class="verdict-close" onclick="closeVerdict()">[ CLICK TO DISMISS ]</div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const PRESETS = {
+  full: {
+    agents: ['ORCHESTRATOR','PM','BACKEND','FRONTEND','SECURITY','QA','CORE'],
+    groups: [['PM'],['BACKEND','FRONTEND','SECURITY'],['QA'],['CORE']],
+    colors: {
+      ORCHESTRATOR: '#c9a84c',
+      PM:     '#a78bfa',
+      BACKEND:'#4a9eff',
+      FRONTEND:'#3dd68c',
+      SECURITY:'#ff5c5c',
+      QA:     '#ffaa33',
+      CORE:   '#f0cc6e',
+    },
+  },
+  saas: {
+    agents: ['ORCHESTRATOR','PM','COPYWRITER','FRONTEND','QA','CORE'],
+    groups: [['PM'],['COPYWRITER','FRONTEND'],['QA'],['CORE']],
+    colors: {
+      ORCHESTRATOR:'#c9a84c',
+      PM:'#a78bfa',
+      COPYWRITER:'#f0abfc',
+      FRONTEND:'#3dd68c',
+      QA:'#ffaa33',
+      CORE:'#f0cc6e',
+    },
+  },
+  research: {
+    agents: ['ORCHESTRATOR','PM','AI','QA','CORE'],
+    groups: [['PM','AI'],['QA'],['CORE']],
+    colors: {
+      ORCHESTRATOR:'#c9a84c',
+      PM:'#a78bfa',
+      AI:'#22d3ee',
+      QA:'#ffaa33',
+      CORE:'#f0cc6e',
+    },
+  },
+};
+
+const AGENT_EMOJIS = {
+  ORCHESTRATOR:'🧠', PM:'📋', BACKEND:'⚙️', FRONTEND:'🎨',
+  SECURITY:'🔒', QA:'🧪', CORE:'🧠', COPYWRITER:'✍️', AI:'🤖',
+};
+
+const AGENT_SCRIPTS = {
+  PM:      ['Decomposing mission into sprint phases...','Risk matrix: API volatility, UAE PDPL compliance, timeline','Assigning: Backend→API layer, Frontend→UI, Security→audit','Sprint plan complete. 6×2-week cycles. MVP at sprint 2.'],
+  BACKEND: ['Designing data layer: PostgreSQL + Redis cache','REST endpoints: /ltv/calculate, /gold/prices, /compliance/check','WebSocket feed for real-time gold price updates (XAU/AED)','Schema locked. API contracts documented. Swagger generated.'],
+  FRONTEND:['Reviewing backend contracts and API spec...','Component library: LTVCalculator, GoldPriceWidget, ResultCard','RTL support for Arabic locale. WCAG 2.1 AA compliance.','UI complete. Storybook stories written. Ready for QA.'],
+  SECURITY:['Threat model: OWASP Top 10 scan initiated...','HIGH: API keys must use Vault — no env vars in production','HIGH: UAE PDPL — user PII requires data residency (AE region)','2 blockers filed. Security gates set as pre-launch requirements.'],
+  QA:      ['Test plan: 47 cases across unit/integration/E2E/load','Critical path: LTV accuracy vs CBUAE published rates','Load test: 500 concurrent requests, <200ms p99 target','Red flag: gold price feed timeout needs fallback. Documented.'],
+  COPYWRITER:['Reviewing product spec and target market (UAE lenders)...','Headline: "Real-time LTV. Every karat. Every lender."','Copy deck: English + Arabic variants. Tone: precise, trusted.','Content package complete. All CTAs A/B tested in copy.'],
+  AI:      ['Pulling latest papers on LTV risk models...','Key finding: tiered LTV + real-time feed reduces default by 12%','Recommending: ML anomaly detection on gold price spikes','Research synthesis complete. 14 citations verified.'],
+  CORE:    ['All specialist outputs received. Running constitutional review...','Verifying: technical accuracy, UAE compliance, safety, consistency','Security blockers acknowledged — conditional approval warranted.','VERDICT: CONDITIONAL GO — 2 security gates must close pre-launch.'],
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+let nodes = {};
+let packets = [];
+let particles = [];
+let connections = [];
+let currentPreset = 'full';
+let paused = false;
+let logVisible = true;
+let missionTime = 0;
+let totalPackets = 0;
+let totalTokens = 0;
+let totalCost = 0;
+let currentPhase = 0;
+let phaseTimer = 0;
+let missionDone = false;
+let raf;
+
+// ── NODE CLASS ────────────────────────────────────────────────────────────────
+class AgentNode {
+  constructor(name, x, y, color) {
+    this.name   = name;
+    this.x      = x;
+    this.y      = y;
+    this.color  = color;
+    this.state  = 'idle'; // idle | ready | working | done | error
+    this.pulse  = 0;
+    this.ring   = 0;
+    this.glow   = 0;
+    this.size   = name === 'ORCHESTRATOR' ? 44 : 34;
+    this.tokens = 0;
+    this.scriptLine = 0;
+    this.scriptTimer = 0;
+    this.logQueue = [];
+  }
+
+  setState(s) {
+    this.state = s;
+    if (s === 'working') { this.ring = 1; this.glow = 1; }
+    if (s === 'done')    { this.glow = 0.4; }
+    if (s === 'idle')    { this.ring = 0; this.glow = 0; }
+  }
+
+  update(dt) {
+    this.pulse = (this.pulse + dt * 2) % (Math.PI * 2);
+
+    if (this.state === 'working') {
+      this.ring  = Math.max(0, this.ring - dt * 0.3);
+      this.glow  = 0.7 + Math.sin(this.pulse) * 0.3;
+
+      this.scriptTimer += dt;
+      if (this.scriptTimer > 1.8 && this.scriptLine < (AGENT_SCRIPTS[this.name]||[]).length) {
+        const lines = AGENT_SCRIPTS[this.name] || [];
+        if (this.scriptLine < lines.length) {
+          addLog(this.name, lines[this.scriptLine], this.color);
+          this.scriptLine++;
+        }
+        this.scriptTimer = 0;
+      }
+    } else {
+      this.ring = Math.max(0, this.ring - dt * 2);
+    }
+  }
+
+  draw() {
+    const { x, y, size, color, state, glow, ring } = this;
+
+    // Glow halo
+    if (glow > 0) {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, size * 2.8);
+      g.addColorStop(0, hexAlpha(color, glow * 0.35));
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, size * 2.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Pulse ring (working)
+    if (state === 'working') {
+      const pr = size + 12 + Math.sin(this.pulse) * 6;
+      ctx.strokeStyle = hexAlpha(color, 0.4);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, pr, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Orbit ring (done)
+    if (state === 'done') {
+      ctx.strokeStyle = hexAlpha(color, 0.25);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x, y, size + 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Node body
+    const grad = ctx.createRadialGradient(x - size*0.2, y - size*0.2, 0, x, y, size);
+    const alpha = state === 'idle' ? 0.15 : state === 'ready' ? 0.3 : state === 'done' ? 0.5 : 0.7;
+    grad.addColorStop(0, hexAlpha(color, alpha + 0.2));
+    grad.addColorStop(1, hexAlpha(color, alpha * 0.4));
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = hexAlpha(color, state === 'idle' ? 0.2 : 0.8);
+    ctx.lineWidth = state === 'working' ? 2 : 1.5;
+
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Inner dot
+    ctx.fillStyle = hexAlpha(color, state === 'idle' ? 0.3 : 1);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Emoji
+    ctx.font = `${size * 0.55}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const emojiAlpha = state === 'idle' ? 0.4 : 1;
+    ctx.globalAlpha = emojiAlpha;
+    ctx.fillText(AGENT_EMOJIS[this.name] || '🤖', x, y - 4);
+    ctx.globalAlpha = 1;
+
+    // Name label
+    ctx.font = `700 10px ${getComputedStyle(document.body).getPropertyValue('--mono')}`;
+    ctx.fillStyle = hexAlpha(color, state === 'idle' ? 0.4 : 0.9);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(this.name, x, y + size + 6);
+
+    // Token count
+    if (this.tokens > 0) {
+      ctx.font = `9px monospace`;
+      ctx.fillStyle = hexAlpha(color, 0.5);
+      ctx.fillText(`${(this.tokens/1000).toFixed(1)}k tok`, x, y + size + 18);
+    }
+
+    // State badge
+    if (state === 'working') {
+      ctx.font = 'bold 8px monospace';
+      ctx.fillStyle = '#ffaa33';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('WORKING', x, y - size - 4);
+    }
+  }
+}
+
+// ── PACKET CLASS ──────────────────────────────────────────────────────────────
+class Packet {
+  constructor(from, to, color, label = '') {
+    this.from   = from;
+    this.to     = to;
+    this.color  = color;
+    this.label  = label;
+    this.t      = 0;       // 0→1
+    this.speed  = 0.4 + Math.random() * 0.3;
+    this.size   = 4 + Math.random() * 3;
+    this.done   = false;
+    this.trail  = [];
+  }
+
+  update(dt) {
+    this.t = Math.min(1, this.t + dt * this.speed);
+
+    const fx = nodes[this.from]?.x || 0;
+    const fy = nodes[this.from]?.y || 0;
+    const tx = nodes[this.to]?.x || 0;
+    const ty = nodes[this.to]?.y || 0;
+
+    // Cubic bezier control point (arc upward)
+    const cx = (fx + tx) / 2 + (ty - fy) * 0.3;
+    const cy = (fy + ty) / 2 - Math.abs(tx - fx) * 0.25;
+
+    const t = this.t;
+    this.x = (1-t)*(1-t)*fx + 2*(1-t)*t*cx + t*t*tx;
+    this.y = (1-t)*(1-t)*fy + 2*(1-t)*t*cy + t*t*ty;
+
+    this.trail.push({ x: this.x, y: this.y, t: this.t });
+    if (this.trail.length > 18) this.trail.shift();
+
+    if (this.t >= 1) {
+      this.done = true;
+      nodes[this.to]?.setState('working');
+      spawnArrival(this.x, this.y, this.color);
+      totalTokens += Math.floor(800 + Math.random() * 1200);
+      totalCost   += 0.002 + Math.random() * 0.005;
+      totalPackets++;
+    }
+  }
+
+  draw() {
+    if (!this.x) return;
+
+    // Trail
+    for (let i = 1; i < this.trail.length; i++) {
+      const a = (i / this.trail.length) * 0.6;
+      ctx.strokeStyle = hexAlpha(this.color, a);
+      ctx.lineWidth   = (i / this.trail.length) * this.size * 0.8;
+      ctx.lineCap     = 'round';
+      ctx.beginPath();
+      ctx.moveTo(this.trail[i-1].x, this.trail[i-1].y);
+      ctx.lineTo(this.trail[i].x, this.trail[i].y);
+      ctx.stroke();
+    }
+
+    // Glow
+    const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
+    g.addColorStop(0, hexAlpha(this.color, 0.9));
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core dot
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// ── PARTICLE CLASS ────────────────────────────────────────────────────────────
+class Particle {
+  constructor(x, y, color) {
+    this.x     = x;
+    this.y     = y;
+    this.vx    = (Math.random() - 0.5) * 120;
+    this.vy    = (Math.random() - 0.5) * 120;
+    this.life  = 1;
+    this.decay = 1.8 + Math.random() * 1.2;
+    this.size  = 2 + Math.random() * 4;
+    this.color = color;
+  }
+  update(dt) {
+    this.x    += this.vx * dt;
+    this.y    += this.vy * dt;
+    this.vx   *= 0.94;
+    this.vy   *= 0.94;
+    this.life -= this.decay * dt;
+  }
+  draw() {
+    ctx.fillStyle = hexAlpha(this.color, this.life * 0.8);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function spawnArrival(x, y, color) {
+  for (let i = 0; i < 12; i++) particles.push(new Particle(x, y, color));
+}
+
+// ── LAYOUT ────────────────────────────────────────────────────────────────────
+function layoutNodes(preset) {
+  nodes = {};
+  const cfg  = PRESETS[preset];
+  const cx   = W / 2;
+  const cy   = H / 2;
+
+  // Orchestrator at center
+  const orchColor = cfg.colors['ORCHESTRATOR'];
+  nodes['ORCHESTRATOR'] = new AgentNode('ORCHESTRATOR', cx, cy, orchColor);
+  nodes['ORCHESTRATOR'].setState('ready');
+  nodes['ORCHESTRATOR'].size = 48;
+
+  // Specialists in a circle
+  const specialists = cfg.agents.filter(a => a !== 'ORCHESTRATOR');
+  const r = Math.min(W, H) * 0.32;
+
+  specialists.forEach((name, i) => {
+    const angle = -Math.PI / 2 + (i / specialists.length) * Math.PI * 2;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    nodes[name] = new AgentNode(name, x, y, cfg.colors[name] || '#8899aa');
+  });
+}
+
+function buildConnections(preset) {
+  connections = [];
+  const cfg = PRESETS[preset];
+  const specialists = cfg.agents.filter(a => a !== 'ORCHESTRATOR' && a !== 'CORE');
+  // Orchestrator → all specialists
+  specialists.forEach(s => connections.push(['ORCHESTRATOR', s]));
+  // All → CORE
+  specialists.forEach(s => connections.push([s, 'CORE']));
+  // CORE → ORCHESTRATOR
+  connections.push(['CORE', 'ORCHESTRATOR']);
+  // Cross-connections within parallel groups
+  cfg.groups.forEach(g => {
+    if (g.length > 1) {
+      for (let i = 0; i < g.length; i++)
+        for (let j = i + 1; j < g.length; j++)
+          connections.push([g[i], g[j]]);
+    }
+  });
+}
+
+// ── MISSION SEQUENCE ──────────────────────────────────────────────────────────
+const MISSIONS = {
+  full:     [['PM'],['BACKEND','FRONTEND','SECURITY'],['QA'],['CORE']],
+  saas:     [['PM'],['COPYWRITER','FRONTEND'],['QA'],['CORE']],
+  research: [['PM','AI'],['QA'],['CORE']],
+};
+
+let sequence = [];
+let seqIdx   = 0;
+let seqTimer = 0;
+
+function startMission() {
+  sequence   = MISSIONS[currentPreset];
+  seqIdx     = 0;
+  seqTimer   = 0;
+  missionDone = false;
+  totalPackets = 0; totalTokens = 0; totalCost = 0; missionTime = 0;
+  currentPhase = 0;
+
+  // Reset all agents
+  Object.values(nodes).forEach(n => { n.setState('idle'); n.tokens = 0; n.scriptLine = 0; });
+  nodes['ORCHESTRATOR']?.setState('working');
+  packets = []; particles = [];
+
+  addLog('ORCHESTRATOR', 'Mission received. Building LangGraph...', '#c9a84c');
+  addLog('SYSTEM', `Preset: ${currentPreset.toUpperCase()} | ${PRESETS[currentPreset].agents.length-1} specialists`, '#4a5568');
+
+  document.getElementById('phase-pill').textContent = 'PHASE 1';
+  document.getElementById('status-pill').textContent = 'RUNNING';
+}
+
+function updateSequence(dt) {
+  if (missionDone || seqIdx >= sequence.length) return;
+
+  seqTimer += dt;
+  const phase = sequence[seqIdx];
+
+  if (seqTimer < 1.5) return;
+
+  // Fire packets to phase agents
+  if (seqTimer < 1.6) {
+    phase.forEach(name => {
+      if (nodes[name]) {
+        packets.push(new Packet('ORCHESTRATOR', name, nodes[name].color, 'task'));
+        nodes[name].setState('ready');
+      }
+    });
+    document.getElementById('phase-pill').textContent = `PHASE ${seqIdx + 1}`;
+    addLog('ORCHESTRATOR', `Delegating phase ${seqIdx+1}: [${phase.join(' ∥ ')}]`, '#c9a84c');
+  }
+
+  // Check if all phase agents received (t>0.5)
+  const allWorking = phase.every(name => nodes[name]?.state === 'working' || nodes[name]?.state === 'done');
+
+  if (seqTimer > 5.5 + phase.length * 1.2) {
+    // Mark phase done, fire results back
+    phase.forEach(name => {
+      if (nodes[name]) {
+        nodes[name].setState('done');
+        nodes[name].tokens += Math.floor(1000 + Math.random() * 2000);
+        packets.push(new Packet(name, 'ORCHESTRATOR', nodes[name].color, 'result'));
+      }
+    });
+    seqIdx++;
+    seqTimer = 0;
+
+    if (seqIdx >= sequence.length) {
+      // Mission complete
+      setTimeout(() => showVerdict(), 1200);
+      nodes['CORE']?.setState('done');
+      nodes['ORCHESTRATOR']?.setState('done');
+      missionDone = true;
+      document.getElementById('status-pill').textContent = 'COMPLETE';
+      document.getElementById('phase-pill').textContent = 'VERDICT';
+    }
+  }
+}
+
+function showVerdict() {
+  const verdicts = [
+    { word: 'CONDITIONAL GO', cls: 'COND', sub: 'Build approved with conditions. 2 security gates must close before launch: Vault credentials + UAE data residency confirmation.' },
+    { word: 'GO', cls: 'GO', sub: 'Mission cleared. All specialist outputs aligned. Ship to staging immediately.' },
+  ];
+  const v = verdicts[currentPreset === 'full' ? 0 : 1];
+
+  document.getElementById('verdict-word').textContent = v.word;
+  document.getElementById('verdict-word').className   = 'verdict-word ' + v.cls;
+  document.getElementById('verdict-sub').textContent  = v.sub;
+  document.getElementById('verdict-overlay').classList.add('show');
+
+  addLog('CORE', '━━━ VERDICT: ' + v.word + ' ━━━', '#f0cc6e');
+}
+
+function closeVerdict() {
+  document.getElementById('verdict-overlay').classList.remove('show');
+}
+
+// ── DRAW CONNECTIONS ──────────────────────────────────────────────────────────
+function drawConnections() {
+  connections.forEach(([a, b]) => {
+    const na = nodes[a], nb = nodes[b];
+    if (!na || !nb) return;
+
+    const active = na.state === 'working' || nb.state === 'working';
+    const done   = na.state === 'done'    && nb.state === 'done';
+
+    ctx.strokeStyle = active
+      ? hexAlpha(na.color, 0.25)
+      : done
+        ? hexAlpha(na.color, 0.12)
+        : 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = active ? 1.5 : 1;
+    ctx.setLineDash(active ? [] : [4, 8]);
+
+    ctx.beginPath();
+    ctx.moveTo(na.x, na.y);
+    ctx.lineTo(nb.x, nb.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+}
+
+// ── BACKGROUND GRID ───────────────────────────────────────────────────────────
+function drawGrid() {
+  const step = 60;
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+  ctx.lineWidth   = 1;
+  for (let x = 0; x < W; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Center cross
+  ctx.strokeStyle = 'rgba(201,168,76,0.06)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+}
+
+// ── BACKGROUND AMBIENT PARTICLES ──────────────────────────────────────────────
+const ambients = [];
+function initAmbients() {
+  for (let i = 0; i < 60; i++) ambients.push({
+    x: Math.random() * W, y: Math.random() * H,
+    vx: (Math.random()-.5)*8, vy: (Math.random()-.5)*8,
+    r: Math.random() * 1.5, a: Math.random() * 0.15,
+  });
+}
+function drawAmbients(dt) {
+  ambients.forEach(p => {
+    p.x = (p.x + p.vx * dt + W) % W;
+    p.y = (p.y + p.vy * dt + H) % H;
+    ctx.fillStyle = `rgba(201,168,76,${p.a})`;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+  });
+}
+
+// ── MAIN LOOP ─────────────────────────────────────────────────────────────────
+let last = 0;
+function loop(ts) {
+  const dt = Math.min((ts - last) / 1000, 0.05);
+  last = ts;
+
+  if (!paused) {
+    missionTime += dt;
+    updateSequence(dt);
+    Object.values(nodes).forEach(n => n.update(dt));
+    packets    = packets.filter(p => { p.update(dt); return !p.done; });
+    particles  = particles.filter(p => { p.update(dt); return p.life > 0; });
+
+    // Update metrics
+    document.getElementById('m-packets').textContent = totalPackets;
+    document.getElementById('m-tokens').textContent  = totalTokens.toLocaleString();
+    document.getElementById('m-cost').textContent    = '$' + totalCost.toFixed(4);
+    document.getElementById('m-time').textContent    = missionTime.toFixed(1) + 's';
+
+    // Ambient packets while running
+    if (!missionDone && Math.random() < 0.04) {
+      const names = Object.keys(nodes).filter(n => nodes[n].state === 'working');
+      if (names.length >= 2) {
+        const a = names[Math.floor(Math.random() * names.length)];
+        let b;
+        do { b = names[Math.floor(Math.random() * names.length)]; } while (b === a);
+        packets.push(new Packet(a, b, nodes[a].color));
+      }
+    }
+  }
+
+  // Draw
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)*.7);
+  bg.addColorStop(0, '#080c14');
+  bg.addColorStop(1, '#05070d');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawGrid();
+  drawAmbients(dt);
+  drawConnections();
+  packets.forEach(p => p.draw());
+  particles.forEach(p => p.draw());
+  Object.values(nodes).forEach(n => n.draw());
+
+  raf = requestAnimationFrame(loop);
+}
+
+// ── LOG ───────────────────────────────────────────────────────────────────────
+const AGENT_COLORS = PRESETS.full.colors;
+let logLines = 0;
+function addLog(agent, msg, color) {
+  const el = document.getElementById('log-entries');
+  const d  = document.createElement('div');
+  d.className = 'log-entry';
+  const ts = new Date().toTimeString().slice(0,8);
+  d.innerHTML = `<span class="log-ts">${ts}</span> <span class="log-ag" style="color:${color||'#8899aa'}">${agent}</span> <span class="log-msg">${msg}</span>`;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+  logLines++;
+  if (logLines > 120) el.firstChild?.remove();
+}
+
+// ── RESIZE ────────────────────────────────────────────────────────────────────
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  layoutNodes(currentPreset);
+  buildConnections(currentPreset);
+  initAmbients();
+}
+
+// ── CONTROLS ──────────────────────────────────────────────────────────────────
+function toggleLog() {
+  logVisible = !logVisible;
+  document.getElementById('log-panel').classList.toggle('hidden', !logVisible);
+  document.getElementById('btn-log').classList.toggle('active', logVisible);
+}
+
+function togglePause() {
+  paused = !paused;
+  const btn = document.getElementById('btn-pause');
+  btn.textContent = paused ? 'Resume' : 'Pause';
+  btn.classList.toggle('active', paused);
+}
+
+function restart() {
+  cancelAnimationFrame(raf);
+  packets = []; particles = [];
+  document.getElementById('log-entries').innerHTML = '';
+  document.getElementById('verdict-overlay').classList.remove('show');
+  logLines = 0;
+  resize();
+  startMission();
+  last = performance.now();
+  raf = requestAnimationFrame(loop);
+}
+
+function setPreset(p, btn) {
+  document.querySelectorAll('.preset-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPreset = p;
+  restart();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function hexAlpha(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+window.addEventListener('resize', resize);
+resize();
+startMission();
+last = performance.now();
+raf = requestAnimationFrame(loop);
+</script>
+</body>
+</html>
