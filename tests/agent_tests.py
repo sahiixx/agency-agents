@@ -38,6 +38,7 @@ REQUIRED_SCRIPTS = [
     "run_deep_research.py",
     "sovereign_ecosystem.py",
     "swarm_stress_test.py",
+    "security_audit_swarm.py",
     "agency.py",
 ]
 

@@ -1,9 +1,9 @@
 # The Agency — Claude-Powered Multi-Agent Swarm
 
-> 166 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
+> 223 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-19%2F19-brightgreen)](tests/agent_tests.py)
+[![Tests](https://img.shields.io/badge/tests-34%2F34-brightgreen)](tests/agent_tests.py)
 [![Score](https://img.shields.io/badge/system%20score-90%2F90-gold)](agency.py)
 [![Model](https://img.shields.io/badge/model-claude--sonnet--4--6-blue)](https://anthropic.com)
 
@@ -11,7 +11,7 @@
 
 ## What This Is
 
-A swarm of **166 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
+A swarm of **223 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
 
 Every mission passes through a sequential delegation pipeline and ends with a **Claude Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
 
@@ -66,6 +66,7 @@ tests/agent_tests.py             ← 19 tests (offline + live LLM)
 | `saas_dominance_swarm.py` | PM → Copy → Frontend → QA → Core |
 | `sovereign_agency_swarm.py` | PM → Backend → AI → Frontend → QA → Core |
 | `sovereign_ecosystem.py` | Observer → Refiner → Core → DevOps |
+| `security_audit_swarm.py` | PM → Security → Compliance → QA → Core |
 | `evolution_scheduler.py` | Self-improvement — critiques and rewrites agents |
 | `mission_control.py` | CLI — list and launch any single agent |
 
@@ -98,13 +99,18 @@ python3 agency.py --mission "..." --agents security,qa,core
 |---|---|---|
 | `engineering/` | 21 | Frontend, backend, DevOps, security, AI, data |
 | `marketing/` | 19 | SEO, content, growth, social, paid media |
+| `game-development/` | 19 | Godot, Roblox, Unity, Unreal Engine |
 | `specialized/` | 18 | Orchestrators, Claude Core, compliance, identity |
+| `integrations/` | 13 | Cursor, Claude Code, Windsurf, OpenClaw, Gemini CLI |
 | `design/` | 8 | UX, brand, visual, inclusive design |
 | `sales/` | 8 | Account, pipeline, proposals, coaching |
 | `testing/` | 8 | QA, accessibility, performance, API |
+| `paid-media/` | 7 | PPC, display, social ads, tracking |
 | `project-management/` | 6 | Planning, Jira, sprint, delivery |
 | `support/` | 6 | Analytics, finance, legal, infrastructure |
+| `spatial-computing/` | 6 | VisionOS, XR, spatial interfaces |
 | `product/` | 4 | Strategy, research, prioritization |
+| `.cursor/rules/` | 128 | Cursor IDE agent rules (`.mdc` format) |
 
 ---
 
@@ -152,9 +158,9 @@ After every mission, `TitansMemory` records the verdict, computes a surprise sco
 ## System Health
 
 ```
-Tests:          19/19 passing (4 need live API key)
+Tests:          34/34 passing (4 need live API key)
 Graph:          6 nodes — MemoryMiddleware.before_agent wired
-Registry:       12/12 agents on disk
+Registry:       223 agents across 13 directories + 128 Cursor rules
 Lock files:     10 checked — 0 stale vulnerable pins
 Security:       dependabot.yml active — weekly auto-updates
 Score:          90/90 — Grade A, Production Ready

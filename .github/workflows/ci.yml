@@ -30,6 +30,10 @@ jobs:
           export PYTHONPATH=$PYTHONPATH:$(pwd)/deepagents/libs/deepagents
           python3 tests/agent_tests.py -v 2>&1
 
+      - name: Run security audit swarm tests
+        run: |
+          python3 tests/test_security_audit_swarm.py -v 2>&1
+
   lint-agents:
     name: Lint Agent Files
     runs-on: ubuntu-latest

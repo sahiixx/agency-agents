@@ -1,25 +1,4 @@
-     'project-management/**/*.md' 'testing/**/*.md' 'support/**/*.md' \
-                 'spatial-computing/**/*.md' 'specialized/**/*.md')
-                           {
-                                       echo "files<<ENDOFLIST"
-                                                   echo "$FILES"
-                                                               echo "ENDOFLIST"
-                                                                         } >> "$GITHUB_OUTPUT"
-                                                                                   if [ -z "$FILES" ]; then
-                                                                                               echo "No agent files changed."
-                                                                                                         else
-                                                                                                                     echo "Changed files:"
-                                                                                                                                 echo "$FILES"
-                                                                                                                                           fi
-                                                                                                                                           
-                                                                                                                                                 - name: Run agent linter
-                                                                                                                                                         if: steps.changed.outputs.files != ''
-                                                                                                                                                                 env:
-                                                                                                                                                                           CHANGED_FILES: ${{ steps.changed.outputs.files }}
-                                                                                                                                                                                   run: |
-                                                                                                                                                                                             chmod +x scripts/lint-agents.sh
-                                                                                                                                                                                                       ./scripts/lint-agents.sh $CHANGED_FILES
-                                                                                                                                                                                                       name: Lint Agent Files
+name: Lint Agent Files
 
 on:
   pull_request:
