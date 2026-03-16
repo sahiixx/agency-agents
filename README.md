@@ -1,6 +1,6 @@
 # The Agency — Claude-Powered Multi-Agent Swarm
 
-> 166 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
+> 175 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-19%2F19-brightgreen)](tests/agent_tests.py)
@@ -11,7 +11,7 @@
 
 ## What This Is
 
-A swarm of **166 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
+A swarm of **175 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
 
 Every mission passes through a sequential delegation pipeline and ends with a **Claude Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
 
@@ -86,19 +86,24 @@ python3 agency.py --mission "..." --preset saas
 python3 agency.py --mission "..." --preset research
 # pm, ai, qa, core
 
+# Real estate (UAE property investment, lead gen, deal closing)
+python3 agency.py --mission "..." --preset realestate
+# re-leads, re-match, re-copy, re-deal, re-intel, re-comply, re-crm, re-pitch, re-refer, core
+
 # Custom
 python3 agency.py --mission "..." --agents security,qa,core
 ```
 
 ---
 
-## Agent Roster — 166 Agents
+## Agent Roster — 175 Agents
 
 | Directory | Agents | Domain |
 |---|---|---|
 | `engineering/` | 21 | Frontend, backend, DevOps, security, AI, data |
 | `marketing/` | 19 | SEO, content, growth, social, paid media |
 | `specialized/` | 18 | Orchestrators, Claude Core, compliance, identity |
+| `real-estate/` | 9 | Lead qualification, property matching, outreach, negotiation, market intelligence, compliance, CRM pipeline, investor pitching, referral generation |
 | `design/` | 8 | UX, brand, visual, inclusive design |
 | `sales/` | 8 | Account, pipeline, proposals, coaching |
 | `testing/` | 8 | QA, accessibility, performance, API |

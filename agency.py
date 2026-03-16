@@ -76,12 +76,23 @@ AGENT_REGISTRY = {
     "copywriter":("marketing/marketing-content-creator.md",           "Content creator — copy, messaging, brand voice"),
     "sales":     ("sales/sales-deal-strategist.md",                   "Deal strategist — sales strategy, proposals, negotiation"),
     "core":      ("specialized/specialized-claude-reasoning-core.md", "Claude Reasoning Core — judgment, ethics, final verdicts"),
+    # Real estate agents
+    "re-leads":  ("real-estate/real-estate-lead-qualification-specialist.md", "Lead qualification — scoring, pipeline prioritization, buyer readiness"),
+    "re-match":  ("real-estate/real-estate-property-matching-engine.md",      "Property matching — buyer-to-listing pairing, market data analysis"),
+    "re-copy":   ("real-estate/real-estate-outreach-copywriter.md",           "Outreach copywriter — WhatsApp, email, SMS campaigns for lead conversion"),
+    "re-deal":   ("real-estate/real-estate-deal-negotiation-strategist.md",   "Deal negotiation — offer structuring, counter-offers, closing"),
+    "re-intel":  ("real-estate/real-estate-market-intelligence-analyst.md",   "Market intelligence — DLD data, price trends, area analysis"),
+    "re-comply": ("real-estate/real-estate-compliance-rera-guardian.md",       "RERA compliance — regulation, AML, data protection, advertising"),
+    "re-crm":    ("real-estate/real-estate-crm-pipeline-orchestrator.md",     "CRM pipeline — lead lifecycle, routing, stage management, reporting"),
+    "re-pitch":  ("real-estate/real-estate-investor-pitch-specialist.md",     "Investor pitch — HNW proposals, ROI analysis, golden visa"),
+    "re-refer":  ("real-estate/real-estate-post-sale-referral-engine.md",     "Post-sale — client retention, referral generation, repeat business"),
 }
 
 PRESETS = {
-    "full":     ["pm", "backend", "frontend", "qa", "security", "core"],
-    "saas":     ["pm", "copywriter", "frontend", "qa", "core"],
-    "research": ["pm", "ai", "qa", "core"],
+    "full":       ["pm", "backend", "frontend", "qa", "security", "core"],
+    "saas":       ["pm", "copywriter", "frontend", "qa", "core"],
+    "research":   ["pm", "ai", "qa", "core"],
+    "realestate": ["re-leads", "re-match", "re-copy", "re-deal", "re-intel", "re-comply", "re-crm", "re-pitch", "re-refer", "core"],
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -119,9 +130,10 @@ def build_subagent(name: str, llm: ChatAnthropic) -> SubAgent:
 # Core always runs last as the verdict gate.
 
 PARALLEL_GROUPS = {
-    "full":     [["pm"], ["backend", "frontend", "security"], ["qa"], ["core"]],
-    "saas":     [["pm"], ["copywriter", "frontend"],          ["qa"], ["core"]],
-    "research": [["pm", "ai"],                                ["qa"], ["core"]],
+    "full":       [["pm"], ["backend", "frontend", "security"], ["qa"], ["core"]],
+    "saas":       [["pm"], ["copywriter", "frontend"],          ["qa"], ["core"]],
+    "research":   [["pm", "ai"],                                ["qa"], ["core"]],
+    "realestate": [["re-leads", "re-intel"], ["re-match", "re-copy"], ["re-deal", "re-comply"], ["re-crm", "re-pitch", "re-refer"], ["core"]],
 }
 
 
