@@ -1,0 +1,29 @@
+name: Security Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  security-audit:
+    name: Security Audit Swarm — Pre-Deploy Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate security_audit_swarm.py syntax
+        run: python3 -m py_compile security_audit_swarm.py
+
+      - name: Run security audit swarm tests
+        run: python3 tests/test_security_audit_swarm.py
+
+      - name: Dry-run security audit swarm
+        run: python3 security_audit_swarm.py --mission "CI gate check" --dry-run

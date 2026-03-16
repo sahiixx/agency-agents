@@ -1,6 +1,6 @@
 # The Agency — Claude-Powered Multi-Agent Swarm
 
-> 223 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
+> 284 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-34%2F34-brightgreen)](tests/agent_tests.py)
@@ -11,7 +11,7 @@
 
 ## What This Is
 
-A swarm of **223 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
+A swarm of **284 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
 
 Every mission passes through a sequential delegation pipeline and ends with a **Claude Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
 
@@ -87,13 +87,17 @@ python3 agency.py --mission "..." --preset saas
 python3 agency.py --mission "..." --preset research
 # pm, ai, qa, core
 
+# Real estate
+python3 agency.py --mission "..." --preset realestate
+# re-leads, re-match, re-copy, re-deal, re-intel, re-comply, re-crm, re-pitch, re-refer, core
+
 # Custom
 python3 agency.py --mission "..." --agents security,qa,core
 ```
 
 ---
 
-## Agent Roster — 166 Agents
+## Agent Roster — 156 Agents
 
 | Directory | Agents | Domain |
 |---|---|---|
@@ -109,6 +113,7 @@ python3 agency.py --mission "..." --agents security,qa,core
 | `project-management/` | 6 | Planning, Jira, sprint, delivery |
 | `support/` | 6 | Analytics, finance, legal, infrastructure |
 | `spatial-computing/` | 6 | VisionOS, XR, spatial interfaces |
+| `real-estate/` | 9 | Lead gen, property matching, compliance, CRM, negotiation |
 | `product/` | 4 | Strategy, research, prioritization |
 | `.cursor/rules/` | 128 | Cursor IDE agent rules (`.mdc` format) |
 
@@ -160,7 +165,7 @@ After every mission, `TitansMemory` records the verdict, computes a surprise sco
 ```
 Tests:          34/34 passing (4 need live API key)
 Graph:          6 nodes — MemoryMiddleware.before_agent wired
-Registry:       223 agents across 13 directories + 128 Cursor rules
+Registry:       156 agents across 14 directories + 128 Cursor rules
 Lock files:     10 checked — 0 stale vulnerable pins
 Security:       dependabot.yml active — weekly auto-updates
 Score:          90/90 — Grade A, Production Ready
@@ -210,6 +215,7 @@ ANTHROPIC_API_KEY=... python3 tests/agent_tests.py  # + live LLM
 `.github/workflows/ci.yml` runs on every push and PR:
 - **Structural tests** — always run, no API key needed
 - **Live LLM tests** — run on push to `main` if `ANTHROPIC_API_KEY` secret is set
+- **Security gate** — `security-gate.yml` validates the security audit swarm on every push/PR (syntax check, test suite, dry-run)
 - **Dependabot** — weekly pip and GitHub Actions updates, grouped by package family
 
 Add secret: repo **Settings → Secrets → Actions → `ANTHROPIC_API_KEY`**

@@ -23,6 +23,7 @@ AGENT_DIRS=(
   support
   spatial-computing
   specialized
+  real-estate
 )
 
 REQUIRED_FRONTMATTER=("name" "description" "color")
