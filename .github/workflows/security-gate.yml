@@ -27,3 +27,24 @@ jobs:
 
       - name: Dry-run security audit swarm
         run: python3 security_audit_swarm.py --mission "CI gate check" --dry-run
+
+  real-estate:
+    name: Real Estate Swarm — Pipeline Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate real_estate_swarm.py syntax
+        run: python3 -m py_compile real_estate_swarm.py
+
+      - name: Run real estate swarm tests
+        run: python3 tests/test_real_estate_swarm.py
+
+      - name: Dry-run real estate swarm
+        run: python3 real_estate_swarm.py --mission "CI gate check" --dry-run

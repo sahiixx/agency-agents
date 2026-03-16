@@ -67,6 +67,7 @@ tests/agent_tests.py             ← 19 tests (offline + live LLM)
 | `sovereign_agency_swarm.py` | PM → Backend → AI → Frontend → QA → Core |
 | `sovereign_ecosystem.py` | Observer → Refiner → Core → DevOps |
 | `security_audit_swarm.py` | PM → Security → Compliance → QA → Core |
+| `real_estate_swarm.py` | Leads → Matching → Deals → CRM/Pitch/Referral → Core |
 | `evolution_scheduler.py` | Self-improvement — critiques and rewrites agents |
 | `mission_control.py` | CLI — list and launch any single agent |
 
@@ -216,6 +217,7 @@ ANTHROPIC_API_KEY=... python3 tests/agent_tests.py  # + live LLM
 - **Structural tests** — always run, no API key needed
 - **Live LLM tests** — run on push to `main` if `ANTHROPIC_API_KEY` secret is set
 - **Security gate** — `security-gate.yml` validates the security audit swarm on every push/PR (syntax check, test suite, dry-run)
+- **Real estate gate** — `security-gate.yml` validates the real estate swarm on every push/PR (syntax check, test suite, dry-run)
 - **Dependabot** — weekly pip and GitHub Actions updates, grouped by package family
 
 Add secret: repo **Settings → Secrets → Actions → `ANTHROPIC_API_KEY`**
