@@ -14,6 +14,7 @@ supported agentic coding tools.
 - **[Cursor](#cursor)** — `.mdc` rule files in `cursor/`
 - **[Aider](#aider)** — `CONVENTIONS.md` in `aider/`
 - **[Windsurf](#windsurf)** — `.windsurfrules` in `windsurf/`
+- **[skills.sh](#skillssh)** — `SKILL.md` per agent in `skills/` (repo root)
 
 ## Quick Install
 
@@ -166,3 +167,26 @@ cd /your/project && /path/to/agency-agents/scripts/install.sh --tool windsurf
 ```
 
 See [windsurf/README.md](windsurf/README.md) for details.
+
+---
+
+## skills.sh
+
+All agents are published as [skills.sh](https://skills.sh)-compatible skills
+in the `skills/` directory at the repo root. Works with 45+ AI coding tools.
+
+```bash
+# Install via skills.sh CLI
+npx skills add sahiixx/agency-agents
+
+# Install a specific skill
+npx skills add sahiixx/agency-agents --skill engineering-backend-architect
+```
+
+To regenerate after modifying agents:
+
+```bash
+./scripts/convert.sh --tool skillssh
+```
+
+See [skills/README.md](../skills/README.md) for the full skill catalog.
