@@ -362,7 +362,7 @@ convert_skillssh() {
   slug="$(basename "$file" .md)"
   outdir="$REPO_ROOT/skills/$slug"
   outfile="$outdir/SKILL.md"
-  mkdir -p "$outdir"
+  mkdir -p "$outdir/scripts"
 
   # skills.sh format: minimal YAML frontmatter (name + description) then body
   cat > "$outfile" <<HEREDOC
@@ -372,6 +372,29 @@ description: ${description}
 ---
 ${body}
 HEREDOC
+
+  # Per-skill runner script — makes the skill executable standalone
+  cat > "$outdir/scripts/run.sh" <<RUNEOF
+#!/usr/bin/env bash
+# Run the ${name} agent with a task.
+# Usage: ./run.sh "Your task here"
+#   or:  echo "Your task" | ./run.sh --stdin
+set -euo pipefail
+SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="\$(cd "\$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="\$(cd "\$SKILL_DIR/../.." && pwd)"
+
+if [[ "\${1:-}" == "--stdin" ]]; then
+  exec python3 "\$REPO_ROOT/scripts/run-skill.py" --skill-file "\$SKILL_DIR/SKILL.md" --stdin
+elif [[ -n "\${1:-}" ]]; then
+  exec python3 "\$REPO_ROOT/scripts/run-skill.py" --skill-file "\$SKILL_DIR/SKILL.md" --task "\$*"
+else
+  echo "Usage: \$0 \"Your task here\""
+  echo "   or: echo \"task\" | \$0 --stdin"
+  exit 1
+fi
+RUNEOF
+  chmod +x "$outdir/scripts/run.sh"
 }
 
 # Aider and Windsurf are single-file formats — accumulate into temp files
