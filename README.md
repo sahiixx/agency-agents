@@ -117,6 +117,13 @@ python3 agency.py --mission "..." --agents security,qa,core
 | `real-estate/` | 9 | Lead gen, property matching, compliance, CRM, negotiation |
 | `product/` | 4 | Strategy, research, prioritization |
 | `.cursor/rules/` | 128 | Cursor IDE agent rules (`.mdc` format) |
+| `skills/` | 139 | [skills.sh](https://skills.sh) compatible skills |
+
+### Install via skills.sh
+
+```bash
+npx skills add sahiixx/agency-agents
+```
 
 ---
 

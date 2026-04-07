@@ -18,6 +18,7 @@
 #   windsurf     — Single .windsurfrules for Windsurf
 #   openclaw     — OpenClaw SOUL.md files (openclaw_workspace/<agent>/SOUL.md)
 #   qwen         — Qwen Code SubAgent files (~/.qwen/agents/*.md)
+#   skillssh     — skills.sh compatible skills (skills/<name>/SKILL.md)
 #   all          — All tools (default)
 #
 # Output is written to integrations/<tool>/ relative to the repo root.
@@ -45,7 +46,7 @@ TODAY="$(date +%Y-%m-%d)"
 
 AGENT_DIRS=(
   design engineering game-development marketing paid-media sales product project-management
-  testing support spatial-computing specialized
+  testing support spatial-computing specialized real-estate strategy
 )
 
 # --- Usage ---
@@ -348,6 +349,54 @@ HEREDOC
   fi
 }
 
+convert_skillssh() {
+  local file="$1"
+  local name description slug outdir outfile body
+
+  name="$(get_field "name" "$file")"
+  description="$(get_field "description" "$file")"
+  body="$(get_body "$file")"
+
+  # Use filename stem as the skill slug — it already carries the domain prefix
+  # and is globally unique (e.g. engineering-backend-architect, unity-architect).
+  slug="$(basename "$file" .md)"
+  outdir="$REPO_ROOT/skills/$slug"
+  outfile="$outdir/SKILL.md"
+  mkdir -p "$outdir/scripts"
+
+  # skills.sh format: minimal YAML frontmatter (name + description) then body
+  cat > "$outfile" <<HEREDOC
+---
+name: ${slug}
+description: ${description}
+---
+${body}
+HEREDOC
+
+  # Per-skill runner script — makes the skill executable standalone
+  cat > "$outdir/scripts/run.sh" <<RUNEOF
+#!/usr/bin/env bash
+# Run the ${name} agent with a task.
+# Usage: ./run.sh "Your task here"
+#   or:  echo "Your task" | ./run.sh --stdin
+set -euo pipefail
+SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="\$(cd "\$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="\$(cd "\$SKILL_DIR/../.." && pwd)"
+
+if [[ "\${1:-}" == "--stdin" ]]; then
+  exec python3 "\$REPO_ROOT/scripts/run-skill.py" --skill-file "\$SKILL_DIR/SKILL.md" --stdin
+elif [[ -n "\${1:-}" ]]; then
+  exec python3 "\$REPO_ROOT/scripts/run-skill.py" --skill-file "\$SKILL_DIR/SKILL.md" --task "\$*"
+else
+  echo "Usage: \$0 \"Your task here\""
+  echo "   or: echo \"task\" | \$0 --stdin"
+  exit 1
+fi
+RUNEOF
+  chmod +x "$outdir/scripts/run.sh"
+}
+
 # Aider and Windsurf are single-file formats — accumulate into temp files
 # then write at the end.
 AIDER_TMP="$(mktemp)"
@@ -445,6 +494,7 @@ run_conversions() {
         cursor)      convert_cursor      "$file" ;;
         openclaw)    convert_openclaw    "$file" ;;
         qwen)        convert_qwen        "$file" ;;
+        skillssh)    convert_skillssh    "$file" ;;
         aider)       accumulate_aider    "$file" ;;
         windsurf)    accumulate_windsurf "$file" ;;
       esac
@@ -480,7 +530,7 @@ main() {
     esac
   done
 
-  local valid_tools=("antigravity" "gemini-cli" "opencode" "cursor" "aider" "windsurf" "openclaw" "qwen" "all")
+  local valid_tools=("antigravity" "gemini-cli" "opencode" "cursor" "aider" "windsurf" "openclaw" "qwen" "skillssh" "all")
   local valid=false
   for t in "${valid_tools[@]}"; do [[ "$t" == "$tool" ]] && valid=true && break; done
   if ! $valid; then
@@ -496,7 +546,7 @@ main() {
 
   local tools_to_run=()
   if [[ "$tool" == "all" ]]; then
-    tools_to_run=("antigravity" "gemini-cli" "opencode" "cursor" "aider" "windsurf" "openclaw" "qwen")
+    tools_to_run=("antigravity" "gemini-cli" "opencode" "cursor" "aider" "windsurf" "openclaw" "qwen" "skillssh")
   else
     tools_to_run=("$tool")
   fi
