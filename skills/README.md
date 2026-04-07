@@ -12,6 +12,37 @@ npx skills add sahiixx/agency-agents
 npx skills add sahiixx/agency-agents --skill engineering-backend-architect
 ```
 
+## Run Standalone
+
+```bash
+pip install anthropic
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Single task
+python3 scripts/run-skill.py --skill engineering-backend-architect --task "Design a REST API"
+
+# Interactive chat
+python3 scripts/run-skill.py --skill engineering-code-reviewer --chat
+
+# With tool use (web search, file read)
+python3 scripts/run-skill.py --skill engineering-ai-engineer --tools --task "Search for RAG best practices"
+
+# Feed files as context
+python3 scripts/run-skill.py --skill engineering-code-reviewer --context src/api.py --task "Review this code"
+
+# Chain skills (output of one → input of next)
+python3 scripts/run-skill.py --skill engineering-backend-architect --pipe testing-reality-checker --task "Design auth API"
+
+# Structured output
+python3 scripts/run-skill.py --skill engineering-backend-architect --output json --task "API schema"
+
+# Cost tracking
+python3 scripts/run-skill.py --skill engineering-backend-architect --cost --task "Design a REST API"
+
+# List all skills
+python3 scripts/run-skill.py --list
+```
+
 ## Categories
 
 | Domain | Count | Examples |
