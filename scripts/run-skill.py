@@ -44,7 +44,19 @@ PRICE_OUTPUT_PER_M = 15.00
 # ── Skill loading ────────────────────────────────────────────────────────────
 
 def parse_skill_md(path: Path) -> tuple[str, str, str]:
-    """Extract name, description, and body from a SKILL.md file."""
+    """
+    Parse a SKILL.md file and return its declared name, description, and the remaining body.
+    
+    Parameters:
+        path (Path): Path to the SKILL.md file to parse.
+    
+    Returns:
+        tuple[str, str, str]: A tuple (name, description, body). `name` and `description` are empty strings when not present or when the file lacks valid frontmatter; `body` contains the file contents (or the portion after frontmatter).
+        
+    Notes:
+        - If the file does not start with a frontmatter delimiter (`---`), the entire file is returned as `body` and `name`/`description` are empty.
+        - If frontmatter is malformed or missing expected keys, `name`/`description` remain empty but `body` is still returned.
+    """
     text = path.read_text()
     if not text.startswith("---"):
         return "", "", text
@@ -85,7 +97,14 @@ def find_skill(skill_name: str) -> Path | None:
 
 
 def list_skills() -> list[tuple[str, str]]:
-    """List all available skills."""
+    """
+    Return the available skills discovered under SKILLS_DIR.
+    
+    Searches SKILLS_DIR for subdirectories containing a SKILL.md and returns the parsed (name, description) for each skill whose frontmatter provides a name.
+    
+    Returns:
+        list[tuple[str, str]]: Tuples of (name, description) for each discovered skill.
+    """
     skills = []
     if not SKILLS_DIR.exists():
         return skills
@@ -104,7 +123,14 @@ def list_skills() -> list[tuple[str, str]]:
 # ── Built-in tools (no langchain dependency) ─────────────────────────────────
 
 def tool_web_search(query: str) -> str:
-    """Search the web via DuckDuckGo instant answer."""
+    """
+    Query DuckDuckGo's Instant Answer API and return a concise textual summary.
+    
+    Returns:
+        str: Combined summary text containing the Instant Answer's abstract (if present)
+        followed by up to four related-topic snippets. If no useful data is found, returns
+        "No instant answer found for: <query>". On failure returns "Search error: <error>".
+    """
     try:
         encoded = urllib.parse.quote_plus(query)
         url = f"https://api.duckduckgo.com/?q={encoded}&format=json&no_html=1&skip_disambig=1"
@@ -125,7 +151,15 @@ def tool_web_search(query: str) -> str:
 
 
 def tool_read_file(path: str) -> str:
-    """Read a file from the repo."""
+    """
+    Read a file path relative to the repository root and return its text.
+    
+    Parameters:
+        path (str): File path to read, interpreted as relative to REPO_ROOT.
+    
+    Returns:
+        str: The file's UTF-8 text (invalid characters replaced). If the file is longer than 4000 characters, the returned text is truncated and ends with a truncation notice that includes the total character count. If the file does not exist, returns `File not found: {path}`. If an exception occurs while reading, returns `Read error: {e}` describing the error.
+    """
     try:
         full = REPO_ROOT / path
         if not full.exists():
@@ -139,7 +173,18 @@ def tool_read_file(path: str) -> str:
 
 
 def tool_write_output(filename: str, content: str) -> str:
-    """Write output to /tmp/agency_outputs/."""
+    """
+    Save `content` to a sanitized file under /tmp/agency_outputs and return a status message.
+    
+    If `filename` contains characters other than letters, digits, dot, underscore, or hyphen they are removed; if the resulting name is empty a timestamped file name `output_HHMMSS.txt` is generated. The outputs directory is created if missing.
+    
+    Parameters:
+        filename (str): Desired filename (may be sanitized).
+        content (str): Text to write to the file.
+    
+    Returns:
+        str: `"Written: <path> (<n> chars)"` on success, or `"Write error: <error>"` on failure.
+    """
     try:
         OUTPUTS_DIR.mkdir(exist_ok=True)
         safe = "".join(c for c in filename if c.isalnum() or c in "._-")
@@ -153,7 +198,12 @@ def tool_write_output(filename: str, content: str) -> str:
 
 
 def tool_get_datetime() -> str:
-    """Return the current date and time in UTC."""
+    """
+    Get the current UTC date and time formatted as "YYYY-MM-DD HH:MM:SS UTC".
+    
+    Returns:
+        A string prefixed with "Current datetime: " followed by the timestamp, e.g. "Current datetime: 2026-04-07 12:34:56 UTC".
+    """
     return f"Current datetime: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC"
 
 
@@ -210,19 +260,45 @@ TOOL_DEFINITIONS = [
 
 class CostTracker:
     def __init__(self):
+        """
+        Initialize a CostTracker instance.
+        
+        Attributes:
+            total_input (int): Cumulative number of input tokens recorded.
+            total_output (int): Cumulative number of output tokens recorded.
+        """
         self.total_input = 0
         self.total_output = 0
 
     def add(self, usage):
+        """
+        Add token counts from an API usage object to the tracker's totals.
+        
+        Parameters:
+            usage: An object with optional `input_tokens` and `output_tokens` attributes; missing attributes are treated as zero.
+        """
         self.total_input += getattr(usage, "input_tokens", 0)
         self.total_output += getattr(usage, "output_tokens", 0)
 
     @property
     def cost(self) -> float:
+        """
+        Compute the total dollar cost from the tracked input and output token counts.
+        
+        Calculates cost using the module-level per-million-token pricing constants for input and output tokens.
+        
+        Returns:
+            float: Total cost in US dollars.
+        """
         return (self.total_input / 1_000_000 * PRICE_INPUT_PER_M +
                 self.total_output / 1_000_000 * PRICE_OUTPUT_PER_M)
 
     def print_summary(self):
+        """
+        Print token usage totals and the estimated dollar cost to standard error.
+        
+        Writes a single formatted line to stderr showing input and output token totals (with thousands separators) and the computed cost as dollars with four decimal places.
+        """
         print(f"Tokens: {self.total_input:,} in / {self.total_output:,} out | "
               f"Cost: ${self.cost:.4f}", file=sys.stderr)
 
@@ -230,7 +306,17 @@ class CostTracker:
 # ── Context injection ────────────────────────────────────────────────────────
 
 def build_context(context_files: list[str]) -> str:
-    """Read files and format as context block."""
+    """
+    Builds a combined XML-like context block from a list of file paths.
+    
+    Each provided path is resolved first as given, then relative to the repository root. For every readable file, its contents are wrapped in a <file path="...">...</file> element and concatenated inside a top-level <context>...</context> block. If a file is missing, a warning is emitted to stderr and the file is skipped. If a file's contents exceed 100 KB, it is truncated to 100 KB with a truncation notice and a warning to stderr.
+    
+    Parameters:
+        context_files (list[str]): Paths to files to include in the context. Paths may be absolute or relative to the current working directory; when not found, they are attempted relative to REPO_ROOT.
+    
+    Returns:
+        str: The combined context string containing one or more <file> elements wrapped in <context> tags, followed by two newlines; returns an empty string if no files were included.
+    """
     parts = []
     for filepath in context_files:
         p = Path(filepath)
@@ -261,7 +347,14 @@ OUTPUT_INSTRUCTIONS = {
 # ── Core agent runner ────────────────────────────────────────────────────────
 
 def get_client():
-    """Create an Anthropic client."""
+    """
+    Create and return an Anthropic client configured from the `ANTHROPIC_API_KEY` environment variable.
+    
+    Attempts to import the `anthropic` package and read `ANTHROPIC_API_KEY` from the environment. If the package is not installed or the environment variable is missing, prints an error message to stderr and exits the process with status code 1.
+    
+    Returns:
+        anthropic.Anthropic: A configured Anthropic client instance.
+    """
     try:
         import anthropic
     except ImportError:
@@ -281,7 +374,20 @@ def get_client():
 def run_agent(client, system_prompt: str, task: str, *,
               stream: bool = True, use_tools: bool = False,
               tracker: CostTracker | None = None) -> str:
-    """Run the agent. Returns the text response."""
+    """
+              Send the task to the Anthropic client using the provided system prompt and return the assistant's full text response.
+              
+              Parameters:
+                  client: An initialized Anthropic client instance used to make message calls.
+                  system_prompt (str): The system-level prompt (skill body) to guide the assistant.
+                  task (str): The user message or task to send as input.
+                  stream (bool): If True, stream response chunks to stdout as they arrive and accumulate them; if False, fetch the full response before printing.
+                  use_tools (bool): If True, run the tool-enabled interaction loop and return its composed output.
+                  tracker (CostTracker | None): Optional cost tracker; when provided, token usage from the final response is added to it if available.
+              
+              Returns:
+                  str: The assistant's combined text output for the request.
+              """
     messages = [{"role": "user", "content": task}]
 
     if use_tools:
@@ -318,7 +424,19 @@ def run_agent(client, system_prompt: str, task: str, *,
 def _run_with_tools(client, system_prompt: str, messages: list[dict], *,
                     stream: bool = True, tracker: CostTracker | None = None,
                     max_iterations: int = 10) -> str:
-    """Run with tool use loop. Returns final text response."""
+    """
+                    Run the assistant loop that supports tool invocation and return the final assistant text output.
+                    
+                    This function sends the current conversation to the client with tool definitions, executes any tool calls returned by the assistant by invoking registered handlers, appends tool results back into the conversation, and repeats until the assistant emits no more tool calls or the iteration limit is reached. Assistant text parts are printed to stdout as they are produced; tool execution traces are printed to stderr. The provided `messages` list is mutated in-place to include assistant tool-use content and subsequent user-supplied tool results.
+                    
+                    Parameters:
+                        messages (list[dict]): Conversation history (list of message dicts); will be extended with assistant content and tool result messages.
+                        tracker (CostTracker | None): Optional cost tracker to which response usage will be added when available.
+                        max_iterations (int): Maximum number of tool-invocation iterations to perform before aborting.
+                    
+                    Returns:
+                        str: The concatenated assistant text parts produced during the final iteration, or an empty string if no text was produced.
+                    """
     for _ in range(max_iterations):
         response = client.messages.create(
             model=model,
@@ -375,7 +493,20 @@ def _run_with_tools(client, system_prompt: str, messages: list[dict], *,
 
 def chat_loop(client, system_prompt: str, *, use_tools: bool = False,
               tracker: CostTracker | None = None):
-    """Interactive multi-turn REPL."""
+    """
+              Run an interactive REPL that chats with the agent using the provided system prompt.
+              
+              The loop reads user input, maintains a conversation history, streams assistant responses,
+              and supports built-in commands: `/clear` (clear history), `/save <file>` (save transcript),
+              and `/quit` (exit). When `use_tools` is True, tool-enabled turns are performed via the
+              tool loop; otherwise assistant output is streamed directly. If a `tracker` is provided,
+              token usage for each assistant response is recorded and a running summary is printed.
+              
+              Parameters:
+                  system_prompt (str): The skill/system prompt to send as the assistant's system message.
+                  use_tools (bool): If True, enable tool-usage flow for assistant turns.
+                  tracker (CostTracker | None): Optional cost/token tracker to record usage and print summaries.
+              """
     try:
         import readline  # noqa: F401 — enables input history
     except ImportError:
@@ -439,7 +570,20 @@ def chat_loop(client, system_prompt: str, *, use_tools: bool = False,
 
 def _chat_with_tools(client, system_prompt: str, messages: list[dict], *,
                      tracker: CostTracker | None = None) -> str:
-    """Handle a single chat turn with tool use."""
+    """
+                     Orchestrate a single chat interaction that may invoke tools until the assistant stops requesting them or a max iteration limit is reached.
+                     
+                     This function sends the provided conversation to the model, prints any assistant text parts to stdout as they are produced, executes requested tools and prints tool traces to stderr, and injects tool results back into the conversation as user messages. It mutates the supplied `messages` list by appending assistant responses and subsequent user messages containing tool results. If a `tracker` is provided, the function accumulates token usage from each model response.
+                     
+                     Parameters:
+                         client: The Anthropic client used to call the model.
+                         system_prompt (str): The system prompt to send with each model call.
+                         messages (list[dict]): The conversation message list; this list will be modified in-place with assistant and tool-result messages.
+                         tracker (CostTracker | None): Optional cost tracker to which response usage will be added.
+                     
+                     Returns:
+                         str: The concatenated assistant text parts produced when the assistant emits no further tool calls, or an empty string if no text parts were produced.
+                     """
     for _ in range(10):
         response = client.messages.create(
             model=model,
@@ -488,7 +632,15 @@ def _chat_with_tools(client, system_prompt: str, messages: list[dict], *,
 
 
 def _save_chat(messages: list[dict], filename: str):
-    """Save chat history to a file."""
+    """
+    Write a simple Markdown-style transcript of chat messages to the given file.
+    
+    Each message is written as a line in the form "**<role>**: <content>". Non-string message content is converted with str(). The function writes the assembled transcript to `filename` and prints a "Saved to <filename>" notice to stderr.
+    
+    Parameters:
+        messages (list[dict]): Sequence of message objects each containing at least the keys `"role"` and `"content"`.
+        filename (str): Path to the destination file to write.
+    """
     lines = []
     for msg in messages:
         role = msg["role"]
@@ -503,7 +655,26 @@ def _save_chat(messages: list[dict], filename: str):
 def run_pipe(client, skills: list[tuple[str, str]], task: str, *,
              use_tools: bool = False, tracker: CostTracker | None = None,
              stream_final: bool = True) -> str:
-    """Chain multiple skills. Output of each becomes input of the next."""
+    """
+             Execute a sequence of skills, passing each skill's output as the next skill's input.
+             
+             Parameters:
+                 client: Anthropic client instance used to run each skill.
+                 skills (list[tuple[str, str]]): Ordered list of (name, system_prompt) pairs defining each skill.
+                 task (str): Initial task text provided to the first skill.
+                 use_tools (bool): If True, allow skills to invoke built-in tools.
+                 tracker (CostTracker | None): Optional cost tracker to accumulate token usage across runs.
+                 stream_final (bool): If True, stream the final skill's response to stdout; intermediate skills are always run non-streaming.
+             
+             Notes:
+                 - For every skill after the first, the previous skill's full output is prepended to the next skill's task as:
+                   "Previous agent output:\n\n<previous output>\n\nYour task: continue from here and apply your expertise."
+                 - Progress lines of the form "[i/total] Running: <name>" are printed to stderr.
+                 - Token usage from each run is added to `tracker` when provided.
+             
+             Returns:
+                 str: The final output produced by the last skill in the chain.
+             """
     current_output = task
 
     for i, (name, system_prompt) in enumerate(skills):
@@ -533,6 +704,23 @@ def run_pipe(client, skills: list[tuple[str, str]], task: str, *,
 # ── Entry point ──────────────────────────────────────────────────────────────
 
 def main():
+    """
+    Command-line entry point to run an Agency skill with modes for listing, single-run, interactive chat, and skill chaining.
+    
+    Parses CLI arguments, loads the requested SKILL.md, and runs the agent using the configured Anthropic client. Supported features include:
+    - Listing installed skills (--list).
+    - Running a single skill with a provided task or reading the task from stdin (--task, --stdin).
+    - Interactive multi-turn chat (--chat).
+    - Enabling built-in tools for web search, repo file read/write, and datetime (--tools).
+    - Prepending file content as contextual input (--context).
+    - Chaining multiple skills where each skill receives the previous output as its input (--pipe).
+    - Selecting output format enforcement for text, JSON, or Markdown (--output).
+    - Enabling token usage and cost tracking (--cost).
+    - Disabling streaming to collect full responses before printing (--no-stream).
+    - Overriding the model and loading a SKILL.md directly (--model, --skill-file).
+    
+    Exits with a non-zero status on missing/invalid inputs (e.g., missing skill or skill file) and prints agent metadata and optional token/cost summaries to stderr. When JSON output is requested, validates and pretty-prints responses when streaming is disabled and warns on invalid JSON.
+    """
     global model
 
     parser = argparse.ArgumentParser(
