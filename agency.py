@@ -13,6 +13,7 @@ Usage:
   python3 agency.py --mission "Build a REST API for user auth"
   python3 agency.py --mission "Design a SaaS landing page" --preset saas
   python3 agency.py --mission "Research AI trends" --preset research
+  python3 agency.py --mission "Analyze AI coding tools" --preset analysis
   python3 agency.py --mission "Audit our security" --agents security,qa,core
 """
 
@@ -62,7 +63,7 @@ from a2a_protocol import (
 CLAUDE_MODEL = "claude-sonnet-4-6"
 MEMORY_FILE  = "memory/AGENTS.md"  # relative to REPO_ROOT
 
-# ── Agent registry ────────────────────────────────────────────────────────────
+# ── Agent registry ────────────────────────────────────────────────────────────────
 AGENT_REGISTRY = {
     "pm":        ("project-management/project-manager-senior.md",    "Senior project manager — planning, task decomposition, timelines"),
     "frontend":  ("engineering/engineering-frontend-developer.md",    "Frontend developer — React, Next.js, UI implementation"),
@@ -86,6 +87,8 @@ AGENT_REGISTRY = {
     "re-crm":    ("real-estate/real-estate-crm-pipeline-orchestrator.md",     "CRM pipeline — lead lifecycle, routing, stage management, reporting"),
     "re-pitch":  ("real-estate/real-estate-investor-pitch-specialist.md",     "Investor pitch — HNW proposals, ROI analysis, golden visa"),
     "re-refer":  ("real-estate/real-estate-post-sale-referral-engine.md",     "Post-sale — client retention, referral generation, repeat business"),
+    # Integration: AI tools knowledge base analyst
+    "ai-tools":  ("specialized/specialized-ai-tools-analyst.md",     "AI Tools Analyst — system prompt patterns, tool comparison, design insights"),
 }
 
 PRESETS = {
@@ -93,6 +96,7 @@ PRESETS = {
     "saas":       ["pm", "copywriter", "frontend", "qa", "core"],
     "research":   ["pm", "ai", "qa", "core"],
     "realestate": ["re-leads", "re-match", "re-copy", "re-deal", "re-intel", "re-comply", "re-crm", "re-pitch", "re-refer", "core"],
+    "analysis":   ["pm", "ai-tools", "ai", "qa", "core"],
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -125,7 +129,7 @@ def build_subagent(name: str, llm: ChatAnthropic) -> SubAgent:
     }
 
 
-# ── Parallel execution groups ─────────────────────────────────────────────────
+# ── Parallel execution groups ───────────────────────────────────────────────────
 # Agents in the same group run concurrently; groups run sequentially.
 # Core always runs last as the verdict gate.
 
@@ -134,14 +138,15 @@ PARALLEL_GROUPS = {
     "saas":       [["pm"], ["copywriter", "frontend"],          ["qa"], ["core"]],
     "research":   [["pm", "ai"],                                ["qa"], ["core"]],
     "realestate": [["re-leads", "re-intel"], ["re-match", "re-copy"], ["re-deal", "re-comply"], ["re-crm", "re-pitch", "re-refer"], ["core"]],
+    "analysis":   [["pm"], ["ai-tools", "ai"], ["qa"], ["core"]],
 }
 
 
-def _parallel_group_label(group: list[str]) -> str:
+def _parallel_group_label(group: list) -> str:
     return " ∥ ".join(group) if len(group) > 1 else group[0]
 
 
-# ── Core mission runner ───────────────────────────────────────────────────────
+# ── Core mission runner ────────────────────────────────────────────────────────────
 
 def run_mission(goal: str, agent_names: list, preset: str = "full") -> str:
     invalid = [n for n in agent_names if n not in AGENT_REGISTRY]
@@ -215,7 +220,8 @@ def run_mission(goal: str, agent_names: list, preset: str = "full") -> str:
 
 You have specialist subagents via `task` tool, MCP tools, and A2A agent servers.
 
-MCP TOOLS: web_search, read_file, write_output, code_lint, memory_recall, get_datetime
+MCP TOOLS: web_search, read_file, write_output, code_lint, memory_recall, get_datetime,
+           query_ai_tools_knowledge, get_tool_system_prompt
 A2A SERVERS (call any external or internal agent via A2A protocol):
 {a2a_desc}
 
@@ -225,11 +231,12 @@ PARALLEL EXECUTION PLAN:
 Instructions:
 1. Follow the phase plan — delegate parallel agents simultaneously
 2. Use web_search for current data, memory_recall for past mission context
-3. A2A servers let you call agents from any external framework too
-4. Synthesize all outputs into one cohesive deliverable
-5. Use write_output to save the final deliverable as a file
-6. Constitutional review — accuracy, safety, completeness, consistency
-7. Return final verdict: GO / CONDITIONAL GO / NO-GO with clear rationale
+3. Use query_ai_tools_knowledge to analyze AI tools from the knowledge base
+4. A2A servers let you call agents from any external framework too
+5. Synthesize all outputs into one cohesive deliverable
+6. Use write_output to save the final deliverable as a file
+7. Constitutional review — accuracy, safety, completeness, consistency
+8. Return final verdict: GO / CONDITIONAL GO / NO-GO with clear rationale
 
 Delegate everything. You are the orchestrator and final judge."""
 
@@ -309,6 +316,7 @@ Examples:
   python3 agency.py --mission "Write a technical spec for user auth"
   python3 agency.py --mission "Design a SaaS landing page" --preset saas
   python3 agency.py --mission "Research AI memory techniques" --preset research
+  python3 agency.py --mission "Analyze AI coding tool architectures" --preset analysis
   python3 agency.py --mission "Audit security posture" --agents security,qa,core
         """,
     )
