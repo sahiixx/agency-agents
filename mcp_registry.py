@@ -272,10 +272,15 @@ def _call_mcp_tool(server_url: str, tool_name: str, arguments_json: str) -> str:
     }).encode()
 
     try:
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "TheAgency/1.0",
+        }
+        headers.update(get_bifrost_headers())
         req = urllib.request.Request(
             server_url,
             data=payload,
-            headers={"Content-Type": "application/json", "User-Agent": "TheAgency/1.0"},
+            headers=headers,
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=15) as r:
