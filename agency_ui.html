@@ -832,11 +832,23 @@ function addLog(agent, msg, cls='') {
   const p = AGENT_PERSONAS[agent] || { label: agent };
   const line = document.createElement('div');
   line.className = 'log-line';
-  line.innerHTML = `
-    <span class="log-time">${now()}</span>
-    <span class="log-agent ${agent}">${p.label || agent.toUpperCase()}</span>
-    <span class="log-msg ${cls}">${msg}</span>
-  `;
+
+  const timeSpan = document.createElement('span');
+  timeSpan.className = 'log-time';
+  timeSpan.textContent = now();
+
+  const agentSpan = document.createElement('span');
+  agentSpan.className = `log-agent ${agent}`;
+  agentSpan.textContent = p.label || agent.toUpperCase();
+
+  const msgSpan = document.createElement('span');
+  msgSpan.className = `log-msg ${cls}`;
+  msgSpan.textContent = msg;
+
+  line.appendChild(timeSpan);
+  line.appendChild(agentSpan);
+  line.appendChild(msgSpan);
+
   // Remove cursor from last line
   term.querySelectorAll('.cursor').forEach(c => c.remove());
   term.appendChild(line);
