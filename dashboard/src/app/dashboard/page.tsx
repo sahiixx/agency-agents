@@ -39,7 +39,7 @@ export default function DashboardPage() {
         {[
           { label: 'Agents',   value: '152', color: 'text-blue-400'   },
           { label: 'Tools',    value: '19+', color: 'text-green-400'  },
-          { label: 'Presets',  value: '12',  color: 'text-yellow-400' },
+          { label: 'Presets',  value: '13',  color: 'text-yellow-400' },
           { label: 'Providers',value: '7',   color: 'text-purple-400' },
         ].map(s => (
           <div key={s.label} className="bg-gray-900 rounded-xl p-4 border border-gray-800">
