@@ -34,6 +34,10 @@ jobs:
         run: |
           python3 tests/test_security_audit_swarm.py -v 2>&1
 
+      - name: Run real estate swarm tests
+        run: |
+          python3 tests/test_real_estate_swarm.py -v 2>&1
+
   lint-agents:
     name: Lint Agent Files
     runs-on: ubuntu-latest

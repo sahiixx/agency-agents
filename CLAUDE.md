@@ -4,7 +4,7 @@ Auto-loaded by Claude Code. Full context so every session starts informed.
 
 ## What This Repo Is
 
-**The Agency** — 130+ specialized AI agent personas on Claude Sonnet 4.6.
+**The Agency** — 152 specialized AI agent personas on Claude Sonnet 4.6.
 Each agent = a `.md` file with a system prompt. Python scripts orchestrate them.
 
 ## Entry Point
