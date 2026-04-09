@@ -99,7 +99,9 @@ def web_search(query: str) -> str:
 def read_file(path: str) -> str:
     """Read any file in the agency repo. Path is relative to repo root."""
     try:
-        full = REPO_ROOT / path
+        full = (REPO_ROOT / path).resolve()
+        if not full.is_relative_to(REPO_ROOT):
+            return "Access denied: path must be within the repo root"
         if not full.exists():
             return f"File not found: {path}"
         content = full.read_text(encoding="utf-8", errors="replace")
