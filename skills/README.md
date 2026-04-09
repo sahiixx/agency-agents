@@ -1,6 +1,6 @@
 # The Agency — skills.sh Skills
 
-139 specialized AI agent personas, installable as skills via [skills.sh](https://skills.sh).
+151 specialized AI agent personas, installable as skills via [skills.sh](https://skills.sh).
 
 ## Install
 
@@ -61,6 +61,7 @@ python3 scripts/run-skill.py --list
 | Spatial Computing | 6 | visionos-spatial-engineer, xr-immersive-developer |
 | Product | 4 | sprint-prioritizer, feedback-synthesizer, trend-researcher |
 | Strategy | 1 | nexus-strategy |
+| Business | 5 | analytics-agent, content-agent, marketing-agent, operations-agent, sales-agent |
 
 ## Regenerate
 
