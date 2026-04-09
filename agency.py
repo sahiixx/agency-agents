@@ -172,7 +172,8 @@ def get_llm(provider: str = "anthropic", ollama_model: str = "llama3.1",
 
     if provider in ("rasa", "n8n"):
         print(f"  Provider: {provider} (external service — Claude used for orchestration)")
-        return ChatAnthropic(model=CLAUDE_MODEL, api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+        from providers.anthropic_provider import AnthropicProvider
+        return AnthropicProvider().get_llm(model=CLAUDE_MODEL)
 
     raise ValueError(f"Unknown provider '{provider}'")
 
