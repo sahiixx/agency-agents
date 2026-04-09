@@ -340,7 +340,14 @@ OUTPUT_INSTRUCTIONS = {
 # ── Core agent runner ────────────────────────────────────────────────────────
 
 def get_client():
-    """Create an Anthropic client."""
+    """
+    Create and return an Anthropic client configured from the `ANTHROPIC_API_KEY` environment variable.
+    
+    Attempts to import the `anthropic` package and read `ANTHROPIC_API_KEY` from the environment. If the package is not installed or the environment variable is missing, prints an error message to stderr and exits the process with status code 1.
+    
+    Returns:
+        anthropic.Anthropic: A configured Anthropic client instance.
+    """
     try:
         import anthropic
     except ImportError:
