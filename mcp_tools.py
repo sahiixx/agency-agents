@@ -184,8 +184,9 @@ def scrape_ae_leads(community: str = "Springs", max_listings: int = 20) -> str:
         max_listings: Maximum number of listings to scrape (default: 20, max: 50).
 
     Returns:
-        JSON string with leads: community, title, price, phones, is_owner, whatsapp_link,
-        hot_deal flag (owner + price < AED 140k).
+        JSON string with leads containing: community, title, price, phones
+        (comma-joined string), is_owner, whatsapp, and hot_deal
+        (owner + price < AED 140k).
     """
     import re
     import time
