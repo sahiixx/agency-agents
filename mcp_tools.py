@@ -192,7 +192,9 @@ def scrape_ae_leads(community: str = "Springs", max_listings: int = 20) -> str:
     import random
     import json as _json
 
-    max_listings = min(max_listings, MAX_SCRAPE_LISTINGS)
+    if isinstance(max_listings, bool) or not isinstance(max_listings, int):
+        raise TypeError("max_listings must be an integer")
+    max_listings = max(0, min(max_listings, MAX_SCRAPE_LISTINGS))
 
     # Build Dubizzle URL from community name
     slug = community.lower().replace(" ", "-").replace("_", "-")
