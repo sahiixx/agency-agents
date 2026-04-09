@@ -435,6 +435,14 @@
         <span>Research</span>
         <span class="preset-agents">pm·ai·qa·core</span>
       </button>
+      <button class="preset-btn" onclick="selectPreset(this,'dubai')">
+        <span>Dubai 🇦🇪</span>
+        <span class="preset-agents">biz-sales·biz-mkt·biz-content·biz-analytics·biz-ops·re-leads·re-intel·re-comply·core</span>
+      </button>
+      <button class="preset-btn" onclick="selectPreset(this,'realestate')">
+        <span>Real Estate</span>
+        <span class="preset-agents">re-leads·re-match·re-copy·re-deal·re-intel·re-comply·re-crm·re-pitch·re-refer·core</span>
+      </button>
     </div>
 
     <div class="sidebar-section">
@@ -566,28 +574,40 @@ const AGENTS = {
   design:             { count: 8,  samples: ['ux-architect','brand-guardian','visual-designer'] },
   marketing:          { count: 19, samples: ['growth-hacker','content-creator','seo-specialist'] },
   sales:              { count: 8,  samples: ['deal-strategist','account-strategist','sales-coach'] },
-  specialized:        { count: 18, samples: ['claude-reasoning-core','agents-orchestrator','compliance-guard'] },
+  specialized:        { count: 19, samples: ['claude-reasoning-core','agents-orchestrator','prompt-architect'] },
   testing:            { count: 8,  samples: ['reality-checker','accessibility-auditor','api-tester'] },
   support:            { count: 6,  samples: ['analytics-reporter','finance-tracker'] },
   product:            { count: 4,  samples: ['sprint-prioritizer','feedback-synthesizer'] },
   'project-management':{ count: 6, samples: ['project-shepherd','jira-workflow-steward'] },
+  business:           { count: 5,  samples: ['business-sales-agent','business-marketing-agent','business-analytics-agent','business-operations-agent','business-content-agent'] },
 };
 
 const PRESETS = {
-  full:     ['pm','backend','frontend','qa','security','core'],
-  saas:     ['pm','copywriter','frontend','qa','core'],
-  research: ['pm','ai','qa','core'],
+  full:       ['pm','backend','frontend','qa','security','core'],
+  saas:       ['pm','copywriter','frontend','qa','core'],
+  research:   ['pm','ai','qa','core'],
+  dubai:      ['biz-sales','biz-mkt','biz-content','biz-analytics','biz-ops','re-leads','re-intel','re-comply','core'],
+  realestate: ['re-leads','re-match','re-copy','re-deal','re-intel','re-comply','re-crm','re-pitch','re-refer','core'],
 };
 
 const AGENT_PERSONAS = {
-  pm:         { emoji:'📋', color:'#a78bfa', label:'Senior PM' },
-  backend:    { emoji:'⚙️', color:'#60a5fa', label:'Backend Arch' },
-  frontend:   { emoji:'🎨', color:'#34d399', label:'Frontend Dev' },
-  security:   { emoji:'🔒', color:'#f87171', label:'Security Eng' },
-  qa:         { emoji:'🧪', color:'#fbbf24', label:'QA Engineer' },
-  core:       { emoji:'🧠', color:'#c9a84c', label:'Reasoning Core' },
-  copywriter: { emoji:'✍️', color:'#f0abfc', label:'Copywriter' },
-  ai:         { emoji:'🤖', color:'#67e8f9', label:'AI Engineer' },
+  pm:           { emoji:'📋', color:'#a78bfa', label:'Senior PM' },
+  backend:      { emoji:'⚙️', color:'#60a5fa', label:'Backend Arch' },
+  frontend:     { emoji:'🎨', color:'#34d399', label:'Frontend Dev' },
+  security:     { emoji:'🔒', color:'#f87171', label:'Security Eng' },
+  qa:           { emoji:'🧪', color:'#fbbf24', label:'QA Engineer' },
+  core:         { emoji:'🧠', color:'#c9a84c', label:'Reasoning Core' },
+  copywriter:   { emoji:'✍️', color:'#f0abfc', label:'Copywriter' },
+  ai:           { emoji:'🤖', color:'#67e8f9', label:'AI Engineer' },
+  'biz-sales':      { emoji:'💼', color:'#fc8181', label:'Biz Sales' },
+  'biz-mkt':        { emoji:'📣', color:'#f6ad55', label:'Biz Marketing' },
+  'biz-content':    { emoji:'✍️', color:'#68d391', label:'Biz Content' },
+  'biz-analytics':  { emoji:'📊', color:'#63b3ed', label:'Biz Analytics' },
+  'biz-ops':        { emoji:'⚙️', color:'#b794f4', label:'Biz Ops' },
+  're-leads':       { emoji:'🎯', color:'#1B5E20', label:'RE Leads' },
+  're-intel':       { emoji:'📈', color:'#0D47A1', label:'RE Intel' },
+  're-comply':      { emoji:'⚖️', color:'#B71C1C', label:'RE Comply' },
+  'prompt-arch':    { emoji:'🏛️', color:'#f6ad55', label:'Prompt Arch' },
 };
 
 let currentPreset = 'full';
@@ -732,12 +752,72 @@ const MISSION_SCRIPTS = {
     "Cross-checking specialist claims against known ground truth...",
     "Security blockers acknowledged. Conditional approval warranted.",
   ],
+  // Dubai business agents
+  'biz-sales': [
+    "Loading UAE B2B lead qualification framework...",
+    "Scoring leads: budget alignment, urgency, authority, business fit, engagement.",
+    "A-tier: 3 leads (score 80+). B-tier: 7 leads. C-tier: 12 leads. D-tier: 8 leads archived.",
+    "AED pipeline value: A-tier estimated AED 2.4M. Follow-up sequences scheduled.",
+    "Pipeline health report complete. Sales team notified of A-tier leads. Done.",
+  ],
+  'biz-mkt': [
+    "Analyzing UAE market channels: LinkedIn, Google, Meta, WhatsApp, TikTok.",
+    "Seasonal calendar applied: Ramadan -20% B2B, Q4 +25% budget unlock.",
+    "Campaign brief drafted: 4 channels, AED 45,000 budget, 90-day window.",
+    "Arabic variants required for 3 ad creatives — flagged for NMC compliance.",
+    "Multi-channel campaign architecture complete. CPL target: AED 120. Done.",
+  ],
+  'biz-content': [
+    "Reviewing brand voice guidelines. Tone: Professional B2B, bilingual.",
+    "Generating content suite: blog (1,200 words) + 3 LinkedIn posts + email + landing page.",
+    "SEO keywords applied: 'AI automation Dubai', 'digital transformation UAE'.",
+    "Arabic content adapted (not translated). Cultural review flagged.",
+    "Content suite complete. 6 pieces ready to publish. Arabic review pending.",
+  ],
+  'biz-analytics': [
+    "Pulling KPI data: sales pipeline, marketing performance, ops efficiency.",
+    "Anomaly detected: CAC increased 28% MoM — below alert threshold, monitoring.",
+    "P50 forecast: AED 1.2M Q3 revenue. P90: AED 1.65M. Confidence: 82%.",
+    "LTV:CAC ratio: 4.2:1 — healthy. Top channel: LinkedIn (CPL AED 89).",
+    "Executive dashboard generated. 5-bullet summary ready for CEO. Done.",
+  ],
+  'biz-ops': [
+    "Reviewing client onboarding pipeline: 3 new clients in progress.",
+    "VAT registration confirmed. Invoices updated with TRN number.",
+    "HR: 2 staff on probation, end dates flagged in calendar.",
+    "Trade license renewal in 47 days — escalated to CEO for action.",
+    "Operational status: 🟢 Onboarding | 🟢 Invoicing | 🟡 Compliance (1 item). Done.",
+  ],
+  // Real estate agents
+  're-leads': [
+    "Loading lead database: 89 contacts from Bayut, PropertyFinder, referrals.",
+    "A-tier: 4 leads (score 80+) — 2 cash buyers, 1 golden visa investor.",
+    "B-tier: 11 leads — nurture sequences activated.",
+    "Deduplication: 6 contacts merged (same number across 3 portals).",
+    "Pipeline scorecard complete. 4 A-tier leads routed to senior agents. Done.",
+  ],
+  're-intel': [
+    "Pulling DLD transaction data: Dubai Hills, Business Bay, JVC.",
+    "Q1 2026: Off-plan +12% QoQ. Ready units +3% QoQ. AED/sqft rising.",
+    "Hotspot: Dubai Creek Harbour — investor demand up 34% since Q3.",
+    "Golden visa threshold: AED 2M. Currently 67% of A-tier leads qualify.",
+    "Market intelligence report filed. Price trend analysis complete. Done.",
+  ],
+  're-comply': [
+    "Reviewing RERA compliance for active listings and agent communications.",
+    "AML check: 1 lead flagged for enhanced due diligence — source of funds unverified.",
+    "Advertising compliance: 3 WhatsApp messages reviewed, 1 revision requested.",
+    "Data protection: PDPL consent forms sent to all new leads.",
+    "Compliance report filed. 1 AML escalation pending human review. Done.",
+  ],
 };
 
 const VERDICTS = {
-  full:     { text: 'CONDITIONAL GO', cls: 'verdict-cgo', msg: 'Build approved. 2 security gates must close before launch: Vault credentials + UAE data residency confirmation.' },
-  saas:     { text: 'GO', cls: 'verdict-go', msg: 'SaaS build cleared. Copy, UX, and QA aligned. Ship to staging.' },
-  research: { text: 'GO', cls: 'verdict-go', msg: 'Research synthesis complete and verified. Ready for application.' },
+  full:       { text: 'CONDITIONAL GO', cls: 'verdict-cgo', msg: 'Build approved. 2 security gates must close before launch: Vault credentials + UAE data residency confirmation.' },
+  saas:       { text: 'GO', cls: 'verdict-go',  msg: 'SaaS build cleared. Copy, UX, and QA aligned. Ship to staging.' },
+  research:   { text: 'GO', cls: 'verdict-go',  msg: 'Research synthesis complete and verified. Ready for application.' },
+  dubai:      { text: 'CONDITIONAL GO', cls: 'verdict-cgo', msg: 'Dubai market strategy approved. Arabic content review required before launch. VAT registration must be confirmed.' },
+  realestate: { text: 'GO', cls: 'verdict-go',  msg: 'Pipeline ready. 3 A-tier leads identified. RERA compliance confirmed. Proceed to outreach.' },
 };
 
 let logTimer = null;
@@ -777,6 +857,110 @@ function setStage(agentName, state) {
 
 async function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// ── SSE STREAMING (connects to live_server.py if running on port 8765) ──────
+let sseSource = null;
+let sseConnected = false;
+
+function connectSSE(mission, preset) {
+  if (sseSource) { sseSource.close(); sseSource = null; }
+  const params = new URLSearchParams({ mission, preset });
+  const url = `http://localhost:8765/stream?${params}`;
+
+  addLog('system', `SSE: connecting to live server → ${url}`);
+  sseSource = new EventSource(url);
+
+  sseSource.onopen = () => {
+    sseConnected = true;
+    addLog('system', 'SSE: live stream connected — real tokens incoming');
+  };
+
+  sseSource.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'token') {
+        addLog(data.agent || 'core', data.content || '');
+      } else if (data.type === 'agent_start') {
+        setStage(data.agent, 'active');
+        addLog('system', `→ ${data.agent} started`);
+      } else if (data.type === 'agent_done') {
+        setStage(data.agent, 'done');
+      } else if (data.type === 'verdict') {
+        addLog('core', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        const cls = data.verdict === 'GO' ? 'verdict-go' : data.verdict === 'NO-GO' ? 'verdict-ngo' : 'verdict-cgo';
+        addLog('core', `VERDICT: ${data.verdict}`, cls);
+        addLog('core', data.message || '');
+        addLog('core', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        finalizeMission(data.verdict);
+      } else if (data.type === 'error') {
+        addLog('system', `SSE error: ${data.message}`);
+        sseSource.close();
+        sseSource = null;
+        running = false;
+        document.getElementById('fire-btn').textContent = '▶ LAUNCH';
+        document.getElementById('fire-btn').classList.remove('running');
+        document.getElementById('main').classList.remove('running');
+      }
+    } catch (_) {
+      addLog('core', e.data);
+    }
+  };
+
+  sseSource.onerror = () => {
+    addLog('system', 'SSE: server not available — falling back to simulation mode');
+    sseConnected = false;
+    if (sseSource) { sseSource.close(); sseSource = null; }
+    // Fall back to simulation
+    runSimulation(mission);
+  };
+}
+
+function finalizeMission(verdictText) {
+  const verdictKey = verdictText === 'GO' ? 'go' : verdictText.includes('COND') ? 'cgo' : 'ngo';
+  const surprise = verdictKey === 'ngo' ? 1.0 : verdictKey === 'cgo' ? 0.75 + Math.random()*0.15 : 0.3 + Math.random()*0.4;
+  const mission = document.getElementById('mission-input').value.trim();
+  missionHistory.unshift({ mission, verdict: verdictKey, surprise, weight: surprise, date: new Date().toISOString().slice(0,10) });
+  if (missionHistory.length > 8) missionHistory.pop();
+  renderHistory();
+  renderMemoryBars();
+  addLog('system', `TitansMemory updated — ${verdictText} (surprise=${surprise.toFixed(2)}) written to AGENTS.md`);
+  PRESETS[currentPreset].forEach(a => {
+    const el = document.getElementById('stage-' + a);
+    if (el) { el.classList.remove('active'); el.classList.add('done'); }
+  });
+  addLog('system', `Mission complete. <span class="cursor"></span>`);
+  running = false;
+  document.getElementById('fire-btn').textContent = '▶ LAUNCH';
+  document.getElementById('fire-btn').classList.remove('running');
+  document.getElementById('main').classList.remove('running');
+}
+
+async function runSimulation(mission) {
+  const agents = PRESETS[currentPreset];
+  for (let i = 0; i < agents.length; i++) {
+    const agent = agents[i];
+    const lines = MISSION_SCRIPTS[agent] || [`Processing...`, `Complete.`];
+    setStage(agent, 'active');
+    addLog('system', `→ dispatching to ${agent}...`);
+    await delay(600);
+    for (const line of lines) {
+      addLog(agent, line);
+      await delay(320 + Math.random() * 280);
+    }
+    setStage(agent, 'done');
+    await delay(300);
+  }
+  await delay(400);
+  const v = VERDICTS[currentPreset] || VERDICTS.full;
+  addLog('core', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  await delay(200);
+  addLog('core', `VERDICT: ${v.text}`, v.cls);
+  await delay(200);
+  addLog('core', v.msg);
+  await delay(200);
+  addLog('core', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  finalizeMission(v.text);
+}
+
 async function fireMission() {
   if (running) return;
   const input = document.getElementById('mission-input');
@@ -800,64 +984,12 @@ async function fireMission() {
   addLog('system', 'Graph ready: 6 nodes | MemoryMiddleware.before_agent wired');
   await delay(400);
   addLog('system', 'AGENTS.md injected (2,941 bytes) → all agents share context');
-  await delay(500);
-  addLog('system', 'Delegating to specialists via task tool...');
   await delay(400);
 
-  const agents = PRESETS[currentPreset];
-
-  for (let i = 0; i < agents.length; i++) {
-    const agent = agents[i];
-    const lines = MISSION_SCRIPTS[agent] || [`Processing...`, `Complete.`];
-
-    setStage(agent, 'active');
-    addLog('system', `→ dispatching to ${agent}...`);
-    await delay(600);
-
-    for (const line of lines) {
-      addLog(agent, line);
-      await delay(320 + Math.random() * 280);
-    }
-
-    setStage(agent, 'done');
-    await delay(300);
-  }
-
-  // Verdict
-  await delay(400);
-  const v = VERDICTS[currentPreset];
-  addLog('core', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  await delay(200);
-  addLog('core', `VERDICT: ${v.text}`, v.cls);
-  await delay(200);
-  addLog('core', v.msg);
-  await delay(200);
-  addLog('core', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-
-  // Update memory
-  await delay(500);
-  const verdictKey = v.text === 'GO' ? 'go' : v.text.includes('COND') ? 'cgo' : 'ngo';
-  const surprise = verdictKey === 'ngo' ? 1.0 : verdictKey === 'cgo' ? 0.75 + Math.random()*0.15 : 0.3 + Math.random()*0.4;
-  missionHistory.unshift({ mission, verdict: verdictKey, surprise, weight: surprise, date: new Date().toISOString().slice(0,10) });
-  if (missionHistory.length > 8) missionHistory.pop();
-  renderHistory();
-  renderMemoryBars();
-
-  addLog('system', `TitansMemory updated — ${v.text} (surprise=${surprise.toFixed(2)}) written to AGENTS.md`);
-
-  // Mark all done
-  PRESETS[currentPreset].forEach(a => {
-    const el = document.getElementById('stage-' + a);
-    if (el) { el.classList.remove('active'); el.classList.add('done'); }
-  });
-
+  // Try SSE first (live server), fall back to simulation
+  addLog('system', 'Attempting SSE connection to live agency server (port 8765)...');
   await delay(300);
-  addLog('system', `Mission complete. <span class="cursor"></span>`);
-
-  running = false;
-  document.getElementById('fire-btn').textContent = '▶ LAUNCH';
-  document.getElementById('fire-btn').classList.remove('running');
-  document.getElementById('main').classList.remove('running');
+  connectSSE(mission, currentPreset);
 }
 
 // Enter key fires mission

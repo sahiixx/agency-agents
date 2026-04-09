@@ -145,6 +145,135 @@ def get_datetime(timezone: str = "UTC") -> str:
     return f"Current datetime: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC"
 
 
+# ── Tool 7: Scrape UAE Real Estate Leads ────────────────────────────────────
+@tool
+def scrape_ae_leads(community: str = "Springs", max_listings: int = 20) -> str:
+    """
+    Scrape owner-direct real estate leads from Dubizzle for a Dubai community.
+
+    Args:
+        community: Dubai community name to search (e.g. 'Springs', 'Arabian Ranches 3',
+                   'Al Waha', 'Dubai Hills', 'JVC', 'Business Bay', 'Creek Harbour').
+                   Default: 'Springs'.
+        max_listings: Maximum number of listings to scrape (default: 20, max: 50).
+
+    Returns:
+        JSON string with leads: community, title, price, phones, is_owner, whatsapp_link,
+        hot_deal flag (owner + price < AED 140k).
+    """
+    import re
+    import time
+    import random
+    import json as _json
+
+    max_listings = min(max_listings, 50)
+
+    # Build Dubizzle URL from community name
+    slug = community.lower().replace(" ", "-").replace("_", "-")
+    url = f"https://dubai.dubizzle.com/en/property-for-rent/residential/villahouse/in/{slug}/"
+
+    try:
+        import urllib.request as _req
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        }
+        request = _req.Request(url, headers=headers)
+        with _req.urlopen(request, timeout=15) as resp:
+            html = resp.read().decode("utf-8", errors="replace")
+    except Exception as e:
+        return _json.dumps({"error": f"Failed to fetch {url}: {e}", "leads": []})
+
+    # Extract phone numbers (UAE mobile: 05X XXX XXXX)
+    phone_patterns = [
+        r'\+971\s*5[0-9]\s*\d{3}\s*\d{4}',
+        r'971\s*5[0-9]\s*\d{3}\s*\d{4}',
+        r'05[0-9][\s\-]?\d{3}[\s\-]?\d{4}',
+    ]
+
+    def normalize_phone(raw: str) -> str:
+        digits = re.sub(r'\D', '', raw)
+        if digits.startswith('971'):
+            return digits
+        if digits.startswith('0'):
+            return '971' + digits[1:]
+        if digits.startswith('5') and len(digits) >= 9:
+            return '971' + digits
+        return digits
+
+    def extract_phones(text: str) -> list:
+        found = set()
+        for pat in phone_patterns:
+            for m in re.findall(pat, text):
+                n = normalize_phone(m)
+                if len(n) == 12 and n.startswith('9715'):
+                    found.add(n)
+        return list(found)
+
+    owner_keywords = ['owner', 'direct', 'no commission', 'landlord', 'private', 'مالك', 'بدون عمولة']
+
+    def is_owner(text: str) -> bool:
+        tl = text.lower()
+        return any(kw in tl for kw in owner_keywords)
+
+    # Simple HTML parsing — extract listing blocks by finding price patterns
+    price_pattern = re.compile(r'([\d,]{3,})\s*AED', re.IGNORECASE)
+    listing_blocks = re.split(r'(?=data-testid="listing|class="listing-card|<article)', html)
+
+    leads = []
+    seen_phones: set = set()
+
+    for block in listing_blocks[:max_listings * 3]:
+        phones = extract_phones(block)
+        if not phones:
+            continue
+        new_phones = [p for p in phones if p not in seen_phones]
+        if not new_phones:
+            continue
+        seen_phones.update(new_phones)
+
+        price_match = price_pattern.search(block)
+        price_str = price_match.group(0) if price_match else "N/A"
+        try:
+            price_num = int(price_match.group(1).replace(',', '')) if price_match else 0
+        except (ValueError, AttributeError):
+            price_num = 0
+
+        owner_flag = is_owner(block)
+        hot = price_num > 0 and price_num < 140_000 and owner_flag
+
+        # Best-effort title extraction
+        title_match = re.search(r'<(?:h2|h3)[^>]*>([^<]{10,80})</(?:h2|h3)>', block)
+        title = title_match.group(1).strip() if title_match else "Listing"
+
+        leads.append({
+            "community": community,
+            "title": title[:80],
+            "price": price_str,
+            "price_aed": price_num,
+            "phones": ", ".join(new_phones),
+            "is_owner": owner_flag,
+            "whatsapp": f"https://wa.me/{new_phones[0]}",
+            "hot_deal": hot,
+        })
+
+        if len(leads) >= max_listings:
+            break
+
+    summary = {
+        "community": community,
+        "url": url,
+        "total_leads": len(leads),
+        "owner_direct": sum(1 for l in leads if l["is_owner"]),
+        "hot_deals": sum(1 for l in leads if l["hot_deal"]),
+        "leads": leads,
+    }
+    return _json.dumps(summary, indent=2)
+
+
 # ── Registry ─────────────────────────────────────────────────────────────────
 MCP_TOOLS = [
     web_search,
@@ -153,6 +282,7 @@ MCP_TOOLS = [
     code_lint,
     memory_recall,
     get_datetime,
+    scrape_ae_leads,
 ]
 
 MCP_TOOL_NAMES = [t.name for t in MCP_TOOLS]
