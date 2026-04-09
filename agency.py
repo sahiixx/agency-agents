@@ -79,9 +79,13 @@ AGENT_REGISTRY = {
     "sales":     ("sales/sales-deal-strategist.md",                   "Deal strategist — sales strategy, proposals, negotiation"),
     "core":      ("specialized/specialized-claude-reasoning-core.md", "Claude Reasoning Core — judgment, ethics, final verdicts"),
     "prompt-arch":("specialized/specialized-prompt-architect.md",     "Prompt Architect — designs and audits agent prompts using 26 universal patterns"),
+    "spy":       ("specialized/specialized-ai-tools-reverse-engineer.md", "AI Tools Reverse Engineer — competitive intel on 31+ AI tools (Cursor, Devin, Windsurf, Manus, Kiro…)"),
+    "docs":      ("specialized/specialized-mintlify-docs-publisher.md",   "Mintlify Docs Publisher — converts outputs into MDX docs for mintlify-docs + docs repos"),
     "wpscan":    ("engineering/engineering-wpscan-penetration-tester.md", "WPScan Penetration Tester — WordPress vuln scanning, plugin/theme enum, brute force"),
     "linux":     ("specialized/specialized-linux-sysadmin.md",        "Linux Sysadmin — filesystem, services, hardening, runbooks across major distros"),
     "learn":     ("specialized/specialized-ai-learning-curator.md",   "AI Learning Curator — curated AI/ML/CS courses, repos, books, and study paths"),
+    "cloudflare":("integrations/cloudflare-deployment-templates.md",  "Cloudflare Deployment — Workers, Pages, D1, R2, Containers; react-router + containers templates"),
+    "trust":     ("specialized/specialized-trust-graph-operator.md",  "Trust Graph Operator — Neo4j entity trust scores, UAE reputation, AML/RERA flags"),
     # Real estate agents
     "re-leads":  ("real-estate/real-estate-lead-qualification-specialist.md", "Lead qualification — scoring, pipeline prioritization, buyer readiness"),
     "re-match":  ("real-estate/real-estate-property-matching-engine.md",      "Property matching — buyer-to-listing pairing, market data analysis"),
@@ -109,6 +113,16 @@ PRESETS = {
     # combined with core RE agents (leads, intel, compliance) for UAE market missions
     "dubai":      ["biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops",
                    "re-leads", "re-intel", "re-comply", "core"],
+    # Security & infrastructure
+    "security":   ["security", "wpscan", "linux", "devops", "core"],
+    # Competitive intelligence — study & improve agent prompts using tool patterns from 31+ AI tools
+    "intel":      ["spy", "prompt-arch", "core"],
+    # Docs — generate and publish Mintlify documentation from any mission output
+    "docs":       ["pm", "docs", "core"],
+    # Moltbot — fire mission and deliver results via Telegram/Discord/Slack/Web
+    "moltbot":    ["pm", "backend", "frontend", "core"],  # results pushed via trigger_moltbot_mission MCP tool
+    # Trust vetting — UAE entity trust screening for sales, RE, compliance
+    "trust":      ["trust", "re-comply", "core"],
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

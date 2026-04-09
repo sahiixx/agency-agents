@@ -7,12 +7,17 @@ can call them via the standard tool interface. No MCP server required —
 these are local MCP-style tool definitions that follow the protocol schema.
 
 Tools available:
-  web_search      — fetch live search results (via DuckDuckGo, no key needed)
-  read_file       — read any file in the repo
-  write_file      — write structured output to /tmp/agency_outputs/
-  summarize_url   — fetch and summarize a URL
-  code_lint       — run ruff lint on a code snippet
-  memory_recall   — query Titans memory for past mission insights
+  web_search              — fetch live search results (via DuckDuckGo, no key needed)
+  read_file               — read any file in the repo
+  write_file              — write structured output to /tmp/agency_outputs/
+  summarize_url           — fetch and summarize a URL
+  code_lint               — run ruff lint on a code snippet
+  memory_recall           — query Titans memory for past mission insights
+  trigger_moltbot_mission — fire a mission via Moltbot gateway (Telegram/Discord/Slack/Web)
+  query_trust_graph       — look up entity trust score from Neo4j trust graph
+  qualify_lead_nowhere    — score a B2B lead via NOWHERE.AI platform API
+  analyze_dubai_market    — run Dubai/UAE market intelligence via NOWHERE.AI
+  create_campaign_nowhere — generate a marketing campaign via NOWHERE.AI
 """
 
 import json
@@ -20,6 +25,7 @@ import subprocess
 import tempfile
 import urllib.request
 import urllib.parse
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -36,6 +42,19 @@ REPO_ROOT = Path(__file__).parent.resolve()
 MAX_SCRAPE_LISTINGS = 50
 # AED price ceiling for flagging a listing as a "hot deal" (owner-direct + below market)
 HOT_DEAL_PRICE_THRESHOLD_AED = 140_000
+
+# ── Cross-repo integration constants ─────────────────────────────────────────
+# Moltbot gateway (sahiixx/moltworker — Cloudflare Worker)
+MOLTBOT_GATEWAY_URL   = os.getenv("MOLTBOT_GATEWAY_URL",   "http://localhost:8787")
+MOLTBOT_GATEWAY_TOKEN = os.getenv("MOLTBOT_GATEWAY_TOKEN", "")
+
+# NOWHERE.AI platform (sahiixx/Fixfizx — FastAPI backend)
+NOWHERE_AI_URL = os.getenv("NOWHERE_AI_URL", "http://localhost:8001")
+NOWHERE_AI_JWT = os.getenv("NOWHERE_AI_JWT", "")
+
+# Trust Graph API (sahiixx/Trust-graph- — Neo4j service)
+TRUST_GRAPH_URL      = os.getenv("TRUST_GRAPH_URL",      "http://localhost:8080")
+TRUST_GRAPH_API_KEY  = os.getenv("TRUST_GRAPH_API_KEY",  "")
 
 
 # ── Tool 1: Web Search (DuckDuckGo instant answer, no API key) ─────────────
@@ -280,6 +299,232 @@ def scrape_ae_leads(community: str = "Springs", max_listings: int = 20) -> str:
     return _json.dumps(summary, indent=2)
 
 
+# ── Tool 8: Trigger Moltbot Mission ─────────────────────────────────────────
+@tool
+def trigger_moltbot_mission(mission: str, channel: str = "web", preset: str = "full") -> str:
+    """Fire an Agency mission via the Moltbot Cloudflare gateway (sahiixx/moltworker).
+    Delivers results to Telegram, Discord, Slack, or Web UI.
+    Args:
+        mission: The mission description to execute.
+        channel: Delivery channel — 'web', 'telegram', 'discord', or 'slack'.
+        preset:  Agency preset — 'full', 'saas', 'research', 'dubai', 'realestate'.
+    Returns JSON with trigger status and delivery info.
+    """
+    import json as _json
+    try:
+        payload = _json.dumps({
+            "mission": mission,
+            "channel": channel,
+            "preset":  preset,
+        }).encode()
+        headers = {
+            "Content-Type":  "application/json",
+            "Authorization": f"Bearer {MOLTBOT_GATEWAY_TOKEN}",
+            "User-Agent":    "TheAgency/1.0",
+        }
+        req = urllib.request.Request(
+            f"{MOLTBOT_GATEWAY_URL}/api/gateway/trigger",
+            data=payload,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as r:
+            result = _json.loads(r.read().decode())
+            return _json.dumps({
+                "status":   "triggered",
+                "channel":  channel,
+                "preset":   preset,
+                "gateway":  MOLTBOT_GATEWAY_URL,
+                "response": result,
+            }, indent=2)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode() if e.fp else ""
+        return _json.dumps({"error": f"HTTP {e.code}: {body[:200]}"})
+    except Exception as e:
+        return _json.dumps({"error": str(e), "note": "Ensure MOLTBOT_GATEWAY_URL is set and gateway is running"})
+
+
+# ── Tool 9: Query Trust Graph ────────────────────────────────────────────────
+@tool
+def query_trust_graph(entity_id: str, include_network: bool = False) -> str:
+    """Query the Neo4j trust graph (sahiixx/Trust-graph-) for an entity's trust score,
+    flags, and relationship network. Used by sales, compliance, and RE agents.
+    Args:
+        entity_id:       Unique ID of the entity (company, person, or domain).
+        include_network: If True, return 1-hop trust network details.
+    Returns a trust profile with score, band (Excellent/Good/Caution/Poor/Critical), and flags.
+    """
+    import json as _json
+    try:
+        params = urllib.parse.urlencode({
+            "entity_id":       entity_id,
+            "include_network": str(include_network).lower(),
+        })
+        headers = {
+            "Authorization": f"Bearer {TRUST_GRAPH_API_KEY}",
+            "User-Agent":    "TheAgency/1.0",
+        }
+        req = urllib.request.Request(
+            f"{TRUST_GRAPH_URL}/api/trust/{urllib.parse.quote(entity_id)}?{params}",
+            headers=headers,
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            data = _json.loads(r.read().decode())
+            score = data.get("trust_score", 0)
+            band  = (
+                "Excellent" if score >= 85 else
+                "Good"      if score >= 70 else
+                "Caution"   if score >= 50 else
+                "Poor"      if score >= 25 else
+                "Critical"
+            )
+            data["band"] = band
+            return _json.dumps(data, indent=2)
+    except Exception as e:
+        return _json.dumps({
+            "error":     str(e),
+            "entity_id": entity_id,
+            "note":      "Ensure TRUST_GRAPH_URL is set and Trust-graph- service is running",
+        })
+
+
+# ── Tool 10: Qualify Lead via NOWHERE.AI ─────────────────────────────────────
+@tool
+def qualify_lead_nowhere(
+    company:          str,
+    contact:          str,
+    email:            str,
+    budget_aed:       int  = 0,
+    service_interest: str  = "",
+    source:           str  = "unknown",
+) -> str:
+    """Score and qualify a B2B lead using the NOWHERE.AI platform (sahiixx/Fixfizx).
+    Returns lead score (0-100), tier (A/B/C), and recommended next action.
+    Args:
+        company:          Company name.
+        contact:          Primary contact full name.
+        email:            Contact email address.
+        budget_aed:       Estimated budget in AED (0 if unknown).
+        service_interest: Primary service of interest.
+        source:           Lead source (LinkedIn, referral, web, etc.).
+    """
+    import json as _json
+    try:
+        payload = _json.dumps({
+            "company":          company,
+            "contact":          contact,
+            "email":            email,
+            "budget_aed":       budget_aed,
+            "service_interest": service_interest,
+            "source":           source,
+        }).encode()
+        headers = {
+            "Content-Type":  "application/json",
+            "Authorization": f"Bearer {NOWHERE_AI_JWT}",
+            "User-Agent":    "TheAgency/1.0",
+        }
+        req = urllib.request.Request(
+            f"{NOWHERE_AI_URL}/api/agents/sales/qualify-lead",
+            data=payload,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return _json.dumps(_json.loads(r.read().decode()), indent=2)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode() if e.fp else ""
+        return _json.dumps({"error": f"HTTP {e.code}: {body[:200]}"})
+    except Exception as e:
+        return _json.dumps({"error": str(e), "note": "Ensure NOWHERE_AI_URL and NOWHERE_AI_JWT are set"})
+
+
+# ── Tool 11: Dubai Market Analysis via NOWHERE.AI ────────────────────────────
+@tool
+def analyze_dubai_market(sector: str, query: str, include_competitors: bool = False) -> str:
+    """Run UAE/Dubai market intelligence via NOWHERE.AI platform (sahiixx/Fixfizx).
+    Returns market size, growth trends, opportunities, and AED revenue projections.
+    Args:
+        sector:              Industry sector (e.g., 'B2B SaaS', 'Real Estate', 'FinTech').
+        query:               Specific research question or analysis request.
+        include_competitors: If True, include competitive landscape analysis.
+    """
+    import json as _json
+    try:
+        payload = _json.dumps({
+            "sector":              sector,
+            "query":               query,
+            "include_competitors": include_competitors,
+        }).encode()
+        headers = {
+            "Content-Type":  "application/json",
+            "Authorization": f"Bearer {NOWHERE_AI_JWT}",
+            "User-Agent":    "TheAgency/1.0",
+        }
+        req = urllib.request.Request(
+            f"{NOWHERE_AI_URL}/api/ai/advanced/dubai-market-analysis",
+            data=payload,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return _json.dumps(_json.loads(r.read().decode()), indent=2)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode() if e.fp else ""
+        return _json.dumps({"error": f"HTTP {e.code}: {body[:200]}"})
+    except Exception as e:
+        return _json.dumps({"error": str(e), "note": "Ensure NOWHERE_AI_URL and NOWHERE_AI_JWT are set"})
+
+
+# ── Tool 12: Create Campaign via NOWHERE.AI ───────────────────────────────────
+@tool
+def create_campaign_nowhere(
+    target_industry:  str,
+    target_geography: str  = "Dubai",
+    budget_aed:       int  = 0,
+    duration_days:    int  = 30,
+    channels:         str  = "LinkedIn,Google",
+    language:         str  = "bilingual",
+) -> str:
+    """Generate a multi-channel marketing campaign via NOWHERE.AI platform (sahiixx/Fixfizx).
+    Returns campaign brief, ad copy variants (EN + AR), budget allocation, and KPI targets.
+    Args:
+        target_industry:  Target industry vertical.
+        target_geography: Geography focus (default: Dubai).
+        budget_aed:       Total campaign budget in AED.
+        duration_days:    Campaign duration in days.
+        channels:         Comma-separated channel list (LinkedIn, Google, Meta, Email).
+        language:         Content language — 'en', 'ar', or 'bilingual'.
+    """
+    import json as _json
+    try:
+        payload = _json.dumps({
+            "target_industry":  target_industry,
+            "target_geography": target_geography,
+            "budget_aed":       budget_aed,
+            "duration_days":    duration_days,
+            "channels":         [c.strip() for c in channels.split(",")],
+            "language":         language,
+        }).encode()
+        headers = {
+            "Content-Type":  "application/json",
+            "Authorization": f"Bearer {NOWHERE_AI_JWT}",
+            "User-Agent":    "TheAgency/1.0",
+        }
+        req = urllib.request.Request(
+            f"{NOWHERE_AI_URL}/api/agents/marketing/create-campaign",
+            data=payload,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return _json.dumps(_json.loads(r.read().decode()), indent=2)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode() if e.fp else ""
+        return _json.dumps({"error": f"HTTP {e.code}: {body[:200]}"})
+    except Exception as e:
+        return _json.dumps({"error": str(e), "note": "Ensure NOWHERE_AI_URL and NOWHERE_AI_JWT are set"})
+
+
 # ── Registry ─────────────────────────────────────────────────────────────────
 MCP_TOOLS = [
     web_search,
@@ -289,6 +534,11 @@ MCP_TOOLS = [
     memory_recall,
     get_datetime,
     scrape_ae_leads,
+    trigger_moltbot_mission,
+    query_trust_graph,
+    qualify_lead_nowhere,
+    analyze_dubai_market,
+    create_campaign_nowhere,
 ]
 
 MCP_TOOL_NAMES = [t.name for t in MCP_TOOLS]
