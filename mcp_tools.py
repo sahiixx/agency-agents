@@ -189,8 +189,6 @@ def scrape_ae_leads(community: str = "Springs", max_listings: int = 20) -> str:
         (owner + price < AED 140k).
     """
     import re
-    import time
-    import random
     import json as _json
 
     if isinstance(max_listings, bool) or not isinstance(max_listings, int):
