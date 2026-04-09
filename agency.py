@@ -143,8 +143,8 @@ def get_llm(provider: str = "anthropic", ollama_model: str = "llama3.1",
     """Return the configured LLM.
 
     Supported providers: anthropic (default), ollama, openai, adk, autogen, rasa, n8n.
-    rasa and n8n do not expose a LangChain LLM — missions using them run via
-    their provider's run_agent() instead.
+    rasa and n8n do not currently provide a LangChain-compatible LLM here, so
+    selecting them still uses Claude/Anthropic as the orchestration backbone.
     """
     p = get_provider(provider)
 
