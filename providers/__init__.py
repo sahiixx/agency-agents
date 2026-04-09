@@ -3,7 +3,7 @@ providers/ — Unified multi-framework LLM/agent provider layer for The Agency.
 
 Every provider exposes two things:
   get_llm(...)   → a LangChain-compatible chat model object
-  run_agent(...) → a blocking call that returns a string response
+  run_agent(...) → a blocking call that returns a ProviderResult object
 
 Supported providers:
   anthropic  — Claude (default)
