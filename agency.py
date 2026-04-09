@@ -114,7 +114,7 @@ PRESETS = {
     # combined with core RE agents (leads, intel, compliance) for UAE market missions
     "dubai":      ["biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops",
                    "re-leads", "re-intel", "re-comply", "core"],
-    # Security & infrastructure
+    # Security & infrastructure — uses airecon + trufflehog + shannon tools automatically
     "security":   ["security", "wpscan", "linux", "devops", "core"],
     # Competitive intelligence — study & improve agent prompts using tool patterns from 31+ AI tools
     "intel":      ["spy", "prompt-arch", "core"],
@@ -124,6 +124,13 @@ PRESETS = {
     "moltbot":    ["pm", "backend", "frontend", "core"],  # results pushed via trigger_moltbot_mission MCP tool
     # Trust vetting — UAE entity trust screening for sales, RE, compliance
     "trust":      ["trust", "re-comply", "core"],
+    # Voice — lean pipeline for voice-driven missions (fast, focused)
+    "voice":      ["pm", "backend", "core"],
+    # n8n automation — workflow generation and automation bus missions
+    "n8n":        ["pm", "devops", "backend", "core"],
+    # Sovereign — full ecosystem with all business + RE + security agents
+    "sovereign":  ["pm", "backend", "frontend", "security", "devops", "ai",
+                   "biz-sales", "biz-mkt", "biz-ops", "re-leads", "re-intel", "core"],
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -200,6 +207,12 @@ PARALLEL_GROUPS = {
     "realestate": [["re-leads", "re-intel"], ["re-match", "re-copy"], ["re-deal", "re-comply"], ["re-crm", "re-pitch", "re-refer"], ["core"]],
     # Dubai: business intelligence + RE context run first, then content/ops, then core verdict
     "dubai":      [["biz-analytics", "re-intel"], ["biz-sales", "biz-mkt", "re-leads"], ["biz-content", "biz-ops", "re-comply"], ["core"]],
+    # Voice: fast 2-phase pipeline
+    "voice":      [["pm", "backend"], ["core"]],
+    # n8n: devops + backend build the workflow, core approves
+    "n8n":        [["pm", "devops", "backend"], ["core"]],
+    # Sovereign: full ecosystem — business + RE + security all run in parallel phases
+    "sovereign":  [["pm", "biz-analytics", "re-intel"], ["backend", "frontend", "biz-sales", "biz-mkt", "re-leads"], ["security", "devops", "ai", "biz-ops", "re-intel"], ["core"]],
 }
 
 
