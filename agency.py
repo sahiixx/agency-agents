@@ -79,6 +79,9 @@ AGENT_REGISTRY = {
     "sales":     ("sales/sales-deal-strategist.md",                   "Deal strategist — sales strategy, proposals, negotiation"),
     "core":      ("specialized/specialized-claude-reasoning-core.md", "Claude Reasoning Core — judgment, ethics, final verdicts"),
     "prompt-arch":("specialized/specialized-prompt-architect.md",     "Prompt Architect — designs and audits agent prompts using 26 universal patterns"),
+    "wpscan":    ("engineering/engineering-wpscan-penetration-tester.md", "WPScan Penetration Tester — WordPress vuln scanning, plugin/theme enum, brute force"),
+    "linux":     ("specialized/specialized-linux-sysadmin.md",        "Linux Sysadmin — filesystem, services, hardening, runbooks across major distros"),
+    "learn":     ("specialized/specialized-ai-learning-curator.md",   "AI Learning Curator — curated AI/ML/CS courses, repos, books, and study paths"),
     # Real estate agents
     "re-leads":  ("real-estate/real-estate-lead-qualification-specialist.md", "Lead qualification — scoring, pipeline prioritization, buyer readiness"),
     "re-match":  ("real-estate/real-estate-property-matching-engine.md",      "Property matching — buyer-to-listing pairing, market data analysis"),
