@@ -14,6 +14,8 @@ Usage:
   python3 agency.py --mission "Design a SaaS landing page" --preset saas
   python3 agency.py --mission "Research AI trends" --preset research
   python3 agency.py --mission "Audit our security" --agents security,qa,core
+  python3 agency.py --mission "Qualify these Dubai leads" --preset dubai
+  python3 agency.py --mission "Run this mission" --provider ollama --ollama-model llama3.1
 """
 
 import os
@@ -76,6 +78,14 @@ AGENT_REGISTRY = {
     "copywriter":("marketing/marketing-content-creator.md",           "Content creator — copy, messaging, brand voice"),
     "sales":     ("sales/sales-deal-strategist.md",                   "Deal strategist — sales strategy, proposals, negotiation"),
     "core":      ("specialized/specialized-claude-reasoning-core.md", "Claude Reasoning Core — judgment, ethics, final verdicts"),
+    "prompt-arch":("specialized/specialized-prompt-architect.md",     "Prompt Architect — designs and audits agent prompts using 26 universal patterns"),
+    "spy":       ("specialized/specialized-ai-tools-reverse-engineer.md", "AI Tools Reverse Engineer — competitive intel on 31+ AI tools (Cursor, Devin, Windsurf, Manus, Kiro…)"),
+    "docs":      ("specialized/specialized-mintlify-docs-publisher.md",   "Mintlify Docs Publisher — converts outputs into MDX docs for mintlify-docs + docs repos"),
+    "wpscan":    ("engineering/engineering-wpscan-penetration-tester.md", "WPScan Penetration Tester — WordPress vuln scanning, plugin/theme enum, brute force"),
+    "linux":     ("specialized/specialized-linux-sysadmin.md",        "Linux Sysadmin — filesystem, services, hardening, runbooks across major distros"),
+    "learn":     ("specialized/specialized-ai-learning-curator.md",   "AI Learning Curator — curated AI/ML/CS courses, repos, books, and study paths"),
+    "cloudflare":("integrations/cloudflare-deployment-templates.md",  "Cloudflare Deployment — Workers, Pages, D1, R2, Containers; react-router + containers templates"),
+    "trust":     ("specialized/specialized-trust-graph-operator.md",  "Trust Graph Operator — Neo4j entity trust scores, UAE reputation, AML/RERA flags"),
     # Real estate agents
     "re-leads":  ("real-estate/real-estate-lead-qualification-specialist.md", "Lead qualification — scoring, pipeline prioritization, buyer readiness"),
     "re-match":  ("real-estate/real-estate-property-matching-engine.md",      "Property matching — buyer-to-listing pairing, market data analysis"),
@@ -86,6 +96,12 @@ AGENT_REGISTRY = {
     "re-crm":    ("real-estate/real-estate-crm-pipeline-orchestrator.md",     "CRM pipeline — lead lifecycle, routing, stage management, reporting"),
     "re-pitch":  ("real-estate/real-estate-investor-pitch-specialist.md",     "Investor pitch — HNW proposals, ROI analysis, golden visa"),
     "re-refer":  ("real-estate/real-estate-post-sale-referral-engine.md",     "Post-sale — client retention, referral generation, repeat business"),
+    # NOWHERE.AI business agents (Dubai/UAE digital services)
+    "biz-sales":     ("business/business-sales-agent.md",       "B2B sales — lead qualification, proposals, pipeline management, AED pricing"),
+    "biz-mkt":       ("business/business-marketing-agent.md",   "Digital marketing — bilingual campaigns, UAE channels, Ramadan/seasonal strategy"),
+    "biz-content":   ("business/business-content-agent.md",     "Bilingual content — English + Arabic copy, SEO, social media, email campaigns"),
+    "biz-analytics": ("business/business-analytics-agent.md",   "Business intelligence — KPIs, forecasting, anomaly detection, AED benchmarks"),
+    "biz-ops":       ("business/business-operations-agent.md",  "Operations — workflow automation, invoicing, HR, UAE compliance, onboarding"),
 }
 
 PRESETS = {
@@ -93,11 +109,38 @@ PRESETS = {
     "saas":       ["pm", "copywriter", "frontend", "qa", "core"],
     "research":   ["pm", "ai", "qa", "core"],
     "realestate": ["re-leads", "re-match", "re-copy", "re-deal", "re-intel", "re-comply", "re-crm", "re-pitch", "re-refer", "core"],
+    # Dubai full-stack: NOWHERE.AI business agents (B2B sales/mkt/content/analytics/ops)
+    # combined with core RE agents (leads, intel, compliance) for UAE market missions
+    "dubai":      ["biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops",
+                   "re-leads", "re-intel", "re-comply", "core"],
+    # Security & infrastructure
+    "security":   ["security", "wpscan", "linux", "devops", "core"],
+    # Competitive intelligence — study & improve agent prompts using tool patterns from 31+ AI tools
+    "intel":      ["spy", "prompt-arch", "core"],
+    # Docs — generate and publish Mintlify documentation from any mission output
+    "docs":       ["pm", "docs", "core"],
+    # Moltbot — fire mission and deliver results via Telegram/Discord/Slack/Web
+    "moltbot":    ["pm", "backend", "frontend", "core"],  # results pushed via trigger_moltbot_mission MCP tool
+    # Trust vetting — UAE entity trust screening for sales, RE, compliance
+    "trust":      ["trust", "re-comply", "core"],
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def get_llm() -> ChatAnthropic:
+def get_llm(provider: str = "claude", ollama_model: str = "llama3.1",
+            ollama_base_url: str = "http://localhost:11434") -> object:
+    """Return the configured LLM. Provider: 'claude' (default) or 'ollama'."""
+    if provider == "ollama":
+        try:
+            from langchain_ollama import ChatOllama
+        except ImportError:
+            print("❌  langchain-ollama not found.")
+            print("    Run: pip install langchain-ollama")
+            sys.exit(1)
+        print(f"  Provider: Ollama ({ollama_model} @ {ollama_base_url})")
+        return ChatOllama(model=ollama_model, base_url=ollama_base_url)
+
+    # Default: Claude via Anthropic
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         print("❌  ANTHROPIC_API_KEY not set.")
@@ -134,6 +177,8 @@ PARALLEL_GROUPS = {
     "saas":       [["pm"], ["copywriter", "frontend"],          ["qa"], ["core"]],
     "research":   [["pm", "ai"],                                ["qa"], ["core"]],
     "realestate": [["re-leads", "re-intel"], ["re-match", "re-copy"], ["re-deal", "re-comply"], ["re-crm", "re-pitch", "re-refer"], ["core"]],
+    # Dubai: business intelligence + RE context run first, then content/ops, then core verdict
+    "dubai":      [["biz-analytics", "re-intel"], ["biz-sales", "biz-mkt", "re-leads"], ["biz-content", "biz-ops", "re-comply"], ["core"]],
 }
 
 
@@ -143,14 +188,16 @@ def _parallel_group_label(group: list[str]) -> str:
 
 # ── Core mission runner ───────────────────────────────────────────────────────
 
-def run_mission(goal: str, agent_names: list, preset: str = "full") -> str:
+def run_mission(goal: str, agent_names: list, preset: str = "full",
+                provider: str = "claude", ollama_model: str = "llama3.1",
+                ollama_base_url: str = "http://localhost:11434") -> str:
     invalid = [n for n in agent_names if n not in AGENT_REGISTRY]
     if invalid:
         print(f"❌  Unknown agents: {invalid}")
         print(f"   Available: {list(AGENT_REGISTRY.keys())}")
         sys.exit(1)
 
-    llm     = get_llm()
+    llm     = get_llm(provider=provider, ollama_model=ollama_model, ollama_base_url=ollama_base_url)
     tracer  = AgencyTracer(mission=goal, preset=preset)
     groups  = PARALLEL_GROUPS.get(preset, [[a] for a in agent_names])
 
@@ -310,6 +357,8 @@ Examples:
   python3 agency.py --mission "Design a SaaS landing page" --preset saas
   python3 agency.py --mission "Research AI memory techniques" --preset research
   python3 agency.py --mission "Audit security posture" --agents security,qa,core
+  python3 agency.py --mission "Qualify these Dubai B2B leads" --preset dubai
+  python3 agency.py --mission "Run offline" --provider ollama --ollama-model llama3.1
         """,
     )
     parser.add_argument("--mission", "-m", type=str, help="Mission goal")
@@ -317,6 +366,12 @@ Examples:
     parser.add_argument("--preset",        choices=list(PRESETS), default="full",
                         help="Agent preset (default: full)")
     parser.add_argument("--list-agents",   action="store_true", help="List available agents")
+    parser.add_argument("--provider",      choices=["claude", "ollama"], default="claude",
+                        help="LLM provider (default: claude). Use 'ollama' for local/offline models.")
+    parser.add_argument("--ollama-model",  default="llama3.1",
+                        help="Ollama model name (default: llama3.1). Only used with --provider ollama.")
+    parser.add_argument("--ollama-url",    default="http://localhost:11434",
+                        help="Ollama server URL (default: http://localhost:11434).")
     args = parser.parse_args()
 
     if args.list_agents:
@@ -337,7 +392,9 @@ Examples:
     if "core" in agent_names:
         agent_names = [a for a in agent_names if a != "core"] + ["core"]
 
-    run_mission(args.mission, agent_names, preset=args.preset)
+    run_mission(args.mission, agent_names, preset=args.preset,
+                provider=args.provider, ollama_model=args.ollama_model,
+                ollama_base_url=args.ollama_url)
 
 
 if __name__ == "__main__":

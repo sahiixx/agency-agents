@@ -1,9 +1,9 @@
 # The Agency — Claude-Powered Multi-Agent Swarm
 
-> 284 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
+> 152 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-34%2F34-brightgreen)](tests/agent_tests.py)
+[![Tests](https://img.shields.io/badge/tests-52%2F52-brightgreen)](tests/agent_tests.py)
 [![Score](https://img.shields.io/badge/system%20score-90%2F90-gold)](agency.py)
 [![Model](https://img.shields.io/badge/model-claude--sonnet--4--6-blue)](https://anthropic.com)
 
@@ -11,7 +11,7 @@
 
 ## What This Is
 
-A swarm of **284 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
+A swarm of **152 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
 
 Every mission passes through a sequential delegation pipeline and ends with a **Claude Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
 
@@ -56,6 +56,8 @@ specialized/
 agency_ui.html                   ← Mission Control UI (open in browser)
 setup.sh                         ← One-command install
 tests/agent_tests.py             ← 19 tests (offline + live LLM)
+tests/test_security_audit_swarm.py ← 15 structural tests
+tests/test_real_estate_swarm.py  ← 18 structural tests
 ```
 
 **Other pipeline scripts:**
@@ -98,7 +100,7 @@ python3 agency.py --mission "..." --agents security,qa,core
 
 ---
 
-## Agent Roster — 156 Agents
+## Agent Roster — 152 Agents
 
 | Directory | Agents | Domain |
 |---|---|---|
@@ -117,7 +119,7 @@ python3 agency.py --mission "..." --agents security,qa,core
 | `real-estate/` | 9 | Lead gen, property matching, compliance, CRM, negotiation |
 | `product/` | 4 | Strategy, research, prioritization |
 | `.cursor/rules/` | 128 | Cursor IDE agent rules (`.mdc` format) |
-| `skills/` | 139 | [skills.sh](https://skills.sh) compatible skills |
+| `skills/` | 140 | [skills.sh](https://skills.sh) compatible skills |
 
 ### Install via skills.sh
 
@@ -171,9 +173,9 @@ After every mission, `TitansMemory` records the verdict, computes a surprise sco
 ## System Health
 
 ```
-Tests:          34/34 passing (4 need live API key)
+Tests:          52/52 passing (4 need live API key)
 Graph:          6 nodes — MemoryMiddleware.before_agent wired
-Registry:       156 agents across 14 directories + 128 Cursor rules
+Registry:       152 agents across 14 directories + 128 Cursor rules
 Lock files:     10 checked — 0 stale vulnerable pins
 Security:       dependabot.yml active — weekly auto-updates
 Score:          90/90 — Grade A, Production Ready
@@ -213,6 +215,8 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 
 # Tests
 python3 tests/agent_tests.py                        # structural (offline)
+python3 tests/test_security_audit_swarm.py          # security swarm (offline)
+python3 tests/test_real_estate_swarm.py             # real estate swarm (offline)
 ANTHROPIC_API_KEY=... python3 tests/agent_tests.py  # + live LLM
 ```
 

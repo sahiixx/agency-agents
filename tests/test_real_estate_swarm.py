@@ -169,6 +169,181 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
             self.assertIn(v, content, f"Verdict '{v}' missing")
 
 
+# ── Dubai Business Agent Tests (ported from agents-for-multi-agent-systems) ──
+
+BUSINESS_AGENT_DIR = REPO_ROOT / "business"
+BUSINESS_AGENT_FILES = [
+    "business-sales-agent.md",
+    "business-marketing-agent.md",
+    "business-content-agent.md",
+    "business-analytics-agent.md",
+    "business-operations-agent.md",
+]
+
+AGENCY_SCRIPT = REPO_ROOT / "agency.py"
+MCP_TOOLS_SCRIPT = REPO_ROOT / "mcp_tools.py"
+
+
+class TestDubaiBusinessAgents(unittest.TestCase):
+    """Structural tests for Dubai/UAE business agent suite — no API key needed."""
+
+    def test_business_agent_dir_exists(self):
+        self.assertTrue(BUSINESS_AGENT_DIR.is_dir(), "business/ directory must exist")
+
+    def test_all_business_agent_files_exist(self):
+        """All 5 Dubai business agent files must be present (biz-sales, biz-mkt, biz-content, biz-analytics, biz-ops)."""
+        for fname in BUSINESS_AGENT_FILES:
+            fpath = BUSINESS_AGENT_DIR / fname
+            self.assertTrue(fpath.exists(), f"Business agent file missing: {fpath}")
+
+    def test_business_agent_frontmatter(self):
+        """Every business agent file must have valid YAML frontmatter."""
+        for fname in BUSINESS_AGENT_FILES:
+            fpath = BUSINESS_AGENT_DIR / fname
+            if not fpath.exists():
+                self.skipTest(f"{fname} not found")
+            content = fpath.read_text()
+            self.assertTrue(content.startswith("---"), f"{fname}: must start with frontmatter '---'")
+            self.assertIn("name:", content, f"{fname}: frontmatter must include 'name:'")
+            self.assertIn("description:", content, f"{fname}: frontmatter must include 'description:'")
+
+    def test_business_agents_have_working_protocol(self):
+        """Every business agent must include a Working Protocol section."""
+        for fname in BUSINESS_AGENT_FILES:
+            fpath = BUSINESS_AGENT_DIR / fname
+            if not fpath.exists():
+                self.skipTest(f"{fname} not found")
+            content = fpath.read_text()
+            self.assertIn("Working Protocol", content, f"{fname}: must have '## ⚡ Working Protocol' section")
+
+    def test_sales_agent_aed_pricing(self):
+        """Sales agent must reference AED pricing tiers (Dubai market requirement)."""
+        fpath = BUSINESS_AGENT_DIR / "business-sales-agent.md"
+        if not fpath.exists():
+            self.skipTest("business-sales-agent.md not found")
+        content = fpath.read_text()
+        self.assertIn("AED", content, "Sales agent must reference AED currency")
+
+    def test_sales_agent_lead_scoring(self):
+        """Sales agent must include lead scoring tiers."""
+        fpath = BUSINESS_AGENT_DIR / "business-sales-agent.md"
+        if not fpath.exists():
+            self.skipTest("business-sales-agent.md not found")
+        content = fpath.read_text()
+        for tier in ["A-tier", "B-tier", "C-tier", "D-tier"]:
+            self.assertIn(tier, content, f"Sales agent must define {tier}")
+
+    def test_marketing_agent_uae_channels(self):
+        """Marketing agent must include UAE-specific channel strategy."""
+        fpath = BUSINESS_AGENT_DIR / "business-marketing-agent.md"
+        if not fpath.exists():
+            self.skipTest("business-marketing-agent.md not found")
+        content = fpath.read_text()
+        for channel in ["LinkedIn", "WhatsApp", "Instagram"]:
+            self.assertIn(channel, content, f"Marketing agent must reference {channel}")
+
+    def test_marketing_agent_ramadan_awareness(self):
+        """Marketing agent must include Ramadan calendar awareness."""
+        fpath = BUSINESS_AGENT_DIR / "business-marketing-agent.md"
+        if not fpath.exists():
+            self.skipTest("business-marketing-agent.md not found")
+        content = fpath.read_text()
+        self.assertIn("Ramadan", content, "Marketing agent must include Ramadan strategy")
+
+    def test_content_agent_arabic_support(self):
+        """Content agent must support Arabic language."""
+        fpath = BUSINESS_AGENT_DIR / "business-content-agent.md"
+        if not fpath.exists():
+            self.skipTest("business-content-agent.md not found")
+        content = fpath.read_text()
+        self.assertIn("Arabic", content, "Content agent must reference Arabic language support")
+
+    def test_analytics_agent_uae_benchmarks(self):
+        """Analytics agent must include UAE market benchmarks."""
+        fpath = BUSINESS_AGENT_DIR / "business-analytics-agent.md"
+        if not fpath.exists():
+            self.skipTest("business-analytics-agent.md not found")
+        content = fpath.read_text()
+        self.assertIn("UAE", content, "Analytics agent must reference UAE market data")
+        self.assertIn("AED", content, "Analytics agent must use AED currency")
+
+    def test_operations_agent_uae_labour_law(self):
+        """Operations agent must reference UAE Labour Law."""
+        fpath = BUSINESS_AGENT_DIR / "business-operations-agent.md"
+        if not fpath.exists():
+            self.skipTest("business-operations-agent.md not found")
+        content = fpath.read_text()
+        self.assertIn("Labour Law", content, "Operations agent must reference UAE Labour Law")
+
+    def test_operations_agent_vat(self):
+        """Operations agent must reference UAE VAT requirements."""
+        fpath = BUSINESS_AGENT_DIR / "business-operations-agent.md"
+        if not fpath.exists():
+            self.skipTest("business-operations-agent.md not found")
+        content = fpath.read_text()
+        self.assertIn("VAT", content, "Operations agent must reference UAE VAT")
+
+    def test_dubai_preset_in_agency(self):
+        """agency.py must define the 'dubai' preset."""
+        content = AGENCY_SCRIPT.read_text()
+        self.assertIn('"dubai"', content, "agency.py must define dubai preset")
+        self.assertIn("biz-sales", content, "dubai preset must include biz-sales")
+        self.assertIn("biz-mkt", content, "dubai preset must include biz-mkt")
+        self.assertIn("biz-analytics", content, "dubai preset must include biz-analytics")
+        self.assertIn("biz-ops", content, "dubai preset must include biz-ops")
+        self.assertIn("biz-content", content, "dubai preset must include biz-content")
+
+    def test_business_agents_in_registry(self):
+        """All 5 business agents must be wired into AGENT_REGISTRY."""
+        content = AGENCY_SCRIPT.read_text()
+        for key in ["biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops"]:
+            self.assertIn(f'"{key}"', content, f"AGENT_REGISTRY missing key: {key}")
+
+    def test_ollama_provider_in_agency(self):
+        """agency.py must support the Ollama provider option."""
+        content = AGENCY_SCRIPT.read_text()
+        self.assertIn("ollama", content.lower(), "agency.py must support Ollama provider")
+        self.assertIn("--provider", content, "agency.py must have --provider CLI argument")
+
+    def test_scrape_ae_leads_tool_exists(self):
+        """mcp_tools.py must define the scrape_ae_leads MCP tool."""
+        content = MCP_TOOLS_SCRIPT.read_text()
+        self.assertIn("scrape_ae_leads", content, "mcp_tools.py must define scrape_ae_leads tool")
+        self.assertIn("dubizzle", content.lower(), "scrape_ae_leads must reference Dubizzle")
+
+    def test_coral_bridge_integration_exists(self):
+        """Coral Protocol bridge integration file must exist."""
+        coral_path = REPO_ROOT / "integrations" / "coral-protocol-bridge.md"
+        self.assertTrue(coral_path.exists(), "integrations/coral-protocol-bridge.md must exist")
+        content = coral_path.read_text()
+        self.assertIn("Coral", content, "Coral bridge must reference Coral Protocol")
+        self.assertIn("SSE", content, "Coral bridge must reference SSE transport")
+
+    def test_prompt_architect_agent_exists(self):
+        """specialized-prompt-architect.md must exist."""
+        pa_path = REPO_ROOT / "specialized" / "specialized-prompt-architect.md"
+        self.assertTrue(pa_path.exists(), "specialized/specialized-prompt-architect.md must exist")
+        content = pa_path.read_text()
+        self.assertIn("Working Protocol", content, "Prompt Architect must include Working Protocol")
+        self.assertIn("26", content, "Prompt Architect must reference the 26 universal patterns")
+
+    def test_agency_syntax(self):
+        """agency.py must compile without syntax errors after all upgrades."""
+        result = subprocess.run(
+            [sys.executable, "-m", "py_compile", str(AGENCY_SCRIPT)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, f"Syntax error in agency.py: {result.stderr}")
+
+    def test_mcp_tools_syntax(self):
+        """mcp_tools.py must compile without syntax errors after all upgrades."""
+        result = subprocess.run(
+            [sys.executable, "-m", "py_compile", str(MCP_TOOLS_SCRIPT)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, f"Syntax error in mcp_tools.py: {result.stderr}")
+
+
 if __name__ == "__main__":
     print(f"\n{'='*60}")
     print(f"  Real Estate Investment Swarm — Test Suite")
