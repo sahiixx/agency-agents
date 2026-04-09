@@ -40,7 +40,8 @@ REPO_ROOT = Path(__file__).parent.resolve()
 # ── scrape_ae_leads constants ───────────────────────────────────────────────
 # Maximum listings the scraper will return in a single call (caps user input)
 MAX_SCRAPE_LISTINGS = 50
-# AED price ceiling for flagging a listing as a "hot deal" (owner-direct + below market)
+# AED price ceiling for flagging a listing as a "hot deal" (owner-direct + below market).
+# 140,000 AED ≈ typical below-market threshold for Springs/Meadows 3BR units; adjust per community.
 HOT_DEAL_PRICE_THRESHOLD_AED = 140_000
 
 # ── Cross-repo integration constants ─────────────────────────────────────────

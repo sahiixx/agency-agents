@@ -191,7 +191,7 @@ class TestDubaiBusinessAgents(unittest.TestCase):
         self.assertTrue(BUSINESS_AGENT_DIR.is_dir(), "business/ directory must exist")
 
     def test_all_business_agent_files_exist(self):
-        """All 5 NOWHERE.AI business agent files must be present."""
+        """All 5 Dubai business agent files must be present (biz-sales, biz-mkt, biz-content, biz-analytics, biz-ops)."""
         for fname in BUSINESS_AGENT_FILES:
             fpath = BUSINESS_AGENT_DIR / fname
             self.assertTrue(fpath.exists(), f"Business agent file missing: {fpath}")
