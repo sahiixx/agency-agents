@@ -102,7 +102,8 @@ PRESETS = {
     "saas":       ["pm", "copywriter", "frontend", "qa", "core"],
     "research":   ["pm", "ai", "qa", "core"],
     "realestate": ["re-leads", "re-match", "re-copy", "re-deal", "re-intel", "re-comply", "re-crm", "re-pitch", "re-refer", "core"],
-    # Dubai full-stack: NOWHERE.AI business agents + RE agents for UAE market missions
+    # Dubai full-stack: NOWHERE.AI business agents (B2B sales/mkt/content/analytics/ops)
+    # combined with core RE agents (leads, intel, compliance) for UAE market missions
     "dubai":      ["biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops",
                    "re-leads", "re-intel", "re-comply", "core"],
 }

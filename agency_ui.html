@@ -858,13 +858,15 @@ function setStage(agentName, state) {
 async function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ── SSE STREAMING (connects to live_server.py if running on port 8765) ──────
+// Override SSE_SERVER_URL to point at a non-local server (e.g. staging/prod)
+const SSE_SERVER_URL = window.AGENCY_SSE_URL || 'http://localhost:8765';
 let sseSource = null;
 let sseConnected = false;
 
 function connectSSE(mission, preset) {
   if (sseSource) { sseSource.close(); sseSource = null; }
   const params = new URLSearchParams({ mission, preset });
-  const url = `http://localhost:8765/stream?${params}`;
+  const url = `${SSE_SERVER_URL}/stream?${params}`;
 
   addLog('system', `SSE: connecting to live server → ${url}`);
   sseSource = new EventSource(url);

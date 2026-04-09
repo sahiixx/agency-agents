@@ -31,6 +31,12 @@ OUTPUTS_DIR.mkdir(exist_ok=True)
 
 REPO_ROOT = Path(__file__).parent.resolve()
 
+# ── scrape_ae_leads constants ───────────────────────────────────────────────
+# Maximum listings the scraper will return in a single call (caps user input)
+MAX_SCRAPE_LISTINGS = 50
+# AED price ceiling for flagging a listing as a "hot deal" (owner-direct + below market)
+HOT_DEAL_PRICE_THRESHOLD_AED = 140_000
+
 
 # ── Tool 1: Web Search (DuckDuckGo instant answer, no API key) ─────────────
 @tool
@@ -166,7 +172,7 @@ def scrape_ae_leads(community: str = "Springs", max_listings: int = 20) -> str:
     import random
     import json as _json
 
-    max_listings = min(max_listings, 50)
+    max_listings = min(max_listings, MAX_SCRAPE_LISTINGS)
 
     # Build Dubizzle URL from community name
     slug = community.lower().replace(" ", "-").replace("_", "-")
@@ -243,7 +249,7 @@ def scrape_ae_leads(community: str = "Springs", max_listings: int = 20) -> str:
             price_num = 0
 
         owner_flag = is_owner(block)
-        hot = price_num > 0 and price_num < 140_000 and owner_flag
+        hot = price_num > 0 and price_num < HOT_DEAL_PRICE_THRESHOLD_AED and owner_flag
 
         # Best-effort title extraction
         title_match = re.search(r'<(?:h2|h3)[^>]*>([^<]{10,80})</(?:h2|h3)>', block)

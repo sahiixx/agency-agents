@@ -161,8 +161,24 @@ IMPORTANT: Never end the loop. You are a persistent service.
     while True:
         try:
             await executor.ainvoke({"agent_scratchpad": []})
+        except asyncio.CancelledError:
+            # Graceful shutdown — close Coral client and exit cleanly
+            await client.__aexit__(None, None, None)
+            break
         except Exception as e:
             await asyncio.sleep(5)
+
+# ── Graceful shutdown (handle SIGTERM / SIGINT in containerized deployments) ─
+import signal, sys as _sys
+
+def _shutdown_handler(sig, frame):
+    """Ensure the Coral EventSource connection is closed on SIGTERM/SIGINT."""
+    if sseSource := globals().get('_active_sse'):
+        sseSource.close()
+    _sys.exit(0)
+
+signal.signal(signal.SIGTERM, _shutdown_handler)
+signal.signal(signal.SIGINT, _shutdown_handler)
 ```
 
 ### Orchestrating a Multi-Framework Mission via Coral
