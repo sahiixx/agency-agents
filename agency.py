@@ -453,8 +453,10 @@ Examples:
 
     # ── Extra tools
     parser.add_argument("--tools", type=str, default="",
-                        help=("Comma-separated extra tool groups to activate: "
-                              "mcp, perplexica, sqlbot, airecon, trufflehog, shannon, n8n"))
+                        help=("Comma-separated optional extra tool groups to activate: "
+                              "perplexica, sqlbot, airecon, trufflehog, shannon, n8n. "
+                              "MCP-provided tools (including api_lookup) are configured separately "
+                              "and are not enabled via --tools."))
 
     # ── Serve modes
     parser.add_argument("--serve",  action="store_true",
