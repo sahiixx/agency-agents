@@ -255,6 +255,11 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
     print(f"  Groups:  {' → '.join(_parallel_group_label(g) for g in groups)}")
     if dry_run:
         print(f"\n  [DRY RUN] Pipeline printed — no API calls made.")
+        print(f"  Tools loaded: {len(base_tools)} MCP tools")
+        print(f"  Execution plan:")
+        for i, g in enumerate(groups):
+            mode = "concurrently" if len(g) > 1 else "sequential"
+            print(f"    Phase {i+1}: [{_parallel_group_label(g)}] ({mode})")
         print(f"{'='*65}\n")
         return "[DRY RUN] No mission executed."
     print(f"{'='*65}\n")
@@ -273,8 +278,9 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
     subagents = [build_subagent(n, llm) for n in specialist_names]
     for sa in subagents:
         sa["tools"] = all_tools   # override with full tool set
-        status = "OK" if sa["system_prompt"] else "MISSING"
-        print(f"  [{status}]  {sa['name']} ({len(sa['system_prompt']):,} chars)  "
+        status      = "OK" if sa["system_prompt"] else "MISSING"
+        prompt_len  = len(sa["system_prompt"])
+        print(f"  [{status}]  {sa['name']} ({prompt_len:,} chars)  "
               f"[{len(all_tools)} tools: MCP+A2A]")
 
     # FilesystemBackend so MemoryMiddleware reads from local disk

@@ -51,6 +51,12 @@ MAX_SCRAPE_LISTINGS = 50
 # 140,000 AED ≈ typical below-market threshold for Springs/Meadows 3BR units; adjust per community.
 HOT_DEAL_PRICE_THRESHOLD_AED = 140_000
 
+# ── Data tool constants ───────────────────────────────────────────────────────
+# Maximum source citations returned by perplexica_search
+PERPLEXICA_MAX_SOURCES  = int(os.getenv("PERPLEXICA_MAX_SOURCES", "5"))
+# Maximum TruffleHog findings included in scan_secrets output (caps response size)
+TRUFFLEHOG_MAX_FINDINGS = int(os.getenv("TRUFFLEHOG_MAX_FINDINGS", "20"))
+
 # ── Cross-repo integration constants ─────────────────────────────────────────
 # Moltbot gateway (sahiixx/moltworker — Cloudflare Worker)
 MOLTBOT_GATEWAY_URL   = os.getenv("MOLTBOT_GATEWAY_URL",   "http://localhost:8787")
@@ -605,7 +611,7 @@ def perplexica_search(query: str, focus: str = "webSearch") -> str:
             data = _json.loads(r.read().decode())
         answer  = data.get("message", "")
         sources = data.get("sources", [])
-        src_lines = [f"  [{i+1}] {s.get('metadata', {}).get('url', '')}" for i, s in enumerate(sources[:5])]
+        src_lines = [f"  [{i+1}] {s.get('metadata', {}).get('url', '')}" for i, s in enumerate(sources[:PERPLEXICA_MAX_SOURCES])]
         return answer + ("\n\nSources:\n" + "\n".join(src_lines) if src_lines else "")
     except Exception as e:
         # Graceful fallback to DuckDuckGo
@@ -768,7 +774,7 @@ def scan_secrets(repo_path: str, since_commit: str = "", only_verified: bool = F
         return _json.dumps({
             "repo":           repo_path,
             "secrets_found":  len(findings),
-            "findings":       findings[:20],   # cap output
+            "findings":       findings[:TRUFFLEHOG_MAX_FINDINGS],
         }, indent=2)
     except FileNotFoundError:
         return _json.dumps({

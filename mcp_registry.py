@@ -218,7 +218,14 @@ class MCPRegistry:
 
     def _wrap_tool(self, tool_def: MCPToolDef, server: MCPServer):
         """Create a LangChain tool that calls the MCP server tool via HTTP."""
-        tool_name = f"mcp_{server.name}_{tool_def.name}".replace("-", "_").replace(".", "_")
+        import re
+        raw_name  = f"mcp_{server.name}_{tool_def.name}"
+        # Replace any non-alphanumeric/underscore character with underscore,
+        # then collapse consecutive underscores and strip leading digits.
+        tool_name = re.sub(r'[^a-zA-Z0-9_]', '_', raw_name)
+        tool_name = re.sub(r'_+', '_', tool_name).strip('_')
+        if tool_name and tool_name[0].isdigit():
+            tool_name = f"mcp_{tool_name}"
         tool_desc = (
             f"[MCP:{server.name}] {tool_def.description or tool_def.name}"
         )

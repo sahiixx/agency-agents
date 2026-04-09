@@ -35,6 +35,9 @@ N8N_BASE_URL     = os.getenv("N8N_BASE_URL",     "http://localhost:5678")
 N8N_API_KEY      = os.getenv("N8N_API_KEY",      "")
 N8N_WEBHOOK_PATH = os.getenv("N8N_WEBHOOK_PATH", "/webhook/agency")
 
+# Maximum characters from system_prompt used as workflow_tag routing hint
+MAX_WORKFLOW_TAG_LENGTH = 200
+
 
 class N8NProvider(BaseProvider):
     """n8n workflow automation — fires webhooks, returns workflow output."""
@@ -61,7 +64,7 @@ class N8NProvider(BaseProvider):
         url     = f"{base_url.rstrip('/')}{webhook_path}"
         payload = json.dumps({
             "mission":      query,
-            "workflow_tag": system_prompt[:200] if system_prompt else agent_name,
+            "workflow_tag": system_prompt[:MAX_WORKFLOW_TAG_LENGTH] if system_prompt else agent_name,
             "agent_name":   agent_name,
         }).encode()
 

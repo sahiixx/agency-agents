@@ -66,7 +66,12 @@ class RasaProvider(BaseProvider):
                 data = json.loads(r.read().decode())
             # Rasa returns a list of response objects
             texts = [msg.get("text", "") for msg in data if msg.get("text")]
-            output = "\n".join(texts) if texts else json.dumps(data)
+            if texts:
+                output = "\n".join(texts)
+            elif data:
+                output = json.dumps(data, indent=2)
+            else:
+                output = "[No text response from Rasa — dialog may require more context]"
             return ProviderResult(
                 output=output or "[No response from Rasa]",
                 provider=self.name,

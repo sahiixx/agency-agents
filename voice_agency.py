@@ -59,6 +59,7 @@ TTS_ENGINE         = os.getenv("VOICE_TTS_ENGINE",   "pyttsx3")
 
 DEFAULT_PRESET     = "full"
 TWILIO_PORT        = int(os.getenv("TWILIO_PORT", "5050"))
+TTS_MAX_CHARS      = int(os.getenv("VOICE_TTS_MAX_CHARS", "500"))
 
 
 # ── TTS layer ─────────────────────────────────────────────────────────────────
@@ -223,7 +224,7 @@ def run_local_mode(preset: str = DEFAULT_PRESET):
                 result = _direct_mission(text, preset=preset)
 
             # Truncate for TTS (long outputs are spoken as a summary)
-            tts_text = result[:500] + ("…" if len(result) > 500 else "")
+            tts_text = result[:TTS_MAX_CHARS] + ("…" if len(result) > TTS_MAX_CHARS else "")
             speak(tts_text)
 
         except KeyboardInterrupt:

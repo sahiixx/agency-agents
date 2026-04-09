@@ -38,7 +38,9 @@ export default function ChatPage() {
           id:      Date.now(),
           method:  'tasks/send',
           params:  {
-            id:      crypto.randomUUID(),
+            id:      typeof crypto !== 'undefined' && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `task-${Date.now()}-${Math.random().toString(36).slice(2)}`,
             message: {
               role:  'user',
               parts: [{ type: 'text', text: `${text}\n\n[preset: ${preset}]` }],
