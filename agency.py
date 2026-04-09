@@ -52,6 +52,7 @@ except ImportError as e:
 from memory.titans_memory import TitansMemory
 from mcp_tools import MCP_TOOLS
 from observability import AgencyTracer
+from providers import get_provider
 from a2a_protocol import (
     start_agency_a2a_servers,
     register_servers,
@@ -113,7 +114,7 @@ PRESETS = {
     # combined with core RE agents (leads, intel, compliance) for UAE market missions
     "dubai":      ["biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops",
                    "re-leads", "re-intel", "re-comply", "core"],
-    # Security & infrastructure
+    # Security & infrastructure — uses airecon + trufflehog + shannon tools automatically
     "security":   ["security", "wpscan", "linux", "devops", "core"],
     # Competitive intelligence — study & improve agent prompts using tool patterns from 31+ AI tools
     "intel":      ["spy", "prompt-arch", "core"],
@@ -123,30 +124,58 @@ PRESETS = {
     "moltbot":    ["pm", "backend", "frontend", "core"],  # results pushed via trigger_moltbot_mission MCP tool
     # Trust vetting — UAE entity trust screening for sales, RE, compliance
     "trust":      ["trust", "re-comply", "core"],
+    # Voice — lean pipeline for voice-driven missions (fast, focused)
+    "voice":      ["pm", "backend", "core"],
+    # n8n automation — workflow generation and automation bus missions
+    "n8n":        ["pm", "devops", "backend", "core"],
+    # Sovereign — full ecosystem with all business + RE + security agents
+    "sovereign":  ["pm", "backend", "frontend", "security", "devops", "ai",
+                   "biz-sales", "biz-mkt", "biz-ops", "re-leads", "re-intel", "core"],
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def get_llm(provider: str = "claude", ollama_model: str = "llama3.1",
-            ollama_base_url: str = "http://localhost:11434") -> object:
-    """Return the configured LLM. Provider: 'claude' (default) or 'ollama'."""
-    if provider == "ollama":
-        try:
-            from langchain_ollama import ChatOllama
-        except ImportError:
-            print("❌  langchain-ollama not found.")
-            print("    Run: pip install langchain-ollama")
-            sys.exit(1)
-        print(f"  Provider: Ollama ({ollama_model} @ {ollama_base_url})")
-        return ChatOllama(model=ollama_model, base_url=ollama_base_url)
+def get_llm(provider: str = "anthropic", ollama_model: str = "llama3.1",
+            ollama_base_url: str = "http://localhost:11434",
+            openai_model: str = "gpt-4o",
+            adk_model: str = "gemini-2.0-flash",
+            autogen_model: str = "gpt-4o") -> object:
+    """Return the configured LLM.
 
-    # Default: Claude via Anthropic
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("❌  ANTHROPIC_API_KEY not set.")
-        print("    Export it: export ANTHROPIC_API_KEY='sk-ant-...'")
-        sys.exit(1)
-    return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
+    Supported providers: anthropic (default), ollama, openai, adk, autogen, rasa, n8n.
+    rasa and n8n do not currently provide a LangChain-compatible LLM here, so
+    selecting them still uses Claude/Anthropic as the orchestration backbone.
+    """
+    p = get_provider(provider)
+
+    if provider in ("anthropic", "claude"):
+        print(f"  Provider: Anthropic ({CLAUDE_MODEL})")
+        return p.get_llm(model=CLAUDE_MODEL)
+
+    if provider == "ollama":
+        print(f"  Provider: Ollama ({ollama_model} @ {ollama_base_url})")
+        return p.get_llm(model=ollama_model, base_url=ollama_base_url)
+
+    if provider == "openai":
+        print(f"  Provider: OpenAI ({openai_model})")
+        return p.get_llm(model=openai_model)
+
+    if provider == "adk":
+        print(f"  Provider: Google ADK ({adk_model})")
+        return p.get_llm(model=adk_model)
+
+    if provider == "autogen":
+        print(f"  Provider: AutoGen ({autogen_model})")
+        # AutoGen manages its own LLM; return Anthropic LLM as orchestrator backbone
+        from providers.anthropic_provider import AnthropicProvider
+        return AnthropicProvider().get_llm(model=CLAUDE_MODEL)
+
+    if provider in ("rasa", "n8n"):
+        print(f"  Provider: {provider} (external service — Claude used for orchestration)")
+        from providers.anthropic_provider import AnthropicProvider
+        return AnthropicProvider().get_llm(model=CLAUDE_MODEL)
+
+    raise ValueError(f"Unknown provider '{provider}'")
 
 
 def load_agent(path: str) -> str:
@@ -179,6 +208,12 @@ PARALLEL_GROUPS = {
     "realestate": [["re-leads", "re-intel"], ["re-match", "re-copy"], ["re-deal", "re-comply"], ["re-crm", "re-pitch", "re-refer"], ["core"]],
     # Dubai: business intelligence + RE context run first, then content/ops, then core verdict
     "dubai":      [["biz-analytics", "re-intel"], ["biz-sales", "biz-mkt", "re-leads"], ["biz-content", "biz-ops", "re-comply"], ["core"]],
+    # Voice: fast 2-phase pipeline
+    "voice":      [["pm", "backend"], ["core"]],
+    # n8n: devops + backend build the workflow, core approves
+    "n8n":        [["pm", "devops", "backend"], ["core"]],
+    # Sovereign: full ecosystem — business + RE + security all run in parallel phases
+    "sovereign":  [["pm", "biz-analytics", "re-intel"], ["backend", "frontend", "biz-sales", "biz-mkt", "re-leads"], ["security", "devops", "ai", "biz-ops", "re-intel"], ["core"]],
 }
 
 
@@ -189,23 +224,46 @@ def _parallel_group_label(group: list[str]) -> str:
 # ── Core mission runner ───────────────────────────────────────────────────────
 
 def run_mission(goal: str, agent_names: list, preset: str = "full",
-                provider: str = "claude", ollama_model: str = "llama3.1",
-                ollama_base_url: str = "http://localhost:11434") -> str:
+                provider: str = "anthropic", ollama_model: str = "llama3.1",
+                ollama_base_url: str = "http://localhost:11434",
+                openai_model: str = "gpt-4o",
+                adk_model: str = "gemini-2.0-flash",
+                autogen_model: str = "gpt-4o",
+                extra_tools: list | None = None,
+                dry_run: bool = False) -> str:
     invalid = [n for n in agent_names if n not in AGENT_REGISTRY]
     if invalid:
         print(f"❌  Unknown agents: {invalid}")
         print(f"   Available: {list(AGENT_REGISTRY.keys())}")
         sys.exit(1)
 
-    llm     = get_llm(provider=provider, ollama_model=ollama_model, ollama_base_url=ollama_base_url)
+    llm = get_llm(
+        provider=provider,
+        ollama_model=ollama_model,
+        ollama_base_url=ollama_base_url,
+        openai_model=openai_model,
+        adk_model=adk_model,
+        autogen_model=autogen_model,
+    )
     tracer  = AgencyTracer(mission=goal, preset=preset)
     groups  = PARALLEL_GROUPS.get(preset, [[a] for a in agent_names])
+    _seen_tool_names = {t.name for t in MCP_TOOLS}
+    base_tools = MCP_TOOLS + [t for t in (extra_tools or []) if t.name not in _seen_tool_names]
 
     print(f"\n{'='*65}")
     print(f"  MISSION: {goal}")
-    print(f"  Engine:  {CLAUDE_MODEL}  |  MCP tools: {len(MCP_TOOLS)}")
+    print(f"  Provider: {provider}  |  MCP tools: {len(base_tools)}")
     print(f"  Agents:  {', '.join(agent_names)}")
     print(f"  Groups:  {' → '.join(_parallel_group_label(g) for g in groups)}")
+    if dry_run:
+        print(f"\n  [DRY RUN] Pipeline printed — no API calls made.")
+        print(f"  Tools loaded: {len(base_tools)} MCP tools")
+        print(f"  Execution plan:")
+        for i, g in enumerate(groups):
+            mode = "concurrently" if len(g) > 1 else "sequential"
+            print(f"    Phase {i+1}: [{_parallel_group_label(g)}] ({mode})")
+        print(f"{'='*65}\n")
+        return "[DRY RUN] No mission executed."
     print(f"{'='*65}\n")
 
     # Start A2A servers for this mission's agents
@@ -214,7 +272,7 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
     register_servers(port_map)
     a2a_urls  = [f"http://localhost:{p}" for p in port_map.values()]
     a2a_tools = make_a2a_tools(a2a_urls)
-    all_tools  = MCP_TOOLS + a2a_tools
+    all_tools  = base_tools + a2a_tools
     print(f"  A2A: {len(a2a_tools)} agent servers live | Total tools: {len(all_tools)}\n")
 
     # Build subagents (all except core) — give each MCP + A2A tools
@@ -222,8 +280,9 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
     subagents = [build_subagent(n, llm) for n in specialist_names]
     for sa in subagents:
         sa["tools"] = all_tools   # override with full tool set
-        status = "OK" if sa["system_prompt"] else "MISSING"
-        print(f"  [{status}]  {sa['name']} ({len(sa['system_prompt']):,} chars)  "
+        status      = "OK" if sa["system_prompt"] else "MISSING"
+        prompt_len  = len(sa["system_prompt"])
+        print(f"  [{status}]  {sa['name']} ({prompt_len:,} chars)  "
               f"[{len(all_tools)} tools: MCP+A2A]")
 
     # FilesystemBackend so MemoryMiddleware reads from local disk
@@ -348,7 +407,7 @@ def list_agents():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="The Agency — Claude-powered multi-agent orchestrator",
+        description="The Agency — unified multi-agent orchestrator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -359,28 +418,142 @@ Examples:
   python3 agency.py --mission "Audit security posture" --agents security,qa,core
   python3 agency.py --mission "Qualify these Dubai B2B leads" --preset dubai
   python3 agency.py --mission "Run offline" --provider ollama --ollama-model llama3.1
+  python3 agency.py --mission "Build API" --provider openai --openai-model gpt-4o
+  python3 agency.py --mission "Plan sprint" --provider adk --adk-model gemini-2.0-flash
+  python3 agency.py --mission "Automate email" --provider n8n
+  python3 agency.py --mission "Scout targets" --tools airecon,trufflehog
+  python3 agency.py --mission "Ship feature" --dry-run
+  python3 agency.py --serve --ui nextjs
+  python3 agency.py --evolve
         """,
     )
+    # ── Mission
     parser.add_argument("--mission", "-m", type=str, help="Mission goal")
     parser.add_argument("--agents",        type=str, help="Comma-separated agent keys")
     parser.add_argument("--preset",        choices=list(PRESETS), default="full",
                         help="Agent preset (default: full)")
-    parser.add_argument("--list-agents",   action="store_true", help="List available agents")
-    parser.add_argument("--provider",      choices=["claude", "ollama"], default="claude",
-                        help="LLM provider (default: claude). Use 'ollama' for local/offline models.")
+    parser.add_argument("--list-agents",   action="store_true", help="List available agents and presets")
+    parser.add_argument("--dry-run",       action="store_true",
+                        help="Print pipeline without making API calls (useful for testing)")
+
+    # ── Provider
+    parser.add_argument("--provider",
+                        choices=["anthropic", "claude", "ollama", "openai", "adk", "autogen", "rasa", "n8n"],
+                        default="anthropic",
+                        help="LLM/agent provider (default: anthropic)")
     parser.add_argument("--ollama-model",  default="llama3.1",
-                        help="Ollama model name (default: llama3.1). Only used with --provider ollama.")
+                        help="Ollama model name (default: llama3.1)")
     parser.add_argument("--ollama-url",    default="http://localhost:11434",
-                        help="Ollama server URL (default: http://localhost:11434).")
+                        help="Ollama server URL (default: http://localhost:11434)")
+    parser.add_argument("--openai-model",  default="gpt-4o",
+                        help="OpenAI model name (default: gpt-4o)")
+    parser.add_argument("--adk-model",     default="gemini-2.0-flash",
+                        help="Google ADK / Gemini model (default: gemini-2.0-flash)")
+    parser.add_argument("--autogen-model", default="gpt-4o",
+                        help="AutoGen model name (default: gpt-4o)")
+
+    # ── Extra tools
+    parser.add_argument("--tools", type=str, default="",
+                        help=("Comma-separated optional extra tool groups to activate: "
+                              "perplexica, sqlbot, airecon, trufflehog, shannon, n8n. "
+                              "MCP-provided tools (including api_lookup) are configured separately "
+                              "and are not enabled via --tools."))
+
+    # ── Serve modes
+    parser.add_argument("--serve",  action="store_true",
+                        help="Start a service (combine with --ui or --voice)")
+    parser.add_argument("--ui",     choices=["nextjs", "html"], default="html",
+                        help="Dashboard UI to launch with --serve (default: html)")
+    parser.add_argument("--voice",  choices=["twilio", "local"], default="local",
+                        help="Voice pipeline backend to launch with --serve (default: local)")
+
+    # ── Evolve
+    parser.add_argument("--evolve", action="store_true",
+                        help="Run the evolution_scheduler to self-improve one agent")
+
     args = parser.parse_args()
 
     if args.list_agents:
         list_agents()
         return
 
+    # ── Serve mode ─────────────────────────────────────────────────────────────
+    if args.serve:
+        import subprocess
+        # Start the Agency A2A server (required for dashboard /api/agency/* proxy)
+        a2a_script = REPO_ROOT / "a2a_protocol.py"
+        if a2a_script.exists():
+            print("  Starting Agency A2A server on port 8100 …")
+            subprocess.Popen(["python3", str(a2a_script), "--serve", "--port", "8100"])
+        else:
+            print("  ⚠️   a2a_protocol.py not found — dashboard API calls will fail.\n"
+                  "      Make sure the Agency A2A server is running on port 8100.")
+
+        if args.ui == "nextjs":
+            dash = REPO_ROOT / "dashboard"
+            if not dash.exists():
+                print("❌  dashboard/ not found. Run the setup first:\n"
+                      "    cd dashboard && npm install && npm run dev")
+                return
+            print(f"  Starting Next.js dashboard at http://localhost:3000 …")
+            subprocess.run(["npm", "run", "dev"], cwd=str(dash))
+        else:
+            import webbrowser
+            ui_path = REPO_ROOT / "agency_ui.html"
+            url = f"file://{ui_path}"
+            print(f"  Opening Agency UI: {url}")
+            webbrowser.open(url)
+        if args.voice == "twilio":
+            print("  Launching voice pipeline (Twilio mode) …")
+            subprocess.Popen(["python3", str(REPO_ROOT / "voice_agency.py"), "--mode", "twilio"])
+        elif args.voice == "local":
+            try:
+                subprocess.Popen(["python3", str(REPO_ROOT / "voice_agency.py"), "--mode", "local"])
+                print("  Launching voice pipeline (local mode) …")
+            except Exception:
+                pass
+        return
+
+    # ── Evolve mode ────────────────────────────────────────────────────────────
+    if args.evolve:
+        print("  Running evolution_scheduler …")
+        import subprocess
+        result = subprocess.run(
+            ["python3", str(REPO_ROOT / "evolution_scheduler.py")],
+            capture_output=False,
+        )
+        sys.exit(result.returncode)
+
     if not args.mission:
         parser.print_help()
         return
+
+    # ── Resolve extra tools ────────────────────────────────────────────────────
+    extra_tools: list = []
+    if args.tools:
+        from mcp_tools import (
+            perplexica_search, sql_query, api_lookup,
+            airecon_scan, scan_secrets, web_pentest, n8n_trigger,
+        )
+        tool_map = {
+            "perplexica": perplexica_search,
+            "sqlbot":     sql_query,
+            "api_lookup": api_lookup,
+            "airecon":    airecon_scan,
+            "trufflehog": scan_secrets,
+            "shannon":    web_pentest,
+            "n8n":        n8n_trigger,
+        }
+        for tag in args.tools.split(","):
+            tag = tag.strip().lower()
+            if tag == "mcp":
+                pass  # all MCP_TOOLS are already included
+            elif tag in tool_map:
+                t = tool_map[tag]
+                if t not in extra_tools:
+                    extra_tools.append(t)
+            else:
+                print(f"  ⚠️   Unknown tool group '{tag}' — skipped")
 
     agent_names = (
         [a.strip() for a in args.agents.split(",")]
@@ -392,9 +565,19 @@ Examples:
     if "core" in agent_names:
         agent_names = [a for a in agent_names if a != "core"] + ["core"]
 
-    run_mission(args.mission, agent_names, preset=args.preset,
-                provider=args.provider, ollama_model=args.ollama_model,
-                ollama_base_url=args.ollama_url)
+    run_mission(
+        args.mission,
+        agent_names,
+        preset=args.preset,
+        provider=args.provider,
+        ollama_model=args.ollama_model,
+        ollama_base_url=args.ollama_url,
+        openai_model=args.openai_model,
+        adk_model=args.adk_model,
+        autogen_model=args.autogen_model,
+        extra_tools=extra_tools,
+        dry_run=args.dry_run,
+    )
 
 
 if __name__ == "__main__":

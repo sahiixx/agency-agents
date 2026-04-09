@@ -18,6 +18,13 @@ Tools available:
   qualify_lead_nowhere    — score a B2B lead via NOWHERE.AI platform API
   analyze_dubai_market    — run Dubai/UAE market intelligence via NOWHERE.AI
   create_campaign_nowhere — generate a marketing campaign via NOWHERE.AI
+  n8n_trigger             — fire an n8n workflow via webhook (automation bus)
+  perplexica_search       — AI-powered search via Perplexica (replaces DuckDuckGo)
+  sql_query               — natural-language SQL via SQLBot (Text-to-SQL)
+  api_lookup              — discover public APIs for a topic (public-apis catalogue)
+  airecon_scan            — autonomous OSINT/recon scan (airecon)
+  scan_secrets            — secret scanning via TruffleHog
+  web_pentest             — web app penetration test via Shannon
 """
 
 import json
@@ -43,6 +50,12 @@ MAX_SCRAPE_LISTINGS = 50
 # AED price ceiling for flagging a listing as a "hot deal" (owner-direct + below market).
 # 140,000 AED ≈ typical below-market threshold for Springs/Meadows 3BR units; adjust per community.
 HOT_DEAL_PRICE_THRESHOLD_AED = 140_000
+
+# ── Data tool constants ───────────────────────────────────────────────────────
+# Maximum source citations returned by perplexica_search
+PERPLEXICA_MAX_SOURCES  = int(os.getenv("PERPLEXICA_MAX_SOURCES", "5"))
+# Maximum TruffleHog findings included in scan_secrets output (caps response size)
+TRUFFLEHOG_MAX_FINDINGS = int(os.getenv("TRUFFLEHOG_MAX_FINDINGS", "20"))
 
 # ── Cross-repo integration constants ─────────────────────────────────────────
 # Moltbot gateway (sahiixx/moltworker — Cloudflare Worker)
@@ -86,7 +99,9 @@ def web_search(query: str) -> str:
 def read_file(path: str) -> str:
     """Read any file in the agency repo. Path is relative to repo root."""
     try:
-        full = REPO_ROOT / path
+        full = (REPO_ROOT / path).resolve()
+        if not full.is_relative_to(REPO_ROOT.resolve()):
+            return "Access denied: path must be within the repo root"
         if not full.exists():
             return f"File not found: {path}"
         content = full.read_text(encoding="utf-8", errors="replace")
@@ -527,6 +542,285 @@ def create_campaign_nowhere(
         return _json.dumps({"error": str(e), "note": "Ensure NOWHERE_AI_URL and NOWHERE_AI_JWT are set"})
 
 
+# ── Tool 13: n8n Workflow Trigger ─────────────────────────────────────────────
+@tool
+def n8n_trigger(workflow_tag: str, payload: str = "{}") -> str:
+    """Trigger an n8n workflow via webhook. The Agency's n8n automation bus.
+    Args:
+        workflow_tag: Workflow name/tag — e.g. 'email', 'slack', 'crm', 'report'.
+                      Maps to the n8n webhook path suffix.
+        payload:      JSON string of data to send to the workflow.
+    Returns JSON with trigger status and workflow response.
+    Environment: N8N_BASE_URL, N8N_API_KEY, N8N_WEBHOOK_PATH (optional).
+    """
+    import json as _json
+    N8N_BASE_URL     = os.getenv("N8N_BASE_URL",     "http://localhost:5678")
+    N8N_API_KEY      = os.getenv("N8N_API_KEY",      "")
+    N8N_WEBHOOK_PATH = os.getenv("N8N_WEBHOOK_PATH", "/webhook/agency")
+    try:
+        data = _json.loads(payload) if payload else {}
+    except _json.JSONDecodeError:
+        data = {"input": payload}
+    data["workflow_tag"] = workflow_tag
+
+    url  = f"{N8N_BASE_URL.rstrip('/')}{N8N_WEBHOOK_PATH}"
+    body = _json.dumps(data).encode()
+    headers: dict = {"Content-Type": "application/json", "User-Agent": "TheAgency/1.0"}
+    if N8N_API_KEY:
+        headers["X-N8N-API-KEY"] = N8N_API_KEY
+    try:
+        req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=30) as r:
+            raw = r.read().decode()
+        try:
+            resp_data = _json.loads(raw)
+            out = resp_data.get("output") or resp_data.get("result") or resp_data
+        except (_json.JSONDecodeError, AttributeError):
+            out = raw
+        return _json.dumps({"status": "triggered", "workflow_tag": workflow_tag, "response": out}, indent=2)
+    except Exception as e:
+        return _json.dumps({"error": str(e), "note": f"Is n8n running at {N8N_BASE_URL}?"})
+
+
+# ── Tool 14: Perplexica Search (AI-powered search) ────────────────────────────
+@tool
+def perplexica_search(query: str, focus: str = "webSearch") -> str:
+    """AI-powered search via Perplexica (sahiixx/Perplexica).
+    Provides richer, AI-synthesised results compared to DuckDuckGo.
+    Args:
+        query: The search query.
+        focus: Search focus mode — 'webSearch', 'academicSearch', 'writingAssistant',
+               'wolframAlphaSearch', 'youtubeSearch', 'redditSearch'. Default: 'webSearch'.
+    Returns synthesised answer with citations.
+    Environment: PERPLEXICA_URL (default: http://localhost:3001).
+    """
+    import json as _json
+    PERPLEXICA_URL = os.getenv("PERPLEXICA_URL", "http://localhost:3001")
+    payload = _json.dumps({
+        "query":    query,
+        "focusMode": focus,
+        "optimizationMode": "balanced",
+    }).encode()
+    headers = {"Content-Type": "application/json", "User-Agent": "TheAgency/1.0"}
+    try:
+        req = urllib.request.Request(
+            f"{PERPLEXICA_URL.rstrip('/')}/api/search",
+            data=payload,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = _json.loads(r.read().decode())
+        answer  = data.get("message", "")
+        sources = data.get("sources", [])
+        src_lines = [f"  [{i+1}] {s.get('metadata', {}).get('url', '')}" for i, s in enumerate(sources[:PERPLEXICA_MAX_SOURCES])]
+        return answer + ("\n\nSources:\n" + "\n".join(src_lines) if src_lines else "")
+    except Exception as e:
+        # Graceful fallback to DuckDuckGo
+        return web_search.invoke({"query": query})
+
+
+# ── Tool 15: SQL Query via SQLBot ─────────────────────────────────────────────
+@tool
+def sql_query(question: str, connection_string: str = "") -> str:
+    """Natural-language SQL query via SQLBot (Text-to-SQL).
+    Converts plain-English questions into SQL and executes them.
+    Args:
+        question:          Natural language database question (e.g. 'How many users signed up last week?').
+        connection_string: Database URL — SQLite, PostgreSQL, MySQL supported.
+                           Defaults to SQLBOT_DB env var.
+    Returns the query results as formatted text.
+    Environment: SQLBOT_URL (SQLBot API, default: http://localhost:8010), SQLBOT_DB.
+    """
+    import json as _json
+    SQLBOT_URL = os.getenv("SQLBOT_URL", "http://localhost:8010")
+    db_url     = connection_string or os.getenv("SQLBOT_DB", "")
+    payload = _json.dumps({"question": question, "db_url": db_url}).encode()
+    headers = {"Content-Type": "application/json", "User-Agent": "TheAgency/1.0"}
+    try:
+        req = urllib.request.Request(
+            f"{SQLBOT_URL.rstrip('/')}/query",
+            data=payload,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = _json.loads(r.read().decode())
+        sql     = data.get("sql", "")
+        results = data.get("results", data.get("data", data))
+        output  = f"SQL: {sql}\n\nResults:\n{_json.dumps(results, indent=2)}" if sql else _json.dumps(results, indent=2)
+        return output
+    except Exception as e:
+        return _json.dumps({"error": str(e), "note": "Ensure SQLBOT_URL is set and SQLBot is running"})
+
+
+# ── Tool 16: Public API Lookup ────────────────────────────────────────────────
+@tool
+def api_lookup(topic: str, category: str = "") -> str:
+    """Discover public APIs for a given topic or category.
+    Uses the public-apis catalogue (sahiixx/public-apis) to find free APIs.
+    Args:
+        topic:    What the API should do (e.g. 'weather', 'finance', 'sports').
+        category: Optional category filter (e.g. 'Data', 'Finance', 'Science').
+    Returns a list of matching public APIs with their descriptions and URLs.
+    Environment: PUBLIC_APIS_URL (optional, default: uses GitHub raw content).
+    """
+    import json as _json
+    PUBLIC_APIS_URL = os.getenv(
+        "PUBLIC_APIS_URL",
+        "https://api.publicapis.org/entries"
+    )
+    topic_lower = topic.lower()
+    try:
+        params = urllib.parse.urlencode({
+            "title":    topic,
+            "category": category,
+        })
+        url = f"{PUBLIC_APIS_URL.rstrip('/')}?{params}"
+        req = urllib.request.Request(url, headers={"User-Agent": "TheAgency/1.0"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            data = _json.loads(r.read().decode())
+        entries = data.get("entries", [])
+        if not entries:
+            return f"No public APIs found for '{topic}' (category: {category or 'any'})"
+        lines = [f"Public APIs matching '{topic}':"]
+        for e in entries[:10]:
+            lines.append(
+                f"  • {e.get('API','?')} ({e.get('Category','?')}) — "
+                f"{e.get('Description','')[:80]} "
+                f"[{e.get('Link','')}]"
+            )
+        return "\n".join(lines)
+    except Exception as e:
+        return _json.dumps({"error": str(e), "query": topic})
+
+
+# ── Tool 17: AIrecon autonomous recon scan ────────────────────────────────────
+@tool
+def airecon_scan(target: str, scan_type: str = "passive") -> str:
+    """Run an autonomous reconnaissance scan using AIrecon (sahiixx/airecon).
+    Collects OSINT, subdomain enumeration, port info, and threat intel.
+    Args:
+        target:    Target domain, IP, or organisation name.
+        scan_type: 'passive' (OSINT only, no direct contact — default) or
+                   'active' (includes direct probing — use only on authorised targets).
+    Returns a recon report with findings.
+    Environment: AIRECON_URL (default: http://localhost:8020).
+    WARNING: Only use active scans on systems you own or have explicit authorisation to test.
+    """
+    import json as _json
+    AIRECON_URL = os.getenv("AIRECON_URL", "http://localhost:8020")
+    payload = _json.dumps({"target": target, "scan_type": scan_type}).encode()
+    headers = {"Content-Type": "application/json", "User-Agent": "TheAgency/1.0"}
+    try:
+        req = urllib.request.Request(
+            f"{AIRECON_URL.rstrip('/')}/scan",
+            data=payload,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=60) as r:
+            data = _json.loads(r.read().decode())
+        return _json.dumps(data, indent=2)
+    except Exception as e:
+        # Fallback: try invoking airecon CLI if available
+        try:
+            result = subprocess.run(
+                ["airecon", "--target", target, "--mode", scan_type, "--output", "json"],
+                capture_output=True, text=True, timeout=60
+            )
+            return result.stdout or result.stderr or f"airecon exited with code {result.returncode}"
+        except FileNotFoundError:
+            return _json.dumps({
+                "error": str(e),
+                "note":  "Ensure AIRECON_URL is set or airecon CLI is installed (pip install airecon)",
+            })
+
+
+# ── Tool 18: TruffleHog secret scan ──────────────────────────────────────────
+@tool
+def scan_secrets(repo_path: str, since_commit: str = "", only_verified: bool = False) -> str:
+    """Scan a repository for leaked secrets using TruffleHog (sahiixx/trufflehog).
+    Detects API keys, tokens, passwords, and other sensitive credentials.
+    Args:
+        repo_path:      Path to a local git repo (absolute) or a GitHub repo URL
+                        (https://github.com/org/repo).
+        since_commit:   Optional commit SHA — only scan commits after this point.
+        only_verified:  If True, only return verified (live) credentials.
+    Returns a JSON report of found secrets.
+    WARNING: Only scan repos you own or have explicit authorisation to test.
+    """
+    import json as _json
+    cmd = ["trufflehog"]
+    if repo_path.startswith("http"):
+        cmd += ["git", repo_path]
+    else:
+        cmd += ["filesystem", repo_path]
+    cmd += ["--json", "--no-update"]
+    if since_commit:
+        cmd += ["--since-commit", since_commit]
+    if only_verified:
+        cmd += ["--only-verified"]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        raw    = result.stdout.strip()
+        if not raw:
+            return _json.dumps({"status": "clean", "secrets_found": 0, "repo": repo_path})
+        # trufflehog outputs one JSON object per line
+        findings = []
+        for line in raw.splitlines():
+            try:
+                findings.append(_json.loads(line))
+            except _json.JSONDecodeError:
+                pass
+        return _json.dumps({
+            "repo":           repo_path,
+            "secrets_found":  len(findings),
+            "findings":       findings[:TRUFFLEHOG_MAX_FINDINGS],
+        }, indent=2)
+    except FileNotFoundError:
+        return _json.dumps({
+            "error": "trufflehog not installed",
+            "note":  "Install: https://github.com/trufflesecurity/trufflehog#installation",
+        })
+    except Exception as e:
+        return _json.dumps({"error": str(e)})
+
+
+# ── Tool 19: Shannon web pentest ──────────────────────────────────────────────
+@tool
+def web_pentest(target_url: str, scan_profile: str = "passive") -> str:
+    """Run a web application penetration test via Shannon (sahiixx/shannon).
+    Identifies OWASP Top 10 vulnerabilities, misconfigs, and exposed endpoints.
+    Args:
+        target_url:   Full URL of the target web application (e.g. https://example.com).
+        scan_profile: 'passive' (headers/meta analysis only — default) or
+                      'active' (full scan including fuzzing — authorised use only).
+    Returns a pentest report with vulnerability findings and remediation advice.
+    Environment: SHANNON_URL (default: http://localhost:8030).
+    WARNING: Only run active scans on systems you own or have explicit written authorisation to test.
+    """
+    import json as _json
+    SHANNON_URL = os.getenv("SHANNON_URL", "http://localhost:8030")
+    payload = _json.dumps({"target": target_url, "profile": scan_profile}).encode()
+    headers = {"Content-Type": "application/json", "User-Agent": "TheAgency/1.0"}
+    try:
+        req = urllib.request.Request(
+            f"{SHANNON_URL.rstrip('/')}/scan",
+            data=payload,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=120) as r:
+            data = _json.loads(r.read().decode())
+        return _json.dumps(data, indent=2)
+    except Exception as e:
+        return _json.dumps({
+            "error": str(e),
+            "note":  f"Ensure SHANNON_URL is set and Shannon is running at {SHANNON_URL}",
+        })
+
+
 # ── Registry ─────────────────────────────────────────────────────────────────
 MCP_TOOLS = [
     web_search,
@@ -541,7 +835,28 @@ MCP_TOOLS = [
     qualify_lead_nowhere,
     analyze_dubai_market,
     create_campaign_nowhere,
+    # Phase 6 — n8n automation bus
+    n8n_trigger,
+    # Phase 7 — data & knowledge layer
+    perplexica_search,
+    sql_query,
+    api_lookup,
+    # Phase 4 — security & recon
+    airecon_scan,
+    scan_secrets,
+    web_pentest,
 ]
+
+# ── Dynamic tools from MCP Registry (non-fatal) ───────────────────────────────
+# Loads tools from any MCP servers registered via MCP_SERVERS env var or
+# registry.json / MCP_REGISTRY_URL at import time.
+try:
+    from mcp_registry import load_registry_tools
+    _registry_tools = load_registry_tools()
+    if _registry_tools:
+        MCP_TOOLS.extend(_registry_tools)
+except Exception as _e:
+    pass  # Registry discovery is best-effort; missing servers are non-fatal
 
 MCP_TOOL_NAMES = [t.name for t in MCP_TOOLS]
 
