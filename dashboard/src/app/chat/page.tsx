@@ -50,7 +50,10 @@ export default function ChatPage() {
       });
 
       const data = await res.json();
+      // A2A spec: result is at result.task.artifacts[*].parts[*].text
+      const artifacts = data?.result?.task?.artifacts;
       const reply =
+        (Array.isArray(artifacts) && artifacts[0]?.parts?.[0]?.text) ||
         data?.result?.status?.message?.parts?.[0]?.text ||
         data?.result?.output ||
         JSON.stringify(data?.result ?? data, null, 2);

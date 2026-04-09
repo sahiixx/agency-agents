@@ -160,7 +160,7 @@ def listen_local(timeout: int = 10) -> Optional[str]:
 
 # ── SHADOW Coral bridge ───────────────────────────────────────────────────────
 
-def route_through_shadow(text: str, coral_url: str) -> str:
+def route_through_shadow(text: str, coral_url: str, preset: str = DEFAULT_PRESET) -> str:
     """
     Route transcribed text through the SHADOW swarm via Coral Protocol SSE.
     Pipeline: Whisper Agent → Shadow Agent → Reviewer → Notion → Slack
@@ -171,6 +171,7 @@ def route_through_shadow(text: str, coral_url: str) -> str:
         "thread_id": "agency-voice",
         "message":   text,
         "pipeline":  "voice-to-code",
+        "preset":    preset,
     }).encode()
     try:
         req = urllib.request.Request(
@@ -184,7 +185,7 @@ def route_through_shadow(text: str, coral_url: str) -> str:
         return data.get("output") or data.get("message") or json.dumps(data)
     except Exception as e:
         print(f"  [voice] SHADOW Coral bridge error: {e} — falling back to direct processing")
-        return _direct_mission(text)
+        return _direct_mission(text, preset=preset)
 
 
 def _direct_mission(text: str, preset: str = DEFAULT_PRESET) -> str:
@@ -219,7 +220,7 @@ def run_local_mode(preset: str = DEFAULT_PRESET):
 
             speak("Processing your request…")
             if SHADOW_CORAL_URL:
-                result = route_through_shadow(text, SHADOW_CORAL_URL)
+                result = route_through_shadow(text, SHADOW_CORAL_URL, preset=preset)
             else:
                 result = _direct_mission(text, preset=preset)
 

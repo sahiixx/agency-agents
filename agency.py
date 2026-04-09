@@ -247,7 +247,8 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
     )
     tracer  = AgencyTracer(mission=goal, preset=preset)
     groups  = PARALLEL_GROUPS.get(preset, [[a] for a in agent_names])
-    base_tools = MCP_TOOLS + (extra_tools or [])
+    _seen_tool_names = {t.name for t in MCP_TOOLS}
+    base_tools = MCP_TOOLS + [t for t in (extra_tools or []) if t.name not in _seen_tool_names]
 
     print(f"\n{'='*65}")
     print(f"  MISSION: {goal}")
@@ -478,8 +479,17 @@ Examples:
 
     # ── Serve mode ─────────────────────────────────────────────────────────────
     if args.serve:
+        import subprocess
+        # Start the Agency A2A server (required for dashboard /api/agency/* proxy)
+        a2a_script = REPO_ROOT / "a2a_protocol.py"
+        if a2a_script.exists():
+            print("  Starting Agency A2A server on port 8100 …")
+            subprocess.Popen(["python3", str(a2a_script), "--serve", "--port", "8100"])
+        else:
+            print("  ⚠️   a2a_protocol.py not found — dashboard API calls will fail.\n"
+                  "      Make sure the Agency A2A server is running on port 8100.")
+
         if args.ui == "nextjs":
-            import subprocess
             dash = REPO_ROOT / "dashboard"
             if not dash.exists():
                 print("❌  dashboard/ not found. Run the setup first:\n"
@@ -495,11 +505,9 @@ Examples:
             webbrowser.open(url)
         if args.voice == "twilio":
             print("  Launching voice pipeline (Twilio mode) …")
-            import subprocess
             subprocess.Popen(["python3", str(REPO_ROOT / "voice_agency.py"), "--mode", "twilio"])
         elif args.voice == "local":
             try:
-                import subprocess
                 subprocess.Popen(["python3", str(REPO_ROOT / "voice_agency.py"), "--mode", "local"])
                 print("  Launching voice pipeline (local mode) …")
             except Exception:
