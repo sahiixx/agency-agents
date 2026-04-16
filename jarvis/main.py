@@ -1,13 +1,28 @@
-"""JARVIS v3 entrypoint."""
+"""Entry point for the JARVIS assistant."""
 
 from __future__ import annotations
 
-from jarvis.core.command_parser import CommandParser
 from jarvis.modules.ai.personality_engine import PersonalityEngine
+
+try:
+    from core.engine import JarvisEngine  # type: ignore
+except Exception:  # pragma: no cover
+    JarvisEngine = None
+
+from jarvis.core.command_parser import CommandParser
+
+BANNER = r"""
+      ██╗ █████╗ ██████╗ ██╗   ██╗██╗███████╗
+      ██║██╔══██╗██╔══██╗██║   ██║██║██╔════╝
+      ██║███████║██████╔╝██║   ██║██║███████╗
+ ██   ██║██╔══██║██╔══██╗╚██╗ ██╔╝██║╚════██║
+ ╚█████╔╝██║  ██║██║  ██║ ╚████╔╝ ██║███████║
+  ╚════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝╚══════╝
+"""
 
 
 class JarvisApp:
-    """Core orchestration shell for JARVIS."""
+    """Core orchestration shell fallback for non-engine mode."""
 
     def __init__(self) -> None:
         self.parser = CommandParser()
@@ -23,6 +38,11 @@ class JarvisApp:
 
 
 def main() -> None:
+    """Start full engine when available, otherwise run fallback shell."""
+    print(BANNER)
+    if JarvisEngine is not None:
+        JarvisEngine().start()
+        return
     app = JarvisApp()
     print(app.handle("JARVIS, status"))
 

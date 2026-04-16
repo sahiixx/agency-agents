@@ -15,6 +15,47 @@ langsmith>=0.7.16
 certifi>=2026.1.4
 cryptography>=46.0.0
 
+# JARVIS v2.0 — AI & LLM
+faster-whisper>=1.0.0
+ollama>=0.4.0
+sentence-transformers>=3.0.0
+faiss-cpu>=1.8.0
+
+# JARVIS v2.0 — Computer Vision
+opencv-python>=4.9.0
+mediapipe>=0.10.0
+face-recognition>=1.3.0
+ultralytics>=8.2.0
+pytesseract>=0.3.10
+Pillow>=10.2.0
+
+# JARVIS v2.0 — TTS
+piper-tts>=1.2.0
+pyttsx3>=2.90
+
+# JARVIS v2.0 — Media & Communication
+spotipy>=2.25.1
+yt-dlp>=2026.02.21
+python-telegram-bot>=21.0
+
+# JARVIS v2.0 — Translation
+argostranslate>=1.9.0
+
+# JARVIS v2.0 — Dashboard
+fastapi>=0.110.0
+uvicorn>=0.29.0
+jinja2>=3.1.0
+
+# JARVIS v2.0 — System Monitoring
+psutil>=5.9.8
+GPUtil>=1.4.0
+
+# JARVIS v2.0 — Knowledge Base
+PyPDF2>=3.0.0
+python-docx>=1.0.0
+requests>=2.32.0
+pyperclip>=1.9.0
+
 # deepagents SDK — install from local path:
 # pip install -e deepagents/libs/deepagents
 

@@ -1,0 +1,12 @@
+{
+  "greeting": [
+    "Right away, sir.",
+    "At your service.",
+    "Systems online and ready."
+  ],
+  "unknown": [
+    "I did not quite catch that command.",
+    "Please repeat your request, sir.",
+    "I am ready when you are."
+  ]
+}

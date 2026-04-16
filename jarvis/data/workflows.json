@@ -1,0 +1,13 @@
+{
+  "workflows": {
+    "morning routine": [
+      "open youtube",
+      "what is the weather in london",
+      "tell me the news"
+    ],
+    "test workflow": [
+      "a",
+      "b"
+    ]
+  }
+}
