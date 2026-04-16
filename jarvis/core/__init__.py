@@ -1,1 +1,1 @@
-"""Core JARVIS services."""
+"""Core orchestration components for JARVIS."""

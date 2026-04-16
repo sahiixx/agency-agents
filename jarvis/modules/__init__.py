@@ -1,1 +1,1 @@
-"""Feature modules for JARVIS."""
+"""JARVIS capability modules."""

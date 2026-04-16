@@ -1,1 +1,1 @@
-"""Automation modules."""
+"""Automation helpers for JARVIS."""

@@ -1,0 +1,21 @@
+{
+  "intents": [
+    {"name": "system_control", "action": "system", "keywords": ["volume up", "volume down", "mute", "brightness up", "brightness down", "shutdown", "restart", "sleep", "lock"]},
+    {"name": "launch_app", "action": "open_app", "keywords": ["open chrome", "open firefox", "open vscode", "open app"]},
+    {"name": "close_app", "action": "close_app", "keywords": ["close chrome", "close firefox", "close app"]},
+    {"name": "web", "action": "browse", "keywords": ["open website", "search google", "search youtube", "open youtube"]},
+    {"name": "weather", "action": "weather", "keywords": ["weather", "temperature", "forecast"]},
+    {"name": "news", "action": "news", "keywords": ["news", "headlines"]},
+    {"name": "wikipedia", "action": "wiki", "keywords": ["wikipedia", "search wikipedia"]},
+    {"name": "joke", "action": "joke", "keywords": ["tell me a joke", "joke"]},
+    {"name": "datetime", "action": "datetime", "keywords": ["time", "date", "day"]},
+    {"name": "battery", "action": "battery", "keywords": ["battery", "battery status"]},
+    {"name": "network", "action": "network", "keywords": ["network", "ip", "speed test"]},
+    {"name": "processes", "action": "process", "keywords": ["list processes", "running processes"]},
+    {"name": "screenshot", "action": "screenshot", "keywords": ["take screenshot", "screenshot"]},
+    {"name": "note", "action": "note", "keywords": ["take note", "note this"]},
+    {"name": "calculate", "action": "calculate", "keywords": ["calculate", "what is"]},
+    {"name": "media", "action": "media", "keywords": ["play music", "pause music", "next track", "previous track"]},
+    {"name": "github", "action": "github", "keywords": ["list repos", "repo status", "create issue"]}
+  ]
+}

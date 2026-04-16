@@ -1,4 +1,4 @@
-"""JARVIS package."""
+"""JARVIS voice assistant package."""
 
 from . import config
 
