@@ -130,7 +130,12 @@ class JarvisEngine:
                     return self.web.google_search(lowered.replace("search", "", 1).strip())
                 return self.web.open_website(lowered.replace("open", "", 1).strip())
             if intent == "weather":
-                city = lowered.replace("weather", "").replace("in", "").strip() or "your city"
+                city = lowered
+                for phrase in ("what is the weather in", "what's the weather in", "weather in", "weather"):
+                    if phrase in city:
+                        city = city.replace(phrase, "", 1).strip()
+                        break
+                city = city or "your city"
                 return self.weather.current_weather(city)
             if intent == "news":
                 return " | ".join(self.news.top_headlines())
