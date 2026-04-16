@@ -24,9 +24,14 @@ class Translator:
         if language_code == source_code:
             return text
         try:
-            translator = argos_translate.get_translation_from_codes(source_code, language_code)
-            if translator is None:
+            languages = {lang.code: lang for lang in argos_translate.get_installed_languages()}
+            source_lang = languages.get(source_code)
+            target_lang = languages.get(language_code)
+            if not source_lang or not target_lang:
                 return f"No local translation model for {source_code}->{language_code} installed."
-            return translator.translate(text)
+            translator = source_lang.get_translation(target_lang)
+            return translator.translate(text) if translator else (
+                f"No local translation model for {source_code}->{language_code} installed."
+            )
         except Exception:
             return f"No local translation model for {source_code}->{language_code} installed."

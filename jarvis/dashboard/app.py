@@ -19,8 +19,8 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(
-        "index.html",
-        {
+        name="index.html",
+        context={
             "request": request,
             "title": "JARVIS Dashboard",
             "modules": ["ai_brain", "whisper_stt", "advanced_tts", "system_dashboard"],

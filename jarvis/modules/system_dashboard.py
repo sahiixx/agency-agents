@@ -28,7 +28,15 @@ class SystemDashboard:
         self.db_path = Path(db_path)
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS metrics(ts REAL, cpu REAL, ram REAL, disk REAL, gpu REAL)"
+            """
+            CREATE TABLE IF NOT EXISTS metrics(
+                ts REAL,
+                cpu REAL,
+                ram REAL,
+                disk REAL,
+                gpu REAL
+            )
+            """
         )
         self.conn.commit()
         self._lock = threading.Lock()
@@ -62,7 +70,10 @@ class SystemDashboard:
                 gpu = gpus[0].load * 100
         with self._lock:
             self.conn.execute(
-                "INSERT INTO metrics(ts, cpu, ram, disk, gpu) VALUES(?, ?, ?, ?, ?)",
+                """
+                INSERT INTO metrics(ts, cpu, ram, disk, gpu)
+                VALUES(?, ?, ?, ?, ?)
+                """,
                 (time.time(), snap.cpu, snap.ram, snap.disk, gpu),
             )
             self.conn.commit()

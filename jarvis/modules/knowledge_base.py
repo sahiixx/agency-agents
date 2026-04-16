@@ -17,7 +17,13 @@ class KnowledgeBase:
         self.db_path = Path(db_path)
         self.conn = sqlite3.connect(self.db_path)
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS docs (id INTEGER PRIMARY KEY, path TEXT UNIQUE, content TEXT)"
+            """
+            CREATE TABLE IF NOT EXISTS docs (
+                id INTEGER PRIMARY KEY,
+                path TEXT UNIQUE,
+                content TEXT
+            )
+            """
         )
         self.conn.commit()
         self.faiss_available = faiss is not None
