@@ -235,6 +235,12 @@ Add secret: repo **Settings → Secrets → Actions → `ANTHROPIC_API_KEY`**
 
 ---
 
+*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Claude migration and orchestration layer by Claude Sonnet 4.6.*
+
+## JARVIS v3
+
+A full desktop assistant scaffold now lives in [/jarvis](jarvis/README.md).
+
 ---
 
 ## JARVIS v2.0 (2026) — Local Voice Assistant Stack
@@ -351,4 +357,4 @@ Persistent Storage: SQLite (metrics/docs/history)
 - Keep dashboard and heavy vision loops on separate threads.
 - Trim document index scope for faster local RAG response times.
 
-*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Claude migration and orchestration layer by Claude Sonnet 4.6, plus JARVIS v2 local assistant modules.*
+*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Claude migration and orchestration layer by Claude Sonnet 4.6, plus JARVIS local assistant modules.*
