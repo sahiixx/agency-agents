@@ -19,7 +19,7 @@ class VoiceOutput:
 
     def __init__(self) -> None:
         self.logger = setup_logger("jarvis.voice_output")
-        self._queue: "queue.Queue[str]" = queue.Queue()
+        self._queue: queue.Queue[str] = queue.Queue()
         self._engine = None
         self._worker = threading.Thread(target=self._consume, daemon=True)
         self._ready = False

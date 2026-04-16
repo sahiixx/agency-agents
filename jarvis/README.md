@@ -23,7 +23,7 @@ A cross-platform (Windows + Linux) voice assistant with wake-word support, speec
 cd jarvis
 python3 -m venv .venv
 source .venv/bin/activate  # Linux
-# .venv\\Scripts\\activate   # Windows PowerShell
+# .venv\Scripts\activate   # Windows PowerShell
 pip install -r requirements.txt
 ```
 

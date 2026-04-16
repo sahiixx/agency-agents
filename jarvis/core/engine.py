@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from automation.hotword_detector import HotwordDetector
 from automation.macros import MacroRecorder
 from automation.task_scheduler import TaskScheduler
@@ -130,11 +132,8 @@ class JarvisEngine:
                     return self.web.google_search(lowered.replace("search", "", 1).strip())
                 return self.web.open_website(lowered.replace("open", "", 1).strip())
             if intent == "weather":
-                city = lowered
-                for phrase in ("what is the weather in", "what's the weather in", "weather in", "weather"):
-                    if phrase in city:
-                        city = city.replace(phrase, "", 1).strip()
-                        break
+                match = re.search(r"(?:what(?:'s| is)\s+)?(?:the\s+)?weather(?:\s+in)?\s*(.*)", lowered)
+                city = match.group(1).strip() if match else ""
                 city = city or "your city"
                 return self.weather.current_weather(city)
             if intent == "news":
