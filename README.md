@@ -236,3 +236,7 @@ Add secret: repo **Settings → Secrets → Actions → `ANTHROPIC_API_KEY`**
 ---
 
 *Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Claude migration and orchestration layer by Claude Sonnet 4.6.*
+
+## JARVIS v3
+
+A full desktop assistant scaffold now lives in [/jarvis](jarvis/README.md).

@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=70.0.0", "wheel>=0.43.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jarvis-desktop-assistant"
+version = "3.0.0"
+description = "JARVIS v3 desktop voice assistant"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "cryptography>=46.0.0",
+]
+
+[project.scripts]
+jarvis = "jarvis.main:main"

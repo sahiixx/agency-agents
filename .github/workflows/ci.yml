@@ -95,3 +95,36 @@ jobs:
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)/deepagents/libs/deepagents
           python3 tests/agent_tests.py -v 2>&1
+
+  jarvis-quality:
+    name: JARVIS Quality Gates
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install quality tools
+        run: |
+          pip install --quiet ruff mypy pytest bandit
+          pip install --quiet -e .
+
+      - name: Lint JARVIS
+        run: ruff check jarvis tests/test_*.py
+
+      - name: Type check JARVIS
+        run: mypy jarvis --ignore-missing-imports
+
+      - name: Run JARVIS tests
+        run: pytest -q tests/test_*.py
+
+      - name: Security scan
+        run: bandit -q -r jarvis
+
+      - name: Build Docker image
+        run: docker build -t jarvis-ci:latest .

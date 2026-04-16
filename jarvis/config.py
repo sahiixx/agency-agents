@@ -1,0 +1,55 @@
+"""Runtime configuration for JARVIS v3."""
+
+# GUI
+GUI_ENABLED = True
+GUI_THEME = "dark"
+ORB_COLOR = "#00BFFF"
+ALWAYS_ON_TOP = True
+SYSTEM_TRAY = True
+
+# Emotion & Presence
+EMOTION_DETECTION = True
+PRESENCE_DETECTION = True
+EYE_TRACKING = False
+MOOD_TRACKING = True
+
+# Creative
+IMAGE_GEN_ENABLED = False
+SD_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
+MUSIC_GEN_ENABLED = False
+VOICE_CLONING_ENABLED = False
+
+# Productivity
+GOOGLE_CALENDAR_ENABLED = False
+GOOGLE_CREDENTIALS_PATH = ""
+POMODORO_WORK_MINS = 25
+POMODORO_BREAK_MINS = 5
+FOCUS_BLOCKED_APPS = ["discord", "steam", "reddit"]
+
+# Security
+PASSWORD_VAULT_ENABLED = True
+BREACH_CHECK_INTERVAL_HOURS = 24
+NETWORK_SCAN_ENABLED = False
+
+# Communication
+DISCORD_BOT_TOKEN = ""
+DISCORD_CHANNEL_ID = ""
+
+# Hardware
+BLUETOOTH_ENABLED = False
+USB_MONITORING = True
+CAFFEINE_MODE = False
+
+# AI
+PERSONALITY_MODE = "professional"
+PERSISTENT_MEMORY = True
+MULTI_AGENT = True
+DREAM_MODE = False
+LEARNING_ENGINE = True
+
+# Auto-Update
+AUTO_UPDATE_CHECK = True
+GITHUB_REPO = "sahiixx/agency-agents"
+
+# Docker
+DOCKER_MODE = False

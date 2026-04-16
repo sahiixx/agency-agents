@@ -1,0 +1,18 @@
+services:
+  jarvis-core:
+    build: .
+    command: python jarvis/main.py
+    volumes:
+      - ./:/app
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+  dashboard:
+    image: python:3.12-slim
+    command: sh -c "python -m http.server 8080"
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "8080:8080"
