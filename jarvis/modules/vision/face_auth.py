@@ -32,7 +32,7 @@ class FaceAuth:
         if not self.enabled:
             return None
         for user_id, known in self.users.items():
-            if known == encoding:
+            if face_recognition.compare_faces([known], encoding, tolerance=0.45)[0]:
                 return user_id
         return None
 

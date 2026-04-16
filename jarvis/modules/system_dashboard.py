@@ -61,8 +61,10 @@ class SystemDashboard:
             if gpus:
                 gpu = gpus[0].load * 100
         with self._lock:
-            self.conn.execute("INSERT INTO metrics(ts, cpu, ram, disk, gpu) VALUES(?, ?, ?, ?, ?)",
-                              (time.time(), snap.cpu, snap.ram, snap.disk, gpu))
+            self.conn.execute(
+                "INSERT INTO metrics(ts, cpu, ram, disk, gpu) VALUES(?, ?, ?, ?, ?)",
+                (time.time(), snap.cpu, snap.ram, snap.disk, gpu),
+            )
             self.conn.commit()
 
     def start(self, interval_seconds: int = 5):

@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from jarvis import config
 from jarvis.automation.voice_macros import VoiceMacros
@@ -20,8 +21,9 @@ class TestJarvisConfig(unittest.TestCase):
 
 class TestAIBrainFallback(unittest.TestCase):
     def test_keyword_fallback_when_ollama_unavailable(self):
-        brain = AIBrain(model="llama3", base_url="http://127.0.0.1:1")
-        response = brain.ask("JARVIS explain quantum computing")
+        brain = AIBrain(model="llama3", base_url="http://localhost:11434")
+        with patch("jarvis.modules.ai_brain.requests.post", side_effect=RuntimeError("offline")):
+            response = brain.ask("JARVIS explain quantum computing")
         self.assertEqual(response.source, "fallback")
         self.assertIn("Quantum", response.text)
 
