@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import base64
 import json
+import secrets
+import string
 from pathlib import Path
 
 from jarvis.core.encryption import EncryptionService
@@ -44,8 +46,5 @@ class PasswordManager:
         return self._read().get(service.lower())
 
     def generate_password(self, length: int = 20) -> str:
-        import secrets
-        import string
-
         alphabet = string.ascii_letters + string.digits + "!@#$%^&*()"
         return "".join(secrets.choice(alphabet) for _ in range(length))
