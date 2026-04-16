@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Callable
+
 
 class MacroRecorder:
     """Store and replay command sequences by name."""
@@ -13,7 +15,7 @@ class MacroRecorder:
         """Save macro commands."""
         self._macros[name] = commands
 
-    def replay(self, name: str, executor) -> list[str]:
+    def replay(self, name: str, executor: Callable[[str], str]) -> list[str]:
         """Replay all commands through executor callback."""
         outputs = []
         for command in self._macros.get(name, []):

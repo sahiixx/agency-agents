@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+from typing import Callable
 
 
 class ReminderModule:
@@ -11,7 +12,7 @@ class ReminderModule:
     def __init__(self) -> None:
         self.reminders: list[str] = []
 
-    def set_reminder(self, seconds: int, message: str, callback) -> str:
+    def set_reminder(self, seconds: int, message: str, callback: Callable[[str], None]) -> str:
         """Set reminder after N seconds and notify through callback."""
         self.reminders.append(message)
 

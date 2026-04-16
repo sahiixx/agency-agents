@@ -35,11 +35,7 @@ class VoiceInput:
             text = input(prompt).strip().lower()
             if not require_wake_word:
                 return text
-            if text.startswith(WAKE_WORD):
-                return text.replace(WAKE_WORD, "", 1).strip()
-            if text.startswith("hey jarvis"):
-                return text.replace("hey jarvis", "", 1).strip()
-            return ""
+            return self._strip_wake_word(text)
 
         try:
             with self._microphone as source:
@@ -47,11 +43,16 @@ class VoiceInput:
             text = self._recognizer.recognize_google(audio).lower().strip()
             if not require_wake_word:
                 return text
-            if text.startswith(WAKE_WORD):
-                return text.replace(WAKE_WORD, "", 1).strip()
-            if text.startswith("hey jarvis"):
-                return text.replace("hey jarvis", "", 1).strip()
-            return ""
+            return self._strip_wake_word(text)
         except Exception as exc:
             self.logger.debug("Voice capture/recognition failed: %s", exc)
             return ""
+
+    @staticmethod
+    def _strip_wake_word(text: str) -> str:
+        """Remove wake-word prefix from text if present."""
+        if text.startswith(WAKE_WORD):
+            return text.replace(WAKE_WORD, "", 1).strip()
+        if text.startswith("hey jarvis"):
+            return text.replace("hey jarvis", "", 1).strip()
+        return ""

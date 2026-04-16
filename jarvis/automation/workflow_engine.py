@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Callable
+
 from config import WORKFLOWS_FILE
 from utils.helpers import load_json, save_json
 
@@ -22,7 +24,7 @@ class WorkflowEngine:
         payload[name] = steps
         save_json(WORKFLOWS_FILE, self.workflows)
 
-    def run_workflow(self, name: str, executor) -> list[str]:
+    def run_workflow(self, name: str, executor: Callable[[str], str]) -> list[str]:
         """Execute each command in a workflow using provided executor callback."""
         steps = self.workflows.get("workflows", {}).get(name, [])
         outputs: list[str] = []

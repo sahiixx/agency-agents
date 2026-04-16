@@ -84,9 +84,10 @@ class JarvisEngine:
             command = self.voice_in.listen(require_wake_word=True)
             if not command:
                 continue
+            normalized = command.lower().strip()
 
             self.logger.info("Command: %s", command)
-            if command.lower().strip() in self.EXIT_COMMANDS:
+            if normalized in self.EXIT_COMMANDS:
                 self.respond("Goodbye. Standing by.")
                 break
 

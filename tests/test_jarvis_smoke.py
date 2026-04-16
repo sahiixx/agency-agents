@@ -39,6 +39,14 @@ class TestJarvisSmoke(unittest.TestCase):
         outputs = engine.run_workflow("test workflow", lambda step: f"ok-{step}")
         self.assertEqual(outputs, ["ok-a", "ok-b"])
 
+    def test_unknown_intent_returns_unknown(self):
+        parsed = self.CommandParser().parse("completely unrelated command")
+        self.assertEqual(parsed["intent"], "unknown")
+
+    def test_calculator_handles_invalid_expression(self):
+        result = self.Calculator().evaluate("import os")
+        self.assertIn("Calculation failed", result)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
