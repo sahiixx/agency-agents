@@ -235,4 +235,120 @@ Add secret: repo **Settings → Secrets → Actions → `ANTHROPIC_API_KEY`**
 
 ---
 
-*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Claude migration and orchestration layer by Claude Sonnet 4.6.*
+---
+
+## JARVIS v2.0 (2026) — Local Voice Assistant Stack
+
+The repository now includes a `jarvis/` package with offline-first modules for:
+- **AI Brain** (`jarvis/modules/ai_brain.py`) — Ollama local LLM chat, code-generation prompts, summarization, multi-turn memory, and keyword fallback.
+- **Whisper STT** (`jarvis/core/whisper_stt.py`) — faster-whisper transcription with fallback callback support.
+- **Advanced TTS** (`jarvis/core/advanced_tts.py`) — Piper-first speech engine with pyttsx3 fallback, profile/emotion/SSML-safe output.
+- **Vision stack** (`jarvis/modules/vision/`) — face auth, gestures, OCR screen reading, YOLO object detection wrappers.
+- **Knowledge Base** (`jarvis/modules/knowledge_base.py`) — local SQLite index with FAISS-aware local RAG scaffolding.
+- **Security/Privacy** (`jarvis/modules/security/`) — encryption vault and privacy report + redaction guard.
+- **Smart Home** (`jarvis/modules/smart_home.py`) — Home Assistant REST controls.
+- **System Dashboard** (`jarvis/modules/system_dashboard.py`) — CPU/RAM/disk/GPU metric snapshots, alert thresholds, and history persistence.
+- **Media/Comms/Translation/Coding/Clipboard** modules in `jarvis/modules/`.
+- **Plugin system** (`jarvis/plugins/`) — plugin base, manager, and example plugin.
+- **Web Dashboard** (`jarvis/dashboard/`) — FastAPI app + template/static assets.
+- **Automation upgrades** (`jarvis/automation/`) — smart routines and voice macro recording/import/export.
+
+### JARVIS Config
+
+`jarvis/config.py` includes:
+- `OLLAMA_MODEL`, `OLLAMA_URL`, `USE_LOCAL_LLM`
+- `WHISPER_MODEL`, `USE_WHISPER`
+- `TTS_ENGINE`
+- `FACE_AUTH_ENABLED`, `GESTURE_CONTROL_ENABLED`
+- `HOME_ASSISTANT_URL`, `HOME_ASSISTANT_TOKEN`
+- `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+- `DASHBOARD_PORT`, `DASHBOARD_ENABLED`
+- `ENCRYPTION_ENABLED`
+- `KNOWLEDGE_BASE_DIR`, `AUTO_INDEX_ON_STARTUP`
+
+### Ollama Setup Guide
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3
+ollama pull mistral
+ollama pull qwen2.5
+ollama pull deepseek-coder
+```
+Run local server: `ollama serve` (default `http://localhost:11434`).
+
+### Whisper Setup Guide
+```bash
+pip install faster-whisper
+```
+Set `USE_WHISPER=True` and choose `WHISPER_MODEL` from `tiny/base/small/medium/large-v3`.
+
+### Face Recognition Setup
+- Install: `pip install face-recognition opencv-python`
+- Use `FaceAuth.register_face(user_id, encoding)` to enroll users.
+- Start background checks with `start_background_auth()`.
+
+### Smart Home Integration
+- Add `HOME_ASSISTANT_URL` and `HOME_ASSISTANT_TOKEN`.
+- Use `SmartHomeController.call_service(domain, service, payload)`.
+
+### Spotify API Setup
+- Create app at Spotify Developer Dashboard.
+- Fill `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET`.
+- Install: `pip install spotipy`.
+
+### Telegram Bot Setup
+- Create bot via BotFather.
+- Set `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`.
+- Install: `pip install python-telegram-bot`.
+
+### Plugin Development Guide
+- Create plugin in `jarvis/plugins/*.py`
+- Inherit `PluginBase`
+- Implement `execute(command: str) -> str`
+- Load plugins via `PluginManager.discover()`
+
+### Web Dashboard Usage
+```bash
+uvicorn jarvis.dashboard.app:app --host 127.0.0.1 --port 8080
+```
+Open `http://localhost:8080`.
+
+### Updated Command Surface (100+ intents via module mapping)
+Command groups now include:
+- Conversation, summarization, and code prompts
+- STT/TTS controls
+- Face auth + gesture control + OCR + object detection
+- RAG document search/add/remove
+- Privacy report/redaction/encryption actions
+- Smart-home actions and status checks
+- System status and performance alerts
+- Spotify/YouTube media commands
+- Telegram remote controls and notifications
+- Translation and live conversation translation
+- Voice coding and git voice actions
+- Clipboard summarize/translate/rewrite/history
+- Plugin list/enable/disable/execute
+- Smart routine and macro record/replay/export/import
+
+### JARVIS Architecture (text diagram)
+```
+Speech In (Whisper) -> Intent Layer -> AI Brain (Ollama) -> Action Router
+                                         |-> RAG Knowledge Base (SQLite/FAISS)
+                                         |-> Vision (Face/Gesture/OCR/YOLO)
+                                         |-> Security/Privacy (Fernet/PII Guard)
+                                         |-> Smart Home / Media / Comms / Translation
+                                         |-> Coding Assistant / Clipboard AI / Plugins
+Action Router -> TTS (Piper/pyttsx3) -> Speech Out
+Background Threads: Vision + Metrics + Dashboard
+Persistent Storage: SQLite (metrics/docs/history)
+```
+
+### Performance Tips
+- Prefer `tiny/base` Whisper for low-latency CPUs; use `large-v3` with GPU.
+- Use smaller Ollama model for fast response (`llama3:8b`) and larger models for reasoning quality.
+- Enable GPU for `faster-whisper`, YOLO, and embeddings when available.
+- Keep dashboard and heavy vision loops on separate threads.
+- Trim document index scope for faster local RAG response times.
+
+*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Claude migration and orchestration layer by Claude Sonnet 4.6, plus JARVIS v2 local assistant modules.*
