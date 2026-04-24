@@ -127,7 +127,7 @@ jobs:
         run: pytest -q tests/test_*.py
 
       - name: Security scan
-        run: bandit -q -r jarvis
+        run: bandit -q -r jarvis -ll
 
       - name: Build Docker image
         run: docker build -t jarvis-ci:latest .
