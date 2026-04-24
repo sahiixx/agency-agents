@@ -3,7 +3,8 @@
 > 152 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-52%2F52-brightgreen)](tests/agent_tests.py)
+[![Tests](https://img.shields.io/badge/tests-19%2F19-brightgreen)](tests/agent_tests.py)
+[![Lint](https://img.shields.io/badge/lint-ruff%20clean-success)](https://docs.astral.sh/ruff/)
 [![Score](https://img.shields.io/badge/system%20score-90%2F90-gold)](agency.py)
 [![Model](https://img.shields.io/badge/model-claude--sonnet--4--6-blue)](https://anthropic.com)
 
