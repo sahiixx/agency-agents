@@ -8,7 +8,7 @@ from typing import Any
 try:
     from cryptography.fernet import Fernet  # type: ignore
 except Exception:  # pragma: no cover
-    Fernet: Any = None
+    Fernet: Any = None  # type: ignore[no-redef]
 
 
 class EncryptionVault:
