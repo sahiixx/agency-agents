@@ -31,7 +31,6 @@ from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.spinner import Spinner
-from rich.text import Text
 
 from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend
@@ -210,7 +209,7 @@ class AgentDisplay:
                         console.print(f"  [bold magenta]>> Researching:[/] {desc[:60]}...")
                         self.update_status(f"Researching: {desc[:40]}...")
                     elif name in ("generate_cover", "generate_social_image"):
-                        console.print(f"  [bold cyan]>> Generating image...[/]")
+                        console.print("  [bold cyan]>> Generating image...[/]")
                         self.update_status("Generating image...")
                     elif name == "write_file":
                         path = args.get("file_path", "file")
@@ -224,16 +223,16 @@ class AgentDisplay:
             name = getattr(msg, "name", "")
             if name in ("generate_cover", "generate_social_image"):
                 if "saved" in msg.content.lower():
-                    console.print(f"  [green]✓ Image saved[/]")
+                    console.print("  [green]✓ Image saved[/]")
                 else:
                     console.print(f"  [red]✗ Image failed: {msg.content}[/]")
             elif name == "write_file":
-                console.print(f"  [green]✓ File written[/]")
+                console.print("  [green]✓ File written[/]")
             elif name == "task":
-                console.print(f"  [green]✓ Research complete[/]")
+                console.print("  [green]✓ Research complete[/]")
             elif name == "web_search":
                 if "error" not in msg.content.lower():
-                    console.print(f"  [green]✓ Found results[/]")
+                    console.print("  [green]✓ Found results[/]")
 
 
 async def main():

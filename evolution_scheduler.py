@@ -3,7 +3,11 @@
 Evolution Scheduler — Randomly selects an agent and runs Claude Reasoning Core
 to critique and improve it, then commits the improved version to git.
 """
-import os, sys, random, subprocess, datetime
+import os
+import sys
+import random
+import subprocess
+import datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
@@ -20,7 +24,8 @@ SKIP_FILES = {'README.md', 'CONTRIBUTING.md', 'LICENSE.md', 'AGENTS.md', 'README
 def get_claude():
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        print("❌  ANTHROPIC_API_KEY not set."); sys.exit(1)
+        print("❌  ANTHROPIC_API_KEY not set.")
+        sys.exit(1)
     return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
 
 def get_all_agents():
@@ -76,7 +81,8 @@ def main():
     agents = get_all_agents()
 
     if not agents:
-        print("No agents found."); return
+        print("No agents found.")
+        return
 
     target = random.choice(agents)
     print(f"\n{'═'*60}")

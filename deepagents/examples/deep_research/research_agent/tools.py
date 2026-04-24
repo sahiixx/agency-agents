@@ -81,11 +81,9 @@ def tavily_search(
         result_texts.append(result_text)
 
     # Format final response
-    response = f"""🔍 Found {len(result_texts)} result(s) for '{query}':
+    return f"""🔍 Found {len(result_texts)} result(s) for '{query}':
 
 {chr(10).join(result_texts)}"""
-
-    return response
 
 
 @tool(parse_docstring=True)

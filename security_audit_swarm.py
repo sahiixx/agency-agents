@@ -176,7 +176,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'='*60}")
-    print(f"  🔒 SECURITY AUDIT SWARM — The Agency")
+    print("  🔒 SECURITY AUDIT SWARM — The Agency")
     print(f"{'='*60}")
     print(f"  Mission : {args.mission}")
     print(f"  Scope   : {args.scope} — {SCOPES[args.scope]}")
@@ -258,7 +258,7 @@ def main():
     print(f"  📁 Reports: {out_dir}/")
     for a in AGENTS:
         print(f"     • {a['output']}")
-    print(f"     • manifest.json")
+    print("     • manifest.json")
     print(f"{'='*60}\n")
 
 

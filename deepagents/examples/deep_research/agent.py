@@ -6,13 +6,12 @@ for conducting web research with strategic thinking and context management.
 
 from datetime import datetime
 
-from langchain.chat_models import init_chat_model
-from langchain_google_genai import ChatGoogleGenerativeAI
 from deepagents import create_deep_agent
+from langchain.chat_models import init_chat_model
 
 from research_agent.prompts import (
-    RESEARCHER_INSTRUCTIONS,
     RESEARCH_WORKFLOW_INSTRUCTIONS,
+    RESEARCHER_INSTRUCTIONS,
     SUBAGENT_DELEGATION_INSTRUCTIONS,
 )
 from research_agent.tools import tavily_search, think_tool

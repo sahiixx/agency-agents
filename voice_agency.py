@@ -40,8 +40,6 @@ import argparse
 import json
 import os
 import sys
-import threading
-import time
 from pathlib import Path
 from typing import Optional
 
@@ -82,7 +80,8 @@ def speak(text: str, engine: str = TTS_ENGINE):
         try:
             import asyncio
             import edge_tts  # type: ignore
-            import tempfile, subprocess
+            import tempfile
+            import subprocess
 
             async def _speak():
                 communicate = edge_tts.Communicate(text, "en-US-AriaNeural")
@@ -105,7 +104,8 @@ def speak(text: str, engine: str = TTS_ENGINE):
         else:
             try:
                 import urllib.request
-                import tempfile, subprocess
+                import tempfile
+                import subprocess
                 payload = json.dumps({"model": "tts-1", "voice": "alloy", "input": text}).encode()
                 req = urllib.request.Request(
                     "https://api.openai.com/v1/audio/speech",
@@ -191,7 +191,7 @@ def route_through_shadow(text: str, coral_url: str, preset: str = DEFAULT_PRESET
 def _direct_mission(text: str, preset: str = DEFAULT_PRESET) -> str:
     """Run the agency mission directly without the Coral bridge."""
     try:
-        from agency import run_mission, PRESETS, AGENT_REGISTRY
+        from agency import run_mission, PRESETS
         agent_names = list(PRESETS.get(preset, PRESETS["full"]))
         if "core" in agent_names:
             agent_names = [a for a in agent_names if a != "core"] + ["core"]
@@ -254,7 +254,6 @@ def run_realtime_mode():
 
     # Import and start the realtime session
     try:
-        from openai.resources.beta.realtime import RealtimeConnection  # type: ignore
         client    = openai.OpenAI(api_key=OPENAI_API_KEY)
         SYSTEM    = (REPO_ROOT / "specialized/specialized-claude-reasoning-core.md").read_text()[:2000]
 
@@ -336,8 +335,8 @@ def run_twilio_mode(port: int = TWILIO_PORT):
             print(f"  [twilio] WebSocket error: {e}")
 
     print(f"\n📞  Twilio Voice Mode — WebSocket server on port {port}")
-    print(f"   Configure Twilio webhook: POST https://your-domain/voice")
-    print(f"   Press Ctrl+C to stop.\n")
+    print("   Configure Twilio webhook: POST https://your-domain/voice")
+    print("   Press Ctrl+C to stop.\n")
     app.run(host="0.0.0.0", port=port, debug=False)
 
 

@@ -18,7 +18,6 @@ Usage:
   python3 agency.py --mission "Run this mission" --provider ollama --ollama-model llama3.1
 """
 
-import os
 import sys
 import warnings
 import argparse
@@ -57,8 +56,6 @@ from a2a_protocol import (
     start_agency_a2a_servers,
     register_servers,
     make_a2a_tools,
-    A2AClient,
-    BASE_PORT,
 )
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -256,9 +253,9 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
     print(f"  Agents:  {', '.join(agent_names)}")
     print(f"  Groups:  {' → '.join(_parallel_group_label(g) for g in groups)}")
     if dry_run:
-        print(f"\n  [DRY RUN] Pipeline printed — no API calls made.")
+        print("\n  [DRY RUN] Pipeline printed — no API calls made.")
         print(f"  Tools loaded: {len(base_tools)} MCP tools")
-        print(f"  Execution plan:")
+        print("  Execution plan:")
         for i, g in enumerate(groups):
             mode = "concurrently" if len(g) > 1 else "sequential"
             print(f"    Phase {i+1}: [{_parallel_group_label(g)}] ({mode})")
@@ -267,7 +264,7 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
     print(f"{'='*65}\n")
 
     # Start A2A servers for this mission's agents
-    print(f"  Starting A2A servers...")
+    print("  Starting A2A servers...")
     port_map = start_agency_a2a_servers(agent_names, AGENT_REGISTRY, REPO_ROOT)
     register_servers(port_map)
     a2a_urls  = [f"http://localhost:{p}" for p in port_map.values()]
@@ -291,7 +288,7 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
         fs_backend = FilesystemBackend(root_dir=str(REPO_ROOT), virtual_mode=False)
 
     # Build orchestrator graph
-    print(f"\n  Building orchestrator...")
+    print("\n  Building orchestrator...")
     try:
         orchestrator = create_deep_agent(
             model=llm,
@@ -339,7 +336,7 @@ Instructions:
 
 Delegate everything. You are the orchestrator and final judge."""
 
-    print(f"  Orchestrating...\n")
+    print("  Orchestrating...\n")
 
     with tracer.span("orchestrator"):
         try:
@@ -361,7 +358,7 @@ Delegate everything. You are the orchestrator and final judge."""
             return None
 
     print(f"\n{'='*65}")
-    print(f"  VERDICT — CLAUDE REASONING CORE")
+    print("  VERDICT — CLAUDE REASONING CORE")
     print(f"{'='*65}")
     print(final)
     print(f"{'='*65}\n")
@@ -399,7 +396,7 @@ def list_agents():
     for name, (path, desc) in AGENT_REGISTRY.items():
         exists = "OK  " if (REPO_ROOT / path).exists() else "MISS"
         print(f"  [{exists}]  {name:<12} {desc}")
-    print(f"\n  Presets:")
+    print("\n  Presets:")
     for preset, agents in PRESETS.items():
         print(f"    --preset {preset:<10} -> {', '.join(agents)}")
     print()
@@ -495,7 +492,7 @@ Examples:
                 print("❌  dashboard/ not found. Run the setup first:\n"
                       "    cd dashboard && npm install && npm run dev")
                 return
-            print(f"  Starting Next.js dashboard at http://localhost:3000 …")
+            print("  Starting Next.js dashboard at http://localhost:3000 …")
             subprocess.run(["npm", "run", "dev"], cwd=str(dash))
         else:
             import webbrowser

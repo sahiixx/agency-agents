@@ -3,7 +3,8 @@
 SaaS Dominance Swarm — Claude-powered 4-agent pipeline.
 PM → Copywriter → Frontend Dev → QA → Claude Reasoning Core verdict
 """
-import os, sys
+import os
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
@@ -18,7 +19,8 @@ CLAUDE_MODEL = "claude-sonnet-4-6"
 def get_claude() -> object:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        print("❌  ANTHROPIC_API_KEY not set."); sys.exit(1)
+        print("❌  ANTHROPIC_API_KEY not set.")
+        sys.exit(1)
     return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
 
 def load(path: str) -> str: return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
@@ -47,11 +49,11 @@ class SaasSwarm:
 
         print("  📋  [1/5] PM — Strategic Planning...")
         plan = run_agent(self.llm, self.agents["pm"], f"Create a SaaS architecture plan for: {goal}", "pm")
-        print(f"  ✅  Plan ready\n")
+        print("  ✅  Plan ready\n")
 
         print("  ✍️   [2/5] Growth Hacker — Marketing Copy...")
         copy = run_agent(self.llm, self.agents["copy"], f"Write high-conversion landing page copy for this SaaS:\n{plan}", "copy")
-        print(f"  ✅  Copy ready\n")
+        print("  ✅  Copy ready\n")
 
         print("  💻  [3/5] Frontend Dev — UI Implementation...")
         code = run_agent(self.llm, self.agents["frontend"], f"Implement the landing page UI.\nPlan: {plan}\nCopy: {copy}", "frontend")
@@ -59,11 +61,11 @@ class SaasSwarm:
         out_dir = REPO_ROOT / "scaffold/nextjs-tailwind/pages"
         out_dir.mkdir(parents=True, exist_ok=True)
         (out_dir / "saas-landing.tsx").write_text(code)
-        print(f"  ✅  Code saved to scaffold/nextjs-tailwind/pages/saas-landing.tsx\n")
+        print("  ✅  Code saved to scaffold/nextjs-tailwind/pages/saas-landing.tsx\n")
 
         print("  🧪  [4/5] QA — Reality Check...")
         qa = run_agent(self.llm, self.agents["qa"], f"Audit for SEO, accessibility, and conversion:\n{code}", "qa")
-        print(f"  ✅  QA done\n")
+        print("  ✅  QA done\n")
 
         print("  🧠  [5/5] Claude Reasoning Core — Final Verdict...")
         verdict = run_agent(self.llm, self.agents["core"],

@@ -35,7 +35,6 @@ import urllib.parse
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from langchain_core.tools import tool
 
@@ -309,8 +308,8 @@ def scrape_ae_leads(community: str = "Springs", max_listings: int = 20) -> str:
         "community": community,
         "url": url,
         "total_leads": len(leads),
-        "owner_direct": sum(1 for l in leads if l["is_owner"]),
-        "hot_deals": sum(1 for l in leads if l["hot_deal"]),
+        "owner_direct": sum(1 for lead in leads if lead["is_owner"]),
+        "hot_deals": sum(1 for lead in leads if lead["hot_deal"]),
         "leads": leads,
     }
     return _json.dumps(summary, indent=2)
@@ -615,7 +614,7 @@ def perplexica_search(query: str, focus: str = "webSearch") -> str:
         sources = data.get("sources", [])
         src_lines = [f"  [{i+1}] {s.get('metadata', {}).get('url', '')}" for i, s in enumerate(sources[:PERPLEXICA_MAX_SOURCES])]
         return answer + ("\n\nSources:\n" + "\n".join(src_lines) if src_lines else "")
-    except Exception as e:
+    except Exception:
         # Graceful fallback to DuckDuckGo
         return web_search.invoke({"query": query})
 
@@ -648,8 +647,7 @@ def sql_query(question: str, connection_string: str = "") -> str:
             data = _json.loads(r.read().decode())
         sql     = data.get("sql", "")
         results = data.get("results", data.get("data", data))
-        output  = f"SQL: {sql}\n\nResults:\n{_json.dumps(results, indent=2)}" if sql else _json.dumps(results, indent=2)
-        return output
+        return f"SQL: {sql}\n\nResults:\n{_json.dumps(results, indent=2)}" if sql else _json.dumps(results, indent=2)
     except Exception as e:
         return _json.dumps({"error": str(e), "note": "Ensure SQLBOT_URL is set and SQLBot is running"})
 
@@ -670,7 +668,6 @@ def api_lookup(topic: str, category: str = "") -> str:
         "PUBLIC_APIS_URL",
         "https://api.publicapis.org/entries"
     )
-    topic_lower = topic.lower()
     try:
         params = urllib.parse.urlencode({
             "title":    topic,
@@ -865,7 +862,7 @@ if __name__ == "__main__":
     print("MCP Tools available:")
     for t in MCP_TOOLS:
         print(f"  {t.name:20} — {t.description.split('.')[0]}")
-    print(f"\nTesting memory_recall...")
+    print("\nTesting memory_recall...")
     print(memory_recall.invoke({"topic": "auth"}))
-    print(f"\nTesting get_datetime...")
+    print("\nTesting get_datetime...")
     print(get_datetime.invoke({}))

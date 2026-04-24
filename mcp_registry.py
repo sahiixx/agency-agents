@@ -44,7 +44,7 @@ import urllib.request
 import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from langchain_core.tools import tool as lc_tool
 

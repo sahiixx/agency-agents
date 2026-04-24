@@ -135,7 +135,7 @@ def cmd_reason(args):
     core_prompt = load_reasoning_core_prompt()
 
     print(f"\n{'─'*60}")
-    print(f"  🧠  Claude Reasoning Core — Direct Mode")
+    print("  🧠  Claude Reasoning Core — Direct Mode")
     print(f"  📋  Query: {args.query}")
     print(f"{'─'*60}\n")
 

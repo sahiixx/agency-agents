@@ -36,7 +36,7 @@ import json
 import threading
 import time
 import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -493,7 +493,8 @@ def register_servers(port_map: dict[str, int]):
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import argparse, sys
+    import argparse
+    import sys
 
     parser = argparse.ArgumentParser(description="A2A Protocol for The Agency")
     parser.add_argument("--serve",   action="store_true",        help="Start A2A servers for all registry agents")
@@ -534,7 +535,7 @@ if __name__ == "__main__":
         print(f"\n✅  {len(port_map)} A2A servers running")
         print(f"    Discovery:  http://localhost:{BASE_PORT}/.well-known/agent.json")
         print(f"    All agents: {list(port_map.keys())}")
-        print(f"\nPress Ctrl+C to stop.\n")
+        print("\nPress Ctrl+C to stop.\n")
 
         try:
             while True:

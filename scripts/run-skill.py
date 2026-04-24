@@ -787,8 +787,8 @@ def main():
     print(f"Agent: {name}", file=sys.stderr)
     print(f"Model: {model}", file=sys.stderr)
     if args.tools:
-        print(f"Tools: web_search, read_file, write_output, get_datetime", file=sys.stderr)
-    print(f"---", file=sys.stderr)
+        print("Tools: web_search, read_file, write_output, get_datetime", file=sys.stderr)
+    print("---", file=sys.stderr)
 
     # Chat mode
     if args.chat:

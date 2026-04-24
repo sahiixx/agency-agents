@@ -232,7 +232,7 @@ class TestAgentIdentityLive(unittest.TestCase):
 
 if __name__ == "__main__":
     print(f"\n{'═'*60}")
-    print(f"  🧪  The Agency — Test Suite")
+    print("  🧪  The Agency — Test Suite")
     print(f"  🧠  Claude-Powered | Structural + {'Live LLM' if LIVE else 'Offline only'}")
     print(f"{'═'*60}\n")
     unittest.main(verbosity=2)

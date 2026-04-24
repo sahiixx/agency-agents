@@ -10,7 +10,6 @@ import json
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from deepagents import create_deep_agent
 
@@ -51,7 +50,7 @@ def scan_dataset_for_solutions(dataset_path: Path) -> dict[str, Path]:
     return task_to_solution
 
 
-def find_task_directory(trial_dir: Path, task_name: str, task_source: str) -> Optional[Path]:
+def find_task_directory(trial_dir: Path, task_name: str, task_source: str) -> Path | None:
     """Find the task directory for a given trial.
 
     Args:
@@ -96,13 +95,13 @@ class Trial:
 
     trial_id: str
     status: TrialStatus
-    reward: Optional[bool] = None
-    trajectory_path: Optional[Path] = None
-    reward_path: Optional[Path] = None
-    exception_path: Optional[Path] = None
-    solution_path: Optional[Path] = None
-    trial_dir: Optional[Path] = None
-    tool_usage: Optional[dict[str, int]] = None
+    reward: bool | None = None
+    trajectory_path: Path | None = None
+    reward_path: Path | None = None
+    exception_path: Path | None = None
+    solution_path: Path | None = None
+    trial_dir: Path | None = None
+    tool_usage: dict[str, int] | None = None
 
 
 async def parse_reward(reward_path: Path) -> bool:
@@ -127,7 +126,7 @@ def extract_task_metadata(trial_dir: Path) -> dict:
     config_path = trial_dir / "config.json"
     if config_path.exists():
         try:
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 config = json.load(f)
                 metadata["task_name"] = config.get("task", {}).get("path", "")
                 metadata["task_source"] = config.get("task", {}).get("source", "")
@@ -140,7 +139,7 @@ def extract_task_metadata(trial_dir: Path) -> dict:
     result_path = trial_dir / "result.json"
     if result_path.exists():
         try:
-            with open(result_path, "r") as f:
+            with open(result_path) as f:
                 result = json.load(f)
                 metadata["reward"] = (
                     result.get("verifier_result", {}).get("rewards", {}).get("reward", 0.0)
@@ -153,13 +152,13 @@ def extract_task_metadata(trial_dir: Path) -> dict:
     return metadata
 
 
-def extract_task_instructions(trajectory_path: Path) -> Optional[str]:
+def extract_task_instructions(trajectory_path: Path) -> str | None:
     """Extract the task instructions from the trajectory file.
 
     Looks for the user message in the trajectory steps.
     """
     try:
-        with open(trajectory_path, "r") as f:
+        with open(trajectory_path) as f:
             trajectory_data = json.load(f)
 
         # Find the user message in the steps
@@ -184,7 +183,7 @@ def count_tool_usage(trajectory_path: Path) -> dict[str, int]:
     tool_counts: dict[str, int] = {}
 
     try:
-        with open(trajectory_path, "r") as f:
+        with open(trajectory_path) as f:
             trajectory_data = json.load(f)
 
         # Iterate through all steps
@@ -202,7 +201,7 @@ def count_tool_usage(trajectory_path: Path) -> dict[str, int]:
         return {}
 
 
-def get_task_name_from_trial(trial_dir: Path) -> Optional[str]:
+def get_task_name_from_trial(trial_dir: Path) -> str | None:
     """Extract the task name from a trial's config.json.
 
     Args:
@@ -214,7 +213,7 @@ def get_task_name_from_trial(trial_dir: Path) -> Optional[str]:
     config_path = trial_dir / "config.json"
     if config_path.exists():
         try:
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 config = json.load(f)
                 return config.get("task", {}).get("path", "")
         except Exception:
@@ -243,8 +242,8 @@ def enrich_trials_with_solutions(
 
 
 async def analyze_trial(
-    trial_dir: Path, solution_mapping: Optional[dict[str, Path]] = None
-) -> Optional[Trial]:
+    trial_dir: Path, solution_mapping: dict[str, Path] | None = None
+) -> Trial | None:
     """Analyze a single trial directory.
 
     Returns a Trial object even if trajectory or reward files are missing so incomplete
@@ -272,7 +271,7 @@ async def analyze_trial(
     # Fall back to searching for the task directory
     if not solution_path and config_path.exists():
         try:
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 config = json.load(f)
                 task_name = config.get("task", {}).get("path", "")
                 task_source = config.get("task", {}).get("source", "")
@@ -288,11 +287,9 @@ async def analyze_trial(
     exception_exists = exception_path.exists()
     solution_exists = solution_path and solution_path.exists()
 
-    reward_value: Optional[bool]
-    if reward_exists:
-        reward_value = reward_path.read_text().strip() == "1"
-    else:
-        reward_value = None
+    reward_value: bool | None = (
+        reward_path.read_text().strip() == "1" if reward_exists else None
+    )
 
     # Determine status
     if exception_exists:
@@ -324,7 +321,7 @@ async def analyze_trial(
 
 
 async def scan_jobs_directory(
-    jobs_dir: Path, solution_mapping: Optional[dict[str, Path]] = None
+    jobs_dir: Path, solution_mapping: dict[str, Path] | None = None
 ) -> list[Trial]:
     """Scan the jobs directory and extract all trial metadata.
 
@@ -536,12 +533,11 @@ If clear from the trajectory, suggest:
 - Focus on actionable insights
 - Identify patterns in agent behavior that led to failure
 - Don't assume the agent is correct just because it reported success
-"""  # noqa: E501
+"""
 
 
-async def analyze_failed_trial(trial: Trial, analyze_pending: bool = False) -> Optional[str]:
-    """
-    Run deep agent analysis on a failed or pending trial trajectory.
+async def analyze_failed_trial(trial: Trial, analyze_pending: bool = False) -> str | None:
+    """Run deep agent analysis on a failed or pending trial trajectory.
 
     Args:
         trial: The trial to analyze
@@ -565,7 +561,7 @@ async def analyze_failed_trial(trial: Trial, analyze_pending: bool = False) -> O
         return None
 
     # Read the trajectory file
-    with open(trial.trajectory_path, "r") as f:
+    with open(trial.trajectory_path) as f:
         trajectory_data = json.load(f)
 
     # Format trajectory as JSON string for the prompt
@@ -597,8 +593,7 @@ async def analyze_failed_trial(trial: Trial, analyze_pending: bool = False) -> O
     result = analysis_agent.invoke({"messages": [{"role": "user", "content": user_message}]})
 
     # Extract the analysis from the response
-    analysis = result["messages"][-1].content
-    return analysis
+    return result["messages"][-1].content
 
 
 async def write_trial_analysis(
@@ -607,9 +602,8 @@ async def write_trial_analysis(
     output_dir: Path,
     summary_only: bool = False,
     analyze_pending: bool = False,
-) -> Optional[Path]:
-    """
-    Analyze a failed or pending trial and write the results to a file.
+) -> Path | None:
+    """Analyze a failed or pending trial and write the results to a file.
 
     Args:
         trial: The trial to analyze

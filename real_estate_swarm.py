@@ -303,7 +303,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'='*60}")
-    print(f"  \033[1;36m🏠 REAL ESTATE INVESTMENT SWARM — The Agency\033[0m")
+    print("  \033[1;36m🏠 REAL ESTATE INVESTMENT SWARM — The Agency\033[0m")
     print(f"{'='*60}")
     print(f"  Mission : {args.mission}")
     print(f"  Scope   : {args.scope} — {SCOPES[args.scope]}")
@@ -385,7 +385,7 @@ def main():
     print(f"  📁 Reports: {out_dir}/")
     for a in active_agents:
         print(f"     • {a['output']}")
-    print(f"     • manifest.json")
+    print("     • manifest.json")
     print(f"{'='*60}\n")
 
 

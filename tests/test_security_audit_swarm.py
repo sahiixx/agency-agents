@@ -6,8 +6,6 @@ Runs offline structural tests + optional live LLM tests.
 
 import os
 import sys
-import stat
-import json
 import unittest
 import subprocess
 from pathlib import Path
@@ -108,6 +106,6 @@ class TestSecurityAuditStructure(unittest.TestCase):
 
 if __name__ == "__main__":
     print(f"\n{'='*60}")
-    print(f"  Security Audit Swarm — Test Suite")
+    print("  Security Audit Swarm — Test Suite")
     print(f"{'='*60}\n")
     unittest.main(verbosity=2)

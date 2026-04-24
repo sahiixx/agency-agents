@@ -13,7 +13,13 @@ Usage:
   Then open: http://localhost:7777
 """
 
-import os, sys, json, time, threading, queue, traceback
+import os
+import sys
+import json
+import time
+import threading
+import queue
+import traceback
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -26,7 +32,6 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, StreamingResponse, JSONResponse
 from starlette.routing import Route
-from starlette.staticfiles import StaticFiles
 import uvicorn
 
 # ── Event bus (thread-safe) ───────────────────────────────────────────────────
@@ -74,7 +79,8 @@ def run_mission_live(mission: str, preset: str, api_key: str):
     _mission_running = True
 
     try:
-        import warnings; warnings.filterwarnings("ignore")
+        import warnings
+        warnings.filterwarnings("ignore")
         os.environ["ANTHROPIC_API_KEY"] = api_key
 
         from deepagents import create_deep_agent

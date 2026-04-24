@@ -55,7 +55,8 @@ from memory.titans_memory import TitansMemory
 from mcp_tools import MCP_TOOLS
 from observability import AgencyTracer
 from a2a_protocol import start_agency_a2a_servers, make_a2a_tools
-import agency, time
+import agency
+import time
 
 # ── Mission ───────────────────────────────────────────────────────────────────
 MISSION = (
@@ -101,7 +102,7 @@ for name in specialist_names:
     print(f"  [OK] {name:12} {len(sp):,} chars  [{len(all_tools)} tools]")
 
 # ── Graph ─────────────────────────────────────────────────────────────────────
-print(f"\nBuilding orchestrator graph...")
+print("\nBuilding orchestrator graph...")
 fs = FilesystemBackend(root_dir=str(REPO), virtual_mode=False)
 core_sp = (REPO / agency.AGENT_REGISTRY["core"][0]).read_text()
 orch = create_deep_agent(
@@ -140,7 +141,7 @@ Delegate everything. You are the orchestrator and final judge."""
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 print(f"{'='*65}")
-print(f"  ORCHESTRATING — Claude Sonnet 4.6 is live")
+print("  ORCHESTRATING — Claude Sonnet 4.6 is live")
 print(f"{'='*65}\n")
 
 with tracer.span("full-mission"):
@@ -163,7 +164,8 @@ with tracer.span("full-mission"):
         sys.exit(0)
     except Exception as e:
         print(f"\nMission failed: {type(e).__name__}: {e}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 # ── Verdict ───────────────────────────────────────────────────────────────────
@@ -174,7 +176,7 @@ verdict = (
 )
 
 print(f"\n{'='*65}")
-print(f"  VERDICT — CLAUDE REASONING CORE")
+print("  VERDICT — CLAUDE REASONING CORE")
 print(f"{'='*65}")
 print(final)
 print(f"{'='*65}\n")
@@ -192,5 +194,5 @@ mem.inject_into_agents_md()
 print(f"  Memory: {verdict} (surprise={outcome.surprise:.2f}) — {mem.summary()}\n")
 
 print(f"{'='*65}")
-print(f"  DONE — The Agency ran live. Real Claude. Real outputs.")
+print("  DONE — The Agency ran live. Real Claude. Real outputs.")
 print(f"{'='*65}")

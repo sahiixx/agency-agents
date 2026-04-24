@@ -3,7 +3,9 @@
 Sovereign Ecosystem — Claude-powered self-evolution cycle.
 Observer audits an agent → Refiner rewrites it → Claude Core approves → DevOps verifies.
 """
-import os, sys, argparse
+import os
+import sys
+import argparse
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
@@ -18,7 +20,8 @@ CLAUDE_MODEL = "claude-sonnet-4-6"
 def get_claude():
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        print("❌  ANTHROPIC_API_KEY not set."); sys.exit(1)
+        print("❌  ANTHROPIC_API_KEY not set.")
+        sys.exit(1)
     return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
 
 def load(path): return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
@@ -44,11 +47,12 @@ class SovereignEcosystem:
     def run_evolution_cycle(self, target_agent_path: str):
         target = REPO_ROOT / target_agent_path
         if not target.exists():
-            print(f"❌  Agent not found: {target_agent_path}"); return False
+            print(f"❌  Agent not found: {target_agent_path}")
+            return False
 
         current = target.read_text()
         print(f"\n{'═'*60}")
-        print(f"  🌌  Sovereign Ecosystem — Evolution Cycle")
+        print("  🌌  Sovereign Ecosystem — Evolution Cycle")
         print(f"  🎯  Target: {target_agent_path}")
         print(f"  🧠  Engine: Claude {CLAUDE_MODEL}")
         print(f"{'═'*60}\n")
@@ -67,7 +71,8 @@ class SovereignEcosystem:
             "refiner")
 
         if len(optimized) < 300:
-            print("  ⚠️   Refiner output too short — aborting"); return False
+            print("  ⚠️   Refiner output too short — aborting")
+            return False
 
         # Phase 3: Claude Reasoning Core approves
         print("  🧠  [3/4] Claude Reasoning Core — Constitutional review...")
@@ -76,7 +81,8 @@ class SovereignEcosystem:
             "claude-reasoning-core")
 
         if "no-go" in verdict.lower() or "no go" in verdict.lower():
-            print(f"  ❌  Core says NO-GO — aborting\n  Reason: {verdict[:300]}"); return False
+            print(f"  ❌  Core says NO-GO — aborting\n  Reason: {verdict[:300]}")
+            return False
         print("  ✅  Core approved\n")
 
         # Phase 4: Write + DevOps verify
@@ -85,10 +91,10 @@ class SovereignEcosystem:
         target.write_text(optimized)
         print(f"  💾  [4/4] Written to {target_agent_path}")
 
-        devops_check = run_agent(self.llm, self.agents["devops"],
+        run_agent(self.llm, self.agents["devops"],
             f"Verify this updated agent is production-ready:\n{optimized[:1000]}",
             "devops")
-        print(f"  ✅  DevOps verified\n")
+        print("  ✅  DevOps verified\n")
         backup.unlink(missing_ok=True)
 
         print(f"{'═'*60}\n  🏁  Evolution complete: {target.name}\n{'═'*60}\n")

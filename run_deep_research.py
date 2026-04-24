@@ -2,7 +2,8 @@
 """
 Deep Research Agent — Claude-powered, with real web-aware tooling stubs.
 """
-import os, sys
+import os
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
@@ -14,7 +15,8 @@ from langchain_core.tools import tool
 
 api_key = os.environ.get("ANTHROPIC_API_KEY")
 if not api_key:
-    print("❌  ANTHROPIC_API_KEY not set."); sys.exit(1)
+    print("❌  ANTHROPIC_API_KEY not set.")
+    sys.exit(1)
 
 personality = (REPO_ROOT / "design/design-ux-researcher.md").read_text()
 

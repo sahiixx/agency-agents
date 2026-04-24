@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-CLI for LangSmith integration with Harbor.
+"""CLI for LangSmith integration with Harbor.
 
 Provides commands for:
 - Creating LangSmith datasets from Harbor tasks
@@ -179,17 +178,16 @@ async def _create_experiment_session(
         f"{LANGSMITH_API_URL}/sessions",
         headers=HEADERS,
         json={
-            "start_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "start_time": datetime.datetime.now(datetime.UTC).isoformat(),
             "reference_dataset_id": dataset_id,
             "name": name,
         },
     ) as experiment_response:
         if experiment_response.status == 200:
             return await experiment_response.json()
-        else:
-            raise Exception(
-                f"Failed to create experiment: {experiment_response.status} {await experiment_response.text()}"
-            )
+        raise Exception(
+            f"Failed to create experiment: {experiment_response.status} {await experiment_response.text()}"
+        )
 
 
 async def _get_dataset_by_name(dataset_name: str, session: aiohttp.ClientSession) -> dict:
@@ -210,10 +208,8 @@ async def _get_dataset_by_name(dataset_name: str, session: aiohttp.ClientSession
             datasets = await response.json()
             if len(datasets) > 0:
                 return datasets[0]
-            else:
-                raise Exception(f"Dataset '{dataset_name}' not found")
-        else:
-            raise Exception(f"Failed to get dataset: {response.status} {await response.text()}")
+            raise Exception(f"Dataset '{dataset_name}' not found")
+        raise Exception(f"Failed to get dataset: {response.status} {await response.text()}")
 
 
 async def create_experiment_async(dataset_name: str, experiment_name: str | None = None) -> str:
@@ -234,7 +230,7 @@ async def create_experiment_async(dataset_name: str, experiment_name: str | None
 
         # Generate experiment name if not provided
         if experiment_name is None:
-            timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+            timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d_%H-%M-%S")
             experiment_name = f"harbor-experiment-{timestamp}"
 
         # Create experiment session
@@ -334,11 +330,10 @@ def _process_trial(
             "status": "success",
             "message": f"Added harbor_reward feedback: {reward}",
         }
-    else:
-        return {
-            "status": "success",
-            "message": f"Would add harbor_reward feedback: {reward}",
-        }
+    return {
+        "status": "success",
+        "message": f"Would add harbor_reward feedback: {reward}",
+    }
 
 
 def add_feedback(job_folder: Path, project_name: str, dry_run: bool = False) -> None:
@@ -498,4 +493,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

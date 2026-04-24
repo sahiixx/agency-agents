@@ -6,7 +6,6 @@ Runs offline structural tests — no API key needed.
 
 import os
 import sys
-import json
 import unittest
 import subprocess
 from pathlib import Path
@@ -346,6 +345,6 @@ class TestDubaiBusinessAgents(unittest.TestCase):
 
 if __name__ == "__main__":
     print(f"\n{'='*60}")
-    print(f"  Real Estate Investment Swarm — Test Suite")
+    print("  Real Estate Investment Swarm — Test Suite")
     print(f"{'='*60}\n")
     unittest.main(verbosity=2)

@@ -34,8 +34,8 @@ def create_sql_deep_agent():
     toolkit = SQLDatabaseToolkit(db=db, llm=model)
     sql_tools = toolkit.get_tools()
 
-    # Create the Deep Agent with all parameters
-    agent = create_deep_agent(
+    # Create and return the Deep Agent with all parameters
+    return create_deep_agent(
         model=model,  # Claude Sonnet 4.5 with temperature=0
         memory=["./AGENTS.md"],  # Agent identity and general instructions
         skills=[
@@ -45,8 +45,6 @@ def create_sql_deep_agent():
         subagents=[],  # No subagents needed
         backend=FilesystemBackend(root_dir=base_dir),  # Persistent file storage
     )
-
-    return agent
 
 
 def main():

@@ -13,8 +13,7 @@ class PrivacyGuard:
         if not self.redact_pii:
             return text
         text = re.sub(r"[\w.-]+@[\w.-]+", "[REDACTED_EMAIL]", text)
-        text = re.sub(r"\b\d{10,}\b", "[REDACTED_NUMBER]", text)
-        return text
+        return re.sub(r"\b\d{10,}\b", "[REDACTED_NUMBER]", text)
 
     def privacy_report(self) -> dict:
         return {

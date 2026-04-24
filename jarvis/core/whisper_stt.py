@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 
 try:
     from faster_whisper import WhisperModel  # type: ignore

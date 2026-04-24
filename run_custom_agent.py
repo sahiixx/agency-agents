@@ -2,7 +2,8 @@
 """
 Run a single agent with a custom tool — Claude-powered example.
 """
-import os, sys
+import os
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
@@ -14,7 +15,8 @@ from langchain_core.tools import tool
 
 api_key = os.environ.get("ANTHROPIC_API_KEY")
 if not api_key:
-    print("❌  ANTHROPIC_API_KEY not set."); sys.exit(1)
+    print("❌  ANTHROPIC_API_KEY not set.")
+    sys.exit(1)
 
 # Load agent personality
 personality_path = REPO_ROOT / "engineering/engineering-frontend-developer.md"
