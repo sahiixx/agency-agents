@@ -69,8 +69,9 @@ librosa>=0.10.0
 soundfile>=0.12.0
 
 # Creative
+# audiocraft is optional — install separately: pip install audiocraft
+# (audiocraft pins torch==2.1.0 which conflicts with torch>=2.3.0)
 diffusers>=0.28.0
-audiocraft>=1.3.0
 transformers>=4.40.0
 torch>=2.3.0
 bark>=0.1.0
