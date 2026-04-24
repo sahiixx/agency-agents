@@ -17,6 +17,7 @@ class Translator:
     def translate(self, text: str, target_language: str) -> str:
         if not self.available:
             return "Install argostranslate for offline translation: pip install argostranslate"
+        assert argos_translate is not None
         language_code = target_language.strip().lower()[:2]
         if not language_code:
             return text

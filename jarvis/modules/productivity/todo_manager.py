@@ -30,7 +30,8 @@ class TodoManager:
             (task, priority, due_date),
         )
         self.conn.commit()
-        return int(cur.lastrowid)
+        row_id = cur.lastrowid
+        return int(row_id) if row_id is not None else 0
 
     def list_tasks(self) -> list[dict[str, str | int | bool]]:
         rows = self.conn.execute("SELECT id, task, priority, due_date, done FROM tasks ORDER BY id").fetchall()

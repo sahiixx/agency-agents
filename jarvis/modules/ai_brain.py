@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 
 @dataclass

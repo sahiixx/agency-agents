@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import queue
 import threading
+from typing import Any
 
 from config import SPEECH_RATE, VOICE_INDEX
 from utils.logger import setup_logger
@@ -20,7 +21,7 @@ class VoiceOutput:
     def __init__(self) -> None:
         self.logger = setup_logger("jarvis.voice_output")
         self._queue: queue.Queue[str] = queue.Queue()
-        self._engine = None
+        self._engine: Any = None
         self._worker = threading.Thread(target=self._consume, daemon=True)
         self._ready = False
         self._init_engine()

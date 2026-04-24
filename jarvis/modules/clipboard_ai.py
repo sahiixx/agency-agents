@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import deque
+from typing import Any
 
 try:
     import pyperclip  # type: ignore
@@ -15,7 +16,7 @@ from .ai_brain import AIBrain
 class ClipboardAI:
     def __init__(self, brain: AIBrain, max_history: int = 50):
         self.brain = brain
-        self.history = deque(maxlen=max_history)
+        self.history: deque[str] = deque(maxlen=max_history)
 
     def read_clipboard(self) -> str:
         if pyperclip is None:

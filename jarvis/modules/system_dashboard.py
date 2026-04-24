@@ -41,7 +41,7 @@ class SystemDashboard:
         self.conn.commit()
         self._lock = threading.Lock()
         self._stop = threading.Event()
-        self._thread = None
+        self._thread: threading.Thread | None = None
 
     def snapshot(self) -> MetricSnapshot:
         return MetricSnapshot(

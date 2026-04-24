@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 try:
     from cryptography.fernet import Fernet  # type: ignore
 except Exception:  # pragma: no cover
-    Fernet = None
+    Fernet: Any = None
 
 
 class EncryptionVault:
