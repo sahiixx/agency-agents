@@ -9,7 +9,7 @@ description = "JARVIS v3 desktop voice assistant"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-  "cryptography>=46.0.0",
+  "cryptography>=47.0.0",
   "requests>=2.31.0",
 ]
 
