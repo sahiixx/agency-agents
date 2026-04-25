@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Swarm Stress Test — Claude-powered. Runs PM→Frontend→QA and writes a real file.
+Swarm Stress Test — Ollama-powered. Runs PM→Frontend→QA and writes a real file.
 Use this to verify the full pipeline works end-to-end with actual file output.
 """
 import os
@@ -11,17 +11,14 @@ REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
 
 from deepagents import create_deep_agent
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-CLAUDE_MODEL = "claude-sonnet-4-6"
+OLLAMA_MODEL = "llama3.1"
+OLLAMA_BASE_URL = "http://localhost:11434"
 
-def get_claude():
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("❌  ANTHROPIC_API_KEY not set.")
-        sys.exit(1)
-    return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
+def get_ollama():
+    return ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
 
 def load(path): return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
 
@@ -42,7 +39,7 @@ def extract_code(response: str) -> str:
 
 class StressTestSwarm:
     def __init__(self):
-        self.llm = get_claude()
+        self.llm = get_ollama()
         self.agents = {
             "pm":       load("project-management/project-manager-senior.md"),
             "frontend": load("engineering/engineering-frontend-developer.md"),
@@ -53,7 +50,7 @@ class StressTestSwarm:
     def run_mission(self, goal: str):
         print(f"\n{'═'*60}")
         print(f"  🔥  Stress Test: {goal}")
-        print(f"  🧠  Engine: Claude {CLAUDE_MODEL}")
+        print(f"  🧠  Engine: Ollama {OLLAMA_MODEL}")
         print(f"{'═'*60}\n")
 
         print("  📋  [1/4] PM — Planning...")
@@ -76,7 +73,7 @@ class StressTestSwarm:
             f"Audit this React component for correctness, accessibility, and best practices:\n{code}", "qa")
         print("  ✅  QA done\n")
 
-        print("  🧠  [4/4] Claude Core — Final verdict...")
+        print("  🧠  [4/4] Ollama Core — Final verdict...")
         verdict = run_agent(self.llm, self.agents["core"],
             f"Mission: {goal}\n\nReview plan + code + QA. GO/NO-GO?\n\nPlan:\n{plan[:600]}\n\nCode:\n{code[:600]}\n\nQA:\n{qa[:400]}",
             "claude-reasoning-core")

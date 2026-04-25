@@ -17,8 +17,9 @@ Usage:
   echo "Review this" | python3 scripts/run-skill.py --skill engineering-code-reviewer --stdin
 
 Requires:
-  export ANTHROPIC_API_KEY="sk-ant-..."
-  pip install anthropic
+  export OLLAMA_HOST=http://localhost:11434
+  export AGENCY_MODEL=llama3.1
+  pip install langchain-ollama
 """
 
 import json
@@ -34,9 +35,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
 OUTPUTS_DIR = Path("/tmp/agency_outputs")
 
-model = os.environ.get("AGENCY_MODEL", "claude-sonnet-4-6")
+model = os.environ.get("AGENCY_MODEL", "llama3.1")
 
-# Claude Sonnet 4.6 pricing (per million tokens)
+# Ollama local inference (free — no token cost)
 PRICE_INPUT_PER_M = 3.00
 PRICE_OUTPUT_PER_M = 15.00
 
@@ -341,27 +342,16 @@ OUTPUT_INSTRUCTIONS = {
 
 def get_client():
     """
-    Create and return an Anthropic client configured from the `ANTHROPIC_API_KEY` environment variable.
-    
-    Attempts to import the `anthropic` package and read `ANTHROPIC_API_KEY` from the environment. If the package is not installed or the environment variable is missing, prints an error message to stderr and exits the process with status code 1.
-    
+    Create and return an Ollama client configured from the `OLLAMA_HOST` environment variable.
+
+    Attempts to connect to Ollama at OLLAMA_HOST (default http://localhost:11434).
+
     Returns:
-        anthropic.Anthropic: A configured Anthropic client instance.
+        dict: A dict with 'model' and 'base_url' keys for Ollama.
     """
-    try:
-        import anthropic
-    except ImportError:
-        print("Error: anthropic package not installed.", file=sys.stderr)
-        print("  pip install anthropic", file=sys.stderr)
-        sys.exit(1)
-
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("Error: ANTHROPIC_API_KEY not set.", file=sys.stderr)
-        print("  export ANTHROPIC_API_KEY='sk-ant-...'", file=sys.stderr)
-        sys.exit(1)
-
-    return anthropic.Anthropic(api_key=api_key)
+    model = os.environ.get("AGENCY_MODEL", "llama3.1")
+    base_url = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+    return {"model": model, "base_url": base_url}
 
 
 def run_agent(client, system_prompt: str, task: str, *,

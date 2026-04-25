@@ -32,7 +32,7 @@ Environment variables:
                             If set, voice→text input is routed through the SHADOW swarm
                             (Whisper → Shadow → Reviewer → Notion → Slack pipeline)
   VOICE_TTS_ENGINE        — TTS engine: 'pyttsx3' (default, offline), 'edge-tts', 'openai'
-  ANTHROPIC_API_KEY       — for the Agency mission backend
+  OLLAMA_BASE_URL           — for the Agency mission backend (Ollama)
 """
 
 from __future__ import annotations

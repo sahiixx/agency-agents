@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # setup.sh — One-command setup for The Agency
 # Usage: bash setup.sh
-# After setup: export ANTHROPIC_API_KEY='sk-ant-...' && python3 agency.py --list-agents
+# After setup: export OLLAMA_HOST=http://localhost:11434 && python3 agency.py --list-agents
 
 set -e
 
@@ -28,14 +28,14 @@ pip install -e deepagents/libs/deepagents --quiet --break-system-packages 2>&1 |
 
 # Install Python dependencies
 echo "  [2/3] Installing dependencies..."
-pip install langchain-anthropic anthropic langchain langchain-core --quiet --break-system-packages 2>&1 | tail -1
+pip install langchain-ollama langchain langchain-core --quiet --break-system-packages 2>&1 | tail -1
 
 # Verify imports
 echo "  [3/3] Verifying imports..."
 python3 -c "
 from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 print('  All imports OK')
 "
 
@@ -43,7 +43,7 @@ echo ""
 echo "============================================================"
 echo "  Setup complete."
 echo ""
-echo "  Next: export ANTHROPIC_API_KEY='sk-ant-...'"
+echo "  Next: export OLLAMA_HOST='http://localhost:11434'"
 echo "  Then: python3 agency.py --list-agents"
 echo "        python3 agency.py --mission 'Build a REST API for user auth'"
 echo "============================================================"

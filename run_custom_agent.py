@@ -2,7 +2,6 @@
 """
 Run a single agent with a custom tool — Claude-powered example.
 """
-import os
 import sys
 from pathlib import Path
 
@@ -10,13 +9,8 @@ REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
 
 from deepagents import create_deep_agent
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
-
-api_key = os.environ.get("ANTHROPIC_API_KEY")
-if not api_key:
-    print("❌  ANTHROPIC_API_KEY not set.")
-    sys.exit(1)
 
 # Load agent personality
 personality_path = REPO_ROOT / "engineering/engineering-frontend-developer.md"
@@ -30,7 +24,7 @@ def get_tech_stack_recommendation(project_type: str) -> str:
         return "Next.js 15, Tailwind CSS, Shadcn UI, and TanStack Query."
     return "Vite, React, and Tailwind CSS."
 
-llm = ChatAnthropic(model="claude-sonnet-4-6", api_key=api_key)
+llm = ChatOllama(model="llama3.1", base_url="http://localhost:11434")
 
 agent = create_deep_agent(
     tools=[get_tech_stack_recommendation],

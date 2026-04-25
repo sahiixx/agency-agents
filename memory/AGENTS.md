@@ -8,7 +8,7 @@ The Agency is a swarm of 130+ specialized AI agents built on Claude Sonnet 4.6.
 Every agent has access to this shared memory and can spawn subagents via the `task` tool.
 
 ## Active Architecture
-- Model: claude-sonnet-4-6 (Anthropic)
+- Model: llama3.1 (Ollama)
 - Orchestration: deepagents SDK (LangGraph-based)
 - Memory: This file, injected at startup by MemoryMiddleware (FilesystemBackend)
 - Reasoning Gate: specialized/specialized-claude-reasoning-core.md

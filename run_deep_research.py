@@ -2,7 +2,6 @@
 """
 Deep Research Agent — Claude-powered, with real web-aware tooling stubs.
 """
-import os
 import sys
 from pathlib import Path
 
@@ -10,13 +9,8 @@ REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
 
 from deepagents import create_deep_agent
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
-
-api_key = os.environ.get("ANTHROPIC_API_KEY")
-if not api_key:
-    print("❌  ANTHROPIC_API_KEY not set.")
-    sys.exit(1)
 
 personality = (REPO_ROOT / "design/design-ux-researcher.md").read_text()
 
@@ -44,7 +38,7 @@ def check_competitor_landscape(domain: str) -> str:
             "Mistral, Cohere. Differentiation factors: safety, reasoning depth, "
             "context window, tool use, multimodality.")
 
-llm = ChatAnthropic(model="claude-sonnet-4-6", api_key=api_key)
+llm = ChatOllama(model="llama3.1", base_url="http://localhost:11434")
 
 agent = create_deep_agent(
     tools=[search_academic_papers, analyze_market_trends, check_competitor_landscape],

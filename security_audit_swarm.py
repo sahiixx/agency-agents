@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
 Security & Compliance Audit Swarm
-Claude Sonnet 4.6 — The Agency Multi-Agent Framework
+Ollama (llama3.1) — The Agency Multi-Agent Framework
 
 5-agent pipeline:
-  PM → Security Engineer → Compliance Auditor → QA → Claude Reasoning Core
+  PM → Security Engineer → Compliance Auditor → QA → Ollama Reasoning Core
 
 Produces 5 timestamped reports in scaffold/security-audits/:
   1. audit_plan.md         (PM)
   2. threat_model.md       (Security Engineer)
   3. compliance_report.md  (Compliance Auditor)
   4. test_results.md       (QA)
-  5. final_verdict.md      (Claude Reasoning Core)
+  5. final_verdict.md      (Ollama Reasoning Core)
 
 Usage:
-  export ANTHROPIC_API_KEY="sk-ant-..."
+  export OLLAMA_BASE_URL="http://localhost:11434"
   python3 security_audit_swarm.py --mission "Audit our REST API" --scope application
   python3 security_audit_swarm.py --mission "Full SOC 2 readiness" --scope full
 """
@@ -166,7 +166,7 @@ def main():
         default="application",
         help="Audit scope (default: application)",
     )
-    parser.add_argument("--model", default="claude-sonnet-4-6", help="Claude model")
+    parser.add_argument("--model", default="llama3.1", help="Ollama model")
     parser.add_argument("--dry-run", action="store_true", help="Print pipeline without calling API")
     args = parser.parse_args()
 
@@ -191,19 +191,19 @@ def main():
             print(f"  Stage {i}: {agent['name']} ({agent['role']}) → {agent['output']}")
         return
 
-    # Check API key
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("ERROR: Set ANTHROPIC_API_KEY environment variable.")
+    # Check OLLAMA_BASE_URL
+    base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    if not base_url:
+        print("ERROR: Set OLLAMA_BASE_URL environment variable.")
         sys.exit(1)
 
     try:
-        from anthropic import Anthropic
+        from langchain_ollama import ChatOllama
     except ImportError:
-        print("ERROR: pip install anthropic")
+        print("ERROR: pip install langchain-ollama")
         sys.exit(1)
 
-    client = Anthropic(api_key=api_key)
+    client = ChatOllama(model=args.model, base_url=base_url)
     outputs: dict[str, str] = {}
     total_start = datetime.now(timezone.utc)
 

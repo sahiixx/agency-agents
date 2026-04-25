@@ -139,7 +139,7 @@ def make_agent_card(
         "defaultOutputModes": ["text/plain"],
         "securitySchemes":    {},
         "metadata": {
-            "model":     "claude-sonnet-4-6",
+            "model":     "llama3.1",
             "framework": "deepagents+langgraph",
             "memory":    "titans-v1",
         },

@@ -6,8 +6,7 @@ Every provider exposes two things:
   run_agent(...) → a blocking call that returns a ProviderResult object
 
 Supported providers:
-  anthropic  — Claude (default)
-  ollama     — Local Ollama models
+  ollama     — Local Ollama models (default)
   openai     — OpenAI Agents SDK (GPT-4o, o3, etc.)
   adk        — Google Agent Development Kit
   autogen    — Microsoft AutoGen

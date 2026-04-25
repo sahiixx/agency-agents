@@ -1,6 +1,6 @@
-# The Agency — Claude Integration
+# The Agency — Ollama Integration
 
-A swarm of 130+ specialized AI agents running entirely on **Claude Sonnet 4.6**.
+A swarm of 150+ specialized AI agents running on **Ollama (llama3.1)**.
 Each agent is a `.md` file. Python scripts chain them into multi-agent pipelines.
 
 ---
@@ -13,12 +13,9 @@ bash setup.sh
 
 # Or manually:
 pip install -e deepagents/libs/deepagents
-pip install langchain-anthropic anthropic
+pip install langchain-ollama
 
-# 2. Set your API key
-export ANTHROPIC_API_KEY="sk-ant-..."
-
-# 3. Run
+# 2. Run (no API key needed — runs locally)
 python3 agency.py --list-agents
 python3 agency.py --mission "Build a REST API for user auth"
 ```
@@ -71,6 +68,19 @@ python3 agency.py --mission "Audit security" --agents security,qa,core
 
 ---
 
+## AGI Features
+
+| Flag | Description |
+|------|-------------|
+| `--explore "topic"` | Autonomous exploration and knowledge discovery |
+| `--fabricate name desc` | Runtime tool synthesis from natural language |
+| `--evolve-daemon` | Continuous agent evolution every 60 min |
+| `--ecosystem` | Scan sahiixx GitHub repos for integration |
+| `--score-all` | Score and rank all 350+ agent prompts |
+| `--preset agi` | Full AGI pipeline: explore + build + verify |
+
+---
+
 ## How Memory Works
 
 Based on [Titans (Google, NeurIPS 2025)](https://arxiv.org/abs/2501.00663):
@@ -101,19 +111,9 @@ memorable outcomes back into `AGENTS.md` — agents learn across runs.
 
 ---
 
-## CI/CD
-
-`.github/workflows/ci.yml` runs on every push:
-- **Structural tests** (no API key needed): always run
-- **Live LLM tests**: run on push to `main` if `ANTHROPIC_API_KEY` secret is set
-
-Add secret: repo Settings → Secrets → `ANTHROPIC_API_KEY`
-
----
-
 ## Tests
 
 ```bash
 python3 tests/agent_tests.py          # 19 structural tests (offline)
-ANTHROPIC_API_KEY=... python3 tests/agent_tests.py   # + 4 live LLM tests
+python3 tests/agent_tests.py          # + 4 live LLM tests (if Ollama is running)
 ```

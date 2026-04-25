@@ -117,7 +117,7 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--mission", "Test pipeline", "--dry-run"],
             capture_output=True, text=True,
-            env={**os.environ, "ANTHROPIC_API_KEY": ""},
+            env={**os.environ, "OLLAMA_BASE_URL": ""},
         )
         self.assertEqual(result.returncode, 0, f"Dry run failed: {result.stderr}")
         self.assertIn("DRY RUN", result.stdout)
@@ -127,7 +127,7 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--mission", "Test leads", "--scope", "leads", "--dry-run"],
             capture_output=True, text=True,
-            env={**os.environ, "ANTHROPIC_API_KEY": ""},
+            env={**os.environ, "OLLAMA_BASE_URL": ""},
         )
         self.assertEqual(result.returncode, 0, f"Dry run (leads) failed: {result.stderr}")
         self.assertIn("DRY RUN", result.stdout)

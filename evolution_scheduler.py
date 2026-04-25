@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Evolution Scheduler — Randomly selects an agent and runs Claude Reasoning Core
+Evolution Scheduler — Randomly selects an agent and runs Reasoning Core
 to critique and improve it, then commits the improved version to git.
 """
 import os
@@ -14,19 +14,16 @@ REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
 
 from deepagents import create_deep_agent
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-CLAUDE_MODEL = "claude-sonnet-4-6"
+OLLAMA_MODEL = "llama3.1"
+OLLAMA_BASE_URL = "http://localhost:11434"
 EXCLUDED = {'.git', 'node_modules', 'deepagents', 'integrations', 'scaffold', 'tests', 'scripts'}
 SKIP_FILES = {'README.md', 'CONTRIBUTING.md', 'LICENSE.md', 'AGENTS.md', 'README_DEEPAGENTS.md', 'README_CLAUDE.md'}
 
-def get_claude():
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("❌  ANTHROPIC_API_KEY not set.")
-        sys.exit(1)
-    return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
+def get_llm():
+    return ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
 
 def get_all_agents():
     agents = []
@@ -38,7 +35,7 @@ def get_all_agents():
     return agents
 
 def evolve_agent(llm, agent_path: Path) -> str:
-    """Use Claude Reasoning Core to critique and rewrite an agent's personality."""
+    """Use Reasoning Core to critique and rewrite an agent's personality."""
     core_prompt = (REPO_ROOT / "specialized/specialized-claude-reasoning-core.md").read_text()
     original = agent_path.read_text()
 
@@ -70,14 +67,14 @@ def commit(agent_path: Path):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     cmds = [
         ["git", "add", str(agent_path.relative_to(REPO_ROOT))],
-        ["git", "commit", "-m", f"🧠 Claude Evolution: {name} [{ts}]"],
+        ["git", "commit", "-m", f"🧠 Ollama Evolution: {name} [{ts}]"],
     ]
     for cmd in cmds:
         subprocess.run(cmd, check=True, cwd=REPO_ROOT)
     print(f"  ✅  Committed: {name}")
 
 def main():
-    llm = get_claude()
+    llm = get_llm()
     agents = get_all_agents()
 
     if not agents:
@@ -88,12 +85,12 @@ def main():
     print(f"\n{'═'*60}")
     print(f"  🧬  Evolution Cycle — {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print(f"  🎯  Target: {target.relative_to(REPO_ROOT)}")
-    print(f"  🧠  Engine: Claude {CLAUDE_MODEL}")
+    print(f"  🧠  Engine: Ollama ({OLLAMA_MODEL})")
     print(f"{'═'*60}\n")
 
     original = target.read_text()
 
-    print("  🔬  Running Claude Reasoning Core critique & rewrite...")
+    print("  🔬  Running Reasoning Core critique & rewrite...")
     improved = evolve_agent(llm, target)
 
     if len(improved) < 200:

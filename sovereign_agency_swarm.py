@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Sovereign Agency Swarm — Claude-powered 6-agent full-stack pipeline.
-PM → Backend → AI Engineer → Frontend → QA → Claude Reasoning Core
+Sovereign Agency Swarm — Ollama-powered 6-agent full-stack pipeline.
+PM → Backend → AI Engineer → Frontend → QA → Ollama Reasoning Core
 """
 import os
 import sys
@@ -11,17 +11,14 @@ REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
 
 from deepagents import create_deep_agent
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-CLAUDE_MODEL = "claude-sonnet-4-6"
+OLLAMA_MODEL = "llama3.1"
+OLLAMA_BASE_URL = "http://localhost:11434"
 
-def get_claude() -> object:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("❌  ANTHROPIC_API_KEY not set.")
-        sys.exit(1)
-    return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
+def get_ollama() -> object:
+    return ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
 
 def load(path: str) -> str: return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
 
@@ -35,7 +32,7 @@ def run_agent(llm, prompt: str, query: str, name: str) -> str:
 
 class SovereignSwarm:
     def __init__(self):
-        self.llm = get_claude()
+        self.llm = get_ollama()
         self.agents = {
             "pm":       load("project-management/project-manager-senior.md"),
             "backend":  load("engineering/engineering-backend-architect.md"),
@@ -46,7 +43,7 @@ class SovereignSwarm:
         }
 
     def run_mission(self, goal: str):
-        print(f"\n{'═'*60}\n  👑  Sovereign Mission: {goal}\n  🧠  Engine: Claude {CLAUDE_MODEL}\n{'═'*60}\n")
+        print(f"\n{'═'*60}\n  👑  Sovereign Mission: {goal}\n  🧠  Engine: Ollama {OLLAMA_MODEL}\n{'═'*60}\n")
 
         print("  📋  [1/6] PM — Full-Stack Architecture...")
         plan = run_agent(self.llm, self.agents["pm"],
@@ -80,7 +77,7 @@ class SovereignSwarm:
             f"Audit this full-stack platform for security, performance, reliability.\nFrontend: {frontend[:1000]}\nBackend: {backend[:1000]}", "qa")
         print("  ✅  QA done\n")
 
-        print("  🧠  [6/6] Claude Reasoning Core — Final Verdict...")
+        print("  🧠  [6/6] Ollama Reasoning Core — Final Verdict...")
         verdict = run_agent(self.llm, self.agents["core"],
             f"Mission: {goal}\n\nReview all agent outputs and give GO/NO-GO with key findings.\n\nPlan:\n{plan[:600]}\nBackend:\n{backend[:600]}\nAI Logic:\n{ai_logic[:600]}\nFrontend:\n{frontend[:600]}\nQA:\n{qa[:600]}", "core")
 

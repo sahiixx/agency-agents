@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-live_run.py — One command to run Claude live inside The Agency.
+live_run.py — One command to run Ollama live inside The Agency.
 
 Usage:
-  ANTHROPIC_API_KEY=sk-ant-... python3 live_run.py
+  python3 live_run.py
 
 What happens:
-  1. Claude Sonnet 4.6 receives the mission
+  1. Ollama llama3.1 receives the mission
   2. Orchestrator delegates to pm → backend → frontend (parallel) → qa → core
-  3. Each agent calls real Claude API with its specialist system prompt
+  3. Each agent calls the local Ollama API with its specialist system prompt
   4. MCP tools available: web_search, read_file, write_output, memory_recall
   5. A2A servers start — each agent is a live HTTP endpoint
-  6. Observability prints per-agent latency, tokens, and cost
+  6. Observability prints per-agent latency and tokens
   7. Titans memory records the verdict
   8. Full trace saved to /tmp/agency_outputs/
 """
@@ -21,24 +21,9 @@ import sys
 import warnings
 warnings.filterwarnings("ignore")
 
-# ── Check key before anything ─────────────────────────────────────────────────
-api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-if not api_key or not api_key.startswith("sk-ant-"):
-    print("""
-╔══════════════════════════════════════════════════════════════╗
-║  THE AGENCY — Live Run                                       ║
-║  One thing needed: your Anthropic API key                    ║
-╠══════════════════════════════════════════════════════════════╣
-║                                                              ║
-║  export ANTHROPIC_API_KEY="sk-ant-..."                       ║
-║  python3 live_run.py                                         ║
-║                                                              ║
-║  Or in one line:                                             ║
-║  ANTHROPIC_API_KEY="sk-ant-..." python3 live_run.py          ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
-""")
-    sys.exit(1)
+# ── Config ────────────────────────────────────────────────────────────────────
+OLLAMA_MODEL = "llama3.1"
+OLLAMA_BASE_URL = "http://localhost:11434"
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 from pathlib import Path
@@ -49,7 +34,7 @@ sys.path.insert(0, str(REPO))
 # ── Imports ───────────────────────────────────────────────────────────────────
 from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 from memory.titans_memory import TitansMemory
 from mcp_tools import MCP_TOOLS
@@ -70,7 +55,7 @@ PRESET = "full"
 print(f"""
 ╔══════════════════════════════════════════════════════════════╗
 ║  THE AGENCY — LIVE RUN                                       ║
-║  Claude Sonnet 4.6 · deepagents · LangGraph                  ║
+║  Ollama (llama3.1) · deepagents · LangGraph                  ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Mission: {MISSION[:52]:<52} ║
 ║  Preset:  {PRESET:<52} ║
@@ -78,7 +63,7 @@ print(f"""
 """)
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
-llm    = ChatAnthropic(model="claude-sonnet-4-6", api_key=api_key)
+llm    = ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
 tracer = AgencyTracer(mission=MISSION, preset=PRESET)
 groups = agency.PARALLEL_GROUPS[PRESET]
 agents = [a for g in groups for a in g]
@@ -141,7 +126,7 @@ Delegate everything. You are the orchestrator and final judge."""
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 print(f"{'='*65}")
-print("  ORCHESTRATING — Claude Sonnet 4.6 is live")
+print("  ORCHESTRATING — Ollama llama3.1 is live")
 print(f"{'='*65}\n")
 
 with tracer.span("full-mission"):
@@ -176,7 +161,7 @@ verdict = (
 )
 
 print(f"\n{'='*65}")
-print("  VERDICT — CLAUDE REASONING CORE")
+print("  VERDICT — REASONING CORE")
 print(f"{'='*65}")
 print(final)
 print(f"{'='*65}\n")
@@ -194,5 +179,5 @@ mem.inject_into_agents_md()
 print(f"  Memory: {verdict} (surprise={outcome.surprise:.2f}) — {mem.summary()}\n")
 
 print(f"{'='*65}")
-print("  DONE — The Agency ran live. Real Claude. Real outputs.")
+print("  DONE — The Agency ran live. Ollama. Real outputs.")
 print(f"{'='*65}")

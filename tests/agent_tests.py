@@ -2,7 +2,7 @@
 """
 The Agency — Test Suite (Claude-Powered)
 Tests agent identity, reasoning core, swarm structure, and file integrity.
-Does NOT require ANTHROPIC_API_KEY for structural tests.
+Does not require API key for structural tests.
 Live LLM tests run only when the key is present.
 """
 import os
@@ -116,20 +116,20 @@ class TestScripts(unittest.TestCase):
             )
             self.assertNotIn(
                 "ChatOpenAI", content,
-                f"ChatOpenAI found in {script} — should use ChatAnthropic"
+                f"ChatOpenAI found in {script} - should use ChatOllama"
             )
 
-    def test_scripts_use_anthropic(self):
-        """Verify scripts import langchain_anthropic."""
+    def test_scripts_use_ollama(self):
+        """Verify scripts import langchain_ollama."""
         for script in REQUIRED_SCRIPTS:
             content = (REPO_ROOT / script).read_text()
-            # mission_control and swarm scripts must use Anthropic
+            # mission_control and swarm scripts must use Ollama
             if script in ["mission_control.py", "swarm_orchestrator.py",
                           "saas_dominance_swarm.py", "sovereign_agency_swarm.py",
                           "evolution_scheduler.py"]:
                 self.assertIn(
-                    "ChatAnthropic", content,
-                    f"Missing ChatAnthropic in {script}"
+                    "ChatOllama", content,
+                    f"Missing ChatOllama in {script}"
                 )
 
     def test_reasoning_core_integrated_in_swarms(self):
@@ -157,26 +157,26 @@ class TestReadme(unittest.TestCase):
 
     def test_claude_readme_has_setup_instructions(self):
         content = (REPO_ROOT / "README_CLAUDE.md").read_text()
-        self.assertIn("ANTHROPIC_API_KEY", content)
+        self.assertIn("langchain-ollama", content)
         self.assertIn("pip install", content)
 
 
-# ─── Live LLM Tests (only if ANTHROPIC_API_KEY is set) ───────────────────────
+# ─── Live LLM Tests (only if Ollama is running) ───────────────────────
 
-LIVE = bool(os.environ.get("ANTHROPIC_API_KEY"))
+LIVE = bool(os.environ.get("OLLAMA_HOST"))
 
-@unittest.skipUnless(LIVE, "Skipping live LLM tests — ANTHROPIC_API_KEY not set")
+@unittest.skipUnless(LIVE, "Skipping live LLM tests — no Ollama connection")
 class TestAgentIdentityLive(unittest.TestCase):
     """Live tests that actually call Claude to verify agent personas."""
 
     @classmethod
     def setUpClass(cls):
         from deepagents import create_deep_agent
-        from langchain_anthropic import ChatAnthropic
+        from langchain_ollama import ChatOllama
         cls.create_agent = create_deep_agent
-        cls.llm = ChatAnthropic(
-            model="claude-sonnet-4-6",
-            api_key=os.environ["ANTHROPIC_API_KEY"]
+        cls.llm = ChatOllama(
+            model="llama3.1",
+            base_url=os.environ["OLLAMA_HOST"]
         )
 
     def _ask(self, agent_path: str, question: str) -> str:

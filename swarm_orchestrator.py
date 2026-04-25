@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 The Agency — Swarm Orchestrator
-Claude (Anthropic) is the reasoning backbone of every agent in the swarm.
-Pipeline: PM → Dev → QA → [Claude Reasoning Core Review] → Ship
+Ollama (llama3.1) is the reasoning backbone of every agent in the swarm.
+Pipeline: PM → Dev → QA → [Reasoning Core Review] → Ship
 """
 
 import os
@@ -14,10 +14,11 @@ REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
 
 from deepagents import create_deep_agent
-from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-CLAUDE_MODEL = "claude-sonnet-4-6"
+OLLAMA_MODEL = "llama3.1"
+OLLAMA_BASE_URL = "http://localhost:11434"
 
 SWARM_AGENTS = {
     "pm":       "project-management/project-manager-senior.md",
@@ -29,12 +30,8 @@ SWARM_AGENTS = {
 }
 
 
-def get_claude():
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("❌  ANTHROPIC_API_KEY not set.")
-        sys.exit(1)
-    return ChatAnthropic(model=CLAUDE_MODEL, api_key=api_key)
+def get_llm():
+    return ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
 
 
 def load(path: str) -> str:
@@ -54,13 +51,13 @@ def run_agent(llm, system_prompt: str, query: str, name: str) -> str:
 
 class AgencySwarm:
     def __init__(self):
-        self.llm = get_claude()
+        self.llm = get_llm()
         self.prompts = {k: load(v) for k, v in SWARM_AGENTS.items()}
 
     def run_mission(self, mission_goal: str, mode: str = "full"):
         print(f"\n{'═'*65}")
         print(f"  🚀  MISSION: {mission_goal}")
-        print(f"  🧠  Engine: Claude {CLAUDE_MODEL} (Anthropic)")
+        print(f"  🧠  Engine: Ollama ({OLLAMA_MODEL})")
         print(f"  🔁  Mode: {mode}")
         print(f"{'═'*65}\n")
 
@@ -102,8 +99,8 @@ class AgencySwarm:
             )
             print(f"  ✅  Security report ready ({len(security_report):,} chars)\n")
 
-        # ── Phase 5: Claude Reasoning Core — Final Gate ───────────────
-        print("  🧠  [Phase 5/5] Claude Reasoning Core — Final Judgment...")
+        # ── Phase 5: Reasoning Core — Final Gate ───────────────
+        print("  🧠  [Phase 5/5] Reasoning Core — Final Judgment...")
         synthesis_query = f"""
 Mission: {mission_goal}
 
@@ -130,7 +127,7 @@ Your job:
         verdict = run_agent(self.llm, self.prompts["core"], synthesis_query, "claude-reasoning-core")
 
         print(f"\n{'═'*65}")
-        print("  🧠  CLAUDE REASONING CORE — FINAL VERDICT")
+        print("  🧠  REASONING CORE — FINAL VERDICT")
         print(f"{'═'*65}")
         print(verdict)
         print(f"{'═'*65}\n")
@@ -145,7 +142,7 @@ Your job:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="🧠 Agency Swarm Orchestrator (Claude-Powered)")
+    parser = argparse.ArgumentParser(description="🧠 Agency Swarm Orchestrator (Ollama-Powered)")
     parser.add_argument("--mission", "-m", type=str, required=True, help="Mission goal")
     parser.add_argument("--mode", choices=["full", "fast"], default="full",
                         help="full=all agents, fast=PM+Dev+QA+Core only")

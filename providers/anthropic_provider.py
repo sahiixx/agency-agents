@@ -1,8 +1,8 @@
 """
-providers/anthropic_provider.py — Default Claude (Anthropic) provider.
+providers/anthropic_provider.py — Legacy Claude (Anthropic) provider wrapper.
 
-Thin wrapper around the existing ChatAnthropic + deepagents flow so the
-rest of the codebase can call it through the unified BaseProvider interface.
+Thin wrapper around ChatAnthropic + deepagents flow for backward compatibility.
+Default model now uses Ollama-style settings via OLLAMA_BASE_URL.
 """
 
 from __future__ import annotations
@@ -18,27 +18,27 @@ for p in (str(SDK_PATH), str(REPO_ROOT)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-CLAUDE_MODEL = "claude-sonnet-4-6"
+OLLAMA_MODEL = "llama3.1"
 
 
 class AnthropicProvider(BaseProvider):
-    """Claude via Anthropic API — the default Agency provider."""
+    """Claude via Anthropic API — legacy provider."""
 
     name = "anthropic"
 
-    def get_llm(self, model: str = CLAUDE_MODEL, **kwargs):
+    def get_llm(self, model: str = OLLAMA_MODEL, **kwargs):
         from langchain_anthropic import ChatAnthropic
-        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-        if not api_key:
-            raise EnvironmentError("ANTHROPIC_API_KEY not set.")
-        return ChatAnthropic(model=model, api_key=api_key, **kwargs)
+        base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+        if not base_url:
+            raise EnvironmentError("OLLAMA_BASE_URL not set.")
+        return ChatAnthropic(model=model, base_url=base_url, **kwargs)
 
     def run_agent(
         self,
         system_prompt: str,
         query:         str,
         agent_name:    str = "claude-agent",
-        model:         str = CLAUDE_MODEL,
+        model:         str = OLLAMA_MODEL,
         **kwargs,
     ) -> ProviderResult:
         try:

@@ -18,6 +18,7 @@ Usage:
   python3 agency.py --mission "Run this mission" --provider ollama --ollama-model llama3.1
 """
 
+import asyncio
 import sys
 import warnings
 import argparse
@@ -41,26 +42,33 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from langchain_anthropic import ChatAnthropic
+    from langchain_ollama import ChatOllama
     from langchain_core.messages import HumanMessage
 except ImportError as e:
-    print(f"❌  langchain-anthropic not found: {e}")
-    print("    Run: pip install langchain-anthropic")
+    print(f"❌  langchain-ollama not found: {e}")
+    print("    Run: pip install langchain-ollama")
     sys.exit(1)
 
 from memory.titans_memory import TitansMemory
 from mcp_tools import MCP_TOOLS
 from observability import AgencyTracer
 from providers import get_provider
-from a2a_protocol import (
-    start_agency_a2a_servers,
-    register_servers,
-    make_a2a_tools,
+
+# ── Phase 2: sahiixx-bus integration ──────────────────────────────────────────
+from safety_proxy import safety_scan_input, gate_kill, track_mission_cost, assign_identity_role
+from orchestration_bridge import (
+    publish_mission,
+    subscribe_to_results,
+    register_agency_services,
+    publish_verdict,
 )
 
+# A2A imports handled lazily in run_mission (optional dependency: starlette)
+
 # ── Config ────────────────────────────────────────────────────────────────────
-CLAUDE_MODEL = "claude-sonnet-4-6"
-MEMORY_FILE  = "memory/AGENTS.md"  # relative to REPO_ROOT
+DEFAULT_PROVIDER = "ollama"
+DEFAULT_MODEL    = "llama3.1"
+MEMORY_FILE      = "memory/AGENTS.md"  # relative to REPO_ROOT
 
 # ── Agent registry ────────────────────────────────────────────────────────────
 AGENT_REGISTRY = {
@@ -100,6 +108,8 @@ AGENT_REGISTRY = {
     "biz-content":   ("business/business-content-agent.md",     "Bilingual content — English + Arabic copy, SEO, social media, email campaigns"),
     "biz-analytics": ("business/business-analytics-agent.md",   "Business intelligence — KPIs, forecasting, anomaly detection, AED benchmarks"),
     "biz-ops":       ("business/business-operations-agent.md",  "Operations — workflow automation, invoicing, HR, UAE compliance, onboarding"),
+    # AGI agents
+    "explorer":     ("specialized/specialized-autonomous-explorer.md", "Autonomous Explorer — open-ended knowledge discovery, self-directed research, ecosystem scanning"),
 }
 
 PRESETS = {
@@ -128,30 +138,33 @@ PRESETS = {
     # Sovereign — full ecosystem with all business + RE + security agents
     "sovereign":  ["pm", "backend", "frontend", "security", "devops", "ai",
                    "biz-sales", "biz-mkt", "biz-ops", "re-leads", "re-intel", "core"],
+    # AGI presets
+    "explore":    ["explorer", "ai", "core"],
+    "agi":        ["explorer", "pm", "backend", "frontend", "security", "ai", "qa", "core"],
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def get_llm(provider: str = "anthropic", ollama_model: str = "llama3.1",
+def get_llm(provider: str = "ollama", ollama_model: str = DEFAULT_MODEL,
             ollama_base_url: str = "http://localhost:11434",
             openai_model: str = "gpt-4o",
             adk_model: str = "gemini-2.0-flash",
             autogen_model: str = "gpt-4o") -> object:
     """Return the configured LLM.
 
-    Supported providers: anthropic (default), ollama, openai, adk, autogen, rasa, n8n.
+    Supported providers: ollama (default), anthropic, openai, adk, autogen, rasa, n8n.
     rasa and n8n do not currently provide a LangChain-compatible LLM here, so
-    selecting them still uses Claude/Anthropic as the orchestration backbone.
+    selecting them still uses default/Ollama as the orchestration backbone.
     """
     p = get_provider(provider)
-
-    if provider in ("anthropic", "claude"):
-        print(f"  Provider: Anthropic ({CLAUDE_MODEL})")
-        return p.get_llm(model=CLAUDE_MODEL)
 
     if provider == "ollama":
         print(f"  Provider: Ollama ({ollama_model} @ {ollama_base_url})")
         return p.get_llm(model=ollama_model, base_url=ollama_base_url)
+
+    if provider in ("anthropic", "claude"):
+        print(f"  Provider: Anthropic ({ollama_model})")
+        return p.get_llm(model=ollama_model)
 
     if provider == "openai":
         print(f"  Provider: OpenAI ({openai_model})")
@@ -163,14 +176,12 @@ def get_llm(provider: str = "anthropic", ollama_model: str = "llama3.1",
 
     if provider == "autogen":
         print(f"  Provider: AutoGen ({autogen_model})")
-        # AutoGen manages its own LLM; return Anthropic LLM as orchestrator backbone
-        from providers.anthropic_provider import AnthropicProvider
-        return AnthropicProvider().get_llm(model=CLAUDE_MODEL)
+        return p.get_llm(model=autogen_model)
 
     if provider in ("rasa", "n8n"):
-        print(f"  Provider: {provider} (external service — Claude used for orchestration)")
-        from providers.anthropic_provider import AnthropicProvider
-        return AnthropicProvider().get_llm(model=CLAUDE_MODEL)
+        print(f"  Provider: {provider} (external service — Ollama used for orchestration)")
+        from providers.ollama_provider import OllamaProvider
+        return OllamaProvider().get_llm(model=ollama_model, base_url=ollama_base_url)
 
     raise ValueError(f"Unknown provider '{provider}'")
 
@@ -183,7 +194,7 @@ def load_agent(path: str) -> str:
     return f.read_text()
 
 
-def build_subagent(name: str, llm: ChatAnthropic) -> SubAgent:
+def build_subagent(name: str, llm: ChatOllama) -> SubAgent:
     path, description = AGENT_REGISTRY[name]
     return {
         "name":          name,
@@ -211,6 +222,9 @@ PARALLEL_GROUPS = {
     "n8n":        [["pm", "devops", "backend"], ["core"]],
     # Sovereign: full ecosystem — business + RE + security all run in parallel phases
     "sovereign":  [["pm", "biz-analytics", "re-intel"], ["backend", "frontend", "biz-sales", "biz-mkt", "re-leads"], ["security", "devops", "ai", "biz-ops", "re-intel"], ["core"]],
+    # AGI: explore then verify
+    "explore":    [["explorer", "ai"], ["core"]],
+    "agi":        [["explorer", "pm"], ["backend", "frontend", "security", "ai"], ["qa"], ["core"]],
 }
 
 
@@ -233,6 +247,13 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
         print(f"❌  Unknown agents: {invalid}")
         print(f"   Available: {list(AGENT_REGISTRY.keys())}")
         sys.exit(1)
+
+    # Phase 2 — safety scan mission goal before any agent construction
+    if not dry_run:
+        try:
+            asyncio.run(safety_scan_input(goal, identity="orchestrator"))
+        except Exception as scan_err:
+            print(f"  ⚠️  Safety scan warning: {scan_err}")
 
     llm = get_llm(
         provider=provider,
@@ -265,12 +286,25 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
 
     # Start A2A servers for this mission's agents
     print("  Starting A2A servers...")
-    port_map = start_agency_a2a_servers(agent_names, AGENT_REGISTRY, REPO_ROOT)
-    register_servers(port_map)
-    a2a_urls  = [f"http://localhost:{p}" for p in port_map.values()]
-    a2a_tools = make_a2a_tools(a2a_urls)
-    all_tools  = base_tools + a2a_tools
-    print(f"  A2A: {len(a2a_tools)} agent servers live | Total tools: {len(all_tools)}\n")
+    try:
+        from a2a_protocol import start_agency_a2a_servers, register_servers, make_a2a_tools
+        port_map = start_agency_a2a_servers(agent_names, AGENT_REGISTRY, REPO_ROOT)
+        register_servers(port_map)
+
+        # Phase 2 — register with sahiixx-bus SwarmBus / A2ARouter
+        if not dry_run:
+            try:
+                asyncio.run(register_agency_services(port_map))
+            except Exception as bus_err:
+                print(f"  ⚠️  Bus registration warning: {bus_err}")
+
+        a2a_urls  = [f"http://localhost:{p}" for p in port_map.values()]
+        a2a_tools = make_a2a_tools(a2a_urls)
+        all_tools  = base_tools + a2a_tools
+        print(f"  A2A: {len(a2a_tools)} agent servers live | Total tools: {len(all_tools)}\n")
+    except ImportError:
+        print("  ⚠️   A2A skipped (install starlette + uvicorn + httpx)")
+        all_tools = base_tools
 
     # Build subagents (all except core) — give each MCP + A2A tools
     specialist_names = [n for n in agent_names if n != "core"]
@@ -338,6 +372,18 @@ Delegate everything. You are the orchestrator and final judge."""
 
     print("  Orchestrating...\n")
 
+    # Phase 2 — publish mission to bus and acquire budget
+    mission_bus_id = ""
+    estimated_cost = 0.0
+    if not dry_run:
+        try:
+            mission_bus_id = asyncio.run(publish_mission(goal, preset, agent_names))
+            # Rough cost heuristic: $0.003 per 1K input chars + $2 buffer
+            estimated_cost = (len(brief) / 1000) * 0.003 + 2.0
+            asyncio.run(track_mission_cost(mission_bus_id, estimated_cost=estimated_cost))
+        except Exception as bus_err:
+            print(f"  ⚠️  Bus publish warning: {bus_err}")
+
     with tracer.span("orchestrator"):
         try:
             response = orchestrator.invoke(
@@ -356,6 +402,26 @@ Delegate everything. You are the orchestrator and final judge."""
         except Exception as e:
             print(f"\n  Mission failed: {type(e).__name__}: {e}")
             return None
+
+    # Phase 2 — release budget and publish verdict to bus
+    if not dry_run and mission_bus_id:
+        try:
+            actual_cost = tracer.total_cost_usd
+            asyncio.run(
+                track_mission_cost(
+                    mission_bus_id,
+                    estimated_cost=estimated_cost,
+                    actual_cost=actual_cost,
+                )
+            )
+            verdict_str = (
+                "NO-GO" if "no-go" in final.lower() and "conditional" not in final.lower() else
+                "CONDITIONAL GO" if "conditional" in final.lower() else
+                "GO"
+            )
+            asyncio.run(publish_verdict(mission_bus_id, verdict_str, final))
+        except Exception as bus_err:
+            print(f"  ⚠️  Bus finalize warning: {bus_err}")
 
     print(f"\n{'='*65}")
     print("  VERDICT — CLAUDE REASONING CORE")
@@ -422,6 +488,10 @@ Examples:
   python3 agency.py --mission "Ship feature" --dry-run
   python3 agency.py --serve --ui nextjs
   python3 agency.py --evolve
+  python3 agency.py --explore "Latest MCP protocol updates"
+  python3 agency.py --evolve-daemon
+  python3 agency.py --fabricate search_pypi "Search PyPI packages"
+  python3 agency.py --ecosystem
         """,
     )
     # ── Mission
@@ -432,14 +502,16 @@ Examples:
     parser.add_argument("--list-agents",   action="store_true", help="List available agents and presets")
     parser.add_argument("--dry-run",       action="store_true",
                         help="Print pipeline without making API calls (useful for testing)")
+    parser.add_argument("--safety-scan",   action="store_true",
+                        help="Scan mission goal for safety threats and exit (no API calls)")
 
     # ── Provider
     parser.add_argument("--provider",
-                        choices=["anthropic", "claude", "ollama", "openai", "adk", "autogen", "rasa", "n8n"],
-                        default="anthropic",
-                        help="LLM/agent provider (default: anthropic)")
-    parser.add_argument("--ollama-model",  default="llama3.1",
-                        help="Ollama model name (default: llama3.1)")
+                        choices=["ollama", "anthropic", "claude", "openai", "adk", "autogen", "rasa", "n8n"],
+                        default="ollama",
+                        help="LLM/agent provider (default: ollama)")
+    parser.add_argument("--ollama-model",  default=DEFAULT_MODEL,
+                        help=f"Ollama model name (default: {DEFAULT_MODEL})")
     parser.add_argument("--ollama-url",    default="http://localhost:11434",
                         help="Ollama server URL (default: http://localhost:11434)")
     parser.add_argument("--openai-model",  default="gpt-4o",
@@ -468,11 +540,44 @@ Examples:
     parser.add_argument("--evolve", action="store_true",
                         help="Run the evolution_scheduler to self-improve one agent")
 
+    # ── AGI modes
+    parser.add_argument("--explore", type=str, nargs="?", const="auto",
+                        help="Run autonomous exploration (topic or 'ecosystem')")
+    parser.add_argument("--evolve-daemon", action="store_true",
+                        help="Run evolution daemon in background (continuous agent improvement)")
+    parser.add_argument("--fabricate", type=str, nargs=2, metavar=("NAME", "DESCRIPTION"),
+                        help="Fabricate a new tool: name description")
+    parser.add_argument("--ecosystem", action="store_true",
+                        help="Scan sahiixx GitHub ecosystem for integration opportunities")
+    parser.add_argument("--score-all", action="store_true",
+                        help="Score and rank all agent prompts")
+
     args = parser.parse_args()
 
     if args.list_agents:
         list_agents()
         return
+
+    # ── Safety scan mode ───────────────────────────────────────────────────────
+    if args.safety_scan:
+        if not args.mission:
+            print("❌  --safety-scan requires --mission")
+            sys.exit(1)
+        try:
+            result = asyncio.run(safety_scan_input(args.mission, identity="orchestrator"))
+            print(f"\n{'='*65}")
+            print("  SAFETY SCAN RESULT")
+            print(f"{'='*65}")
+            print(f"  Safe:           {result['safe']}")
+            print(f"  Threat level:   {result['threat_level']}")
+            print(f"  Violations:     {result['violations']}")
+            print(f"  Sanitized:      {result['sanitized'][:120]}...")
+            print(f"  Recommendation: {result['recommendation']}")
+            print(f"{'='*65}\n")
+            sys.exit(0 if result['safe'] else 1)
+        except Exception as e:
+            print(f"❌  Safety scan failed: {e}")
+            sys.exit(1)
 
     # ── Serve mode ─────────────────────────────────────────────────────────────
     if args.serve:
@@ -513,13 +618,75 @@ Examples:
 
     # ── Evolve mode ────────────────────────────────────────────────────────────
     if args.evolve:
-        print("  Running evolution_scheduler …")
+        print("  Running evolution_scheduler ...")
         import subprocess
         result = subprocess.run(
             ["python3", str(REPO_ROOT / "evolution_scheduler.py")],
             capture_output=False,
         )
         sys.exit(result.returncode)
+
+    # ── AGI modes ─────────────────────────────────────────────────────────────
+    # Explore mode: autonomous knowledge discovery
+    if args.explore:
+        from explorer_loop import run_exploration_cycle
+        ecosystem_mode = args.explore in ("auto", "ecosystem", "--ecosystem")
+        if ecosystem_mode:
+            print("  Running autonomous ecosystem scan ...")
+            run_exploration_cycle(ecosystem_mode=True)
+        else:
+            print(f"  Running autonomous exploration: {args.explore}")
+            run_exploration_cycle(custom_topic=args.explore)
+        return
+
+    # Evolve daemon: continuous agent improvement in background
+    if args.evolve_daemon:
+        print("  Starting evolution daemon (continuous agent improvement) ...")
+        import subprocess
+        subprocess.Popen(
+            ["python3", str(REPO_ROOT / "self_evolve_loop.py"), "--daemon",
+             "--interval", "60", "--max-agents", "3"],
+        )
+        print("  Evolution daemon started (PID: see above). Runs every 60 min.")
+        return
+
+    # Fabricate: create a new tool from natural language
+    if args.fabricate:
+        name, description = args.fabricate
+        print(f"  Fabricating tool: {name} — {description}")
+        from tool_fabricator import ToolFabricator
+        f = ToolFabricator()
+        tool = f.fabricate(name=name, description=description,
+                           requirements=description)
+        if tool:
+            print(f"  Tool '{name}' ready for use by all agents.")
+        else:
+            print(f"  Tool fabrication failed.")
+        return
+
+    # Ecosystem scan: explore sahiixx repos for integration
+    if args.ecosystem:
+        from explorer_loop import run_exploration_cycle
+        run_exploration_cycle(ecosystem_mode=True)
+        return
+
+    # Score all agents: rank and analyze
+    if args.score_all:
+        from self_evolve_loop import get_agent_files, score_agent
+        from datetime import datetime
+        agents = get_agent_files()
+        now = datetime.now()
+        scored = [score_agent(path, now) for path in agents]
+        scored.sort(key=lambda s: s["score"])
+        print(f"\n  Agent Score Ranking ({len(scored)} agents):")
+        print(f"  {'Rank':<6} {'Score':<8} {'Name':<30} {'Chars':<8}")
+        print(f"  {'-'*55}")
+        for i, s in enumerate(scored, 1):
+            print(f"  {i:<6} {s['score']:<8.1f} {s['name']:<30} {s['char_count']:<8,}")
+        avg = sum(s['score'] for s in scored) / len(scored) if scored else 0
+        print(f"\n  Average score: {avg:.1f}/100")
+        print(f"  Below 50: {sum(1 for s in scored if s['score'] < 50)} agents")
+        return
 
     if not args.mission:
         parser.print_help()

@@ -1,0 +1,4 @@
+{"timestamp": 1777100190.961154, "event": "safety.scan", "agent_id": "safety_proxy", "data": {"text": "rm -rf /", "result": {"blocked": true, "confidence": 1.0, "rule": "pattern:rm\\s+-rf"}}}
+{"timestamp": 1777100190.9615977, "event": "safety.authorize", "agent_id": "safety_proxy", "data": {"user": "admin", "permission": "spawn", "granted": true}}
+{"timestamp": 1777100190.9616854, "event": "safety.authorize", "agent_id": "safety_proxy", "data": {"user": "admin", "permission": "kill", "granted": true}}
+{"timestamp": 1777100190.9617567, "event": "safety.authorize", "agent_id": "safety_proxy", "data": {"user": "viewer", "permission": "kill", "granted": false}}

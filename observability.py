@@ -30,7 +30,7 @@ from typing import Optional
 OUTPUTS_DIR = Path("/tmp/agency_outputs")
 OUTPUTS_DIR.mkdir(exist_ok=True)
 
-# Claude Sonnet 4.6 pricing (per million tokens, as of early 2026)
+# Ollama local inference
 PRICE_INPUT_PER_M  = 3.00   # $3.00 / 1M input tokens
 PRICE_OUTPUT_PER_M = 15.00  # $15.00 / 1M output tokens
 
@@ -141,7 +141,7 @@ class AgencyTracer:
             "total_cost_usd": self.total_cost_usd,
             "total_input_tokens":  tin,
             "total_output_tokens": tout,
-            "model":          "claude-sonnet-4-6",
+            "model":          "llama3.1",
             "spans": [
                 {
                     "agent":         s.agent,

@@ -1,0 +1,4 @@
+[2026-04-25 10:56:30] safety_proxy | safety.scan | {"text": "rm -rf /", "result": {"blocked": true, "confidence": 1.0, "rule": "pattern:rm\\s+-rf"}}
+[2026-04-25 10:56:30] safety_proxy | safety.authorize | {"user": "admin", "permission": "spawn", "granted": true}
+[2026-04-25 10:56:30] safety_proxy | safety.authorize | {"user": "admin", "permission": "kill", "granted": true}
+[2026-04-25 10:56:30] safety_proxy | safety.authorize | {"user": "viewer", "permission": "kill", "granted": false}
