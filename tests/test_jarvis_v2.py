@@ -40,7 +40,8 @@ class TestKnowledgeBase(unittest.TestCase):
 
 class TestPluginSystem(unittest.TestCase):
     def test_discover_enable_run_plugin(self):
-        manager = PluginManager(plugin_dir="jarvis/plugins")
+        plugin_dir = Path(__file__).parent.parent / "jarvis" / "plugins"
+        manager = PluginManager(plugin_dir=str(plugin_dir))
         names = manager.discover()
         self.assertIn("example", names)
         self.assertTrue(manager.enable("example"))
