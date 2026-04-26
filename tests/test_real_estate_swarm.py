@@ -25,7 +25,7 @@ EXPECTED_AGENTS = [
     "CRM Pipeline Orchestrator",
     "Investor Pitch Specialist",
     "Post-Sale Referral Engine",
-    "Claude Reasoning Core",
+    "Ollama Reasoning Core",
 ]
 
 EXPECTED_OUTPUTS = [
@@ -139,7 +139,7 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
         match_pos = content.index('"Property Matching Engine"')
         deal_pos = content.index('"Deal Negotiation Strategist"')
         crm_pos = content.index('"CRM Pipeline Orchestrator"')
-        core_pos = content.index('"Claude Reasoning Core"')
+        core_pos = content.index('"Ollama Reasoning Core"')
         self.assertLess(lead_pos, match_pos, "Stage 1 must precede Stage 2")
         self.assertLess(match_pos, deal_pos, "Stage 2 must precede Stage 3")
         self.assertLess(deal_pos, crm_pos, "Stage 3 must precede Stage 4")

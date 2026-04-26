@@ -50,6 +50,8 @@ node_modules/
 .next/
 
 # Memory runtime files
+memory/
+*.db
 memory/mission_ledger.json
 memory/mission_ledger.json.bak
 memory/mission_ledger.json.tmp
