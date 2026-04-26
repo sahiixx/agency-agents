@@ -1,6 +1,6 @@
-# The Agency — Claude-Powered Multi-Agent Swarm
+# The Agency — AI-Powered Multi-Agent Swarm
 
-> 152 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
+> 152 specialized AI agents · Sonnet 4.6 · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-19%2F19-brightgreen)](tests/agent_tests.py)
@@ -12,9 +12,9 @@
 
 ## What This Is
 
-A swarm of **152 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
+A swarm of **152 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Sonnet 4.6**.
 
-Every mission passes through a sequential delegation pipeline and ends with a **Claude Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
+Every mission passes through a sequential delegation pipeline and ends with a **Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
 
 ---
 
@@ -108,7 +108,7 @@ python3 agency.py --mission "..." --agents security,qa,core
 | `engineering/` | 21 | Frontend, backend, DevOps, security, AI, data |
 | `marketing/` | 19 | SEO, content, growth, social, paid media |
 | `game-development/` | 19 | Godot, Roblox, Unity, Unreal Engine |
-| `specialized/` | 18 | Orchestrators, Claude Core, compliance, identity |
+| `specialized/` | 18 | Orchestrators, Reasoning Core, compliance, identity |
 | `integrations/` | 13 | Cursor, Claude Code, Windsurf, OpenClaw, Gemini CLI |
 | `design/` | 8 | UX, brand, visual, inclusive design |
 | `sales/` | 8 | Account, pipeline, proposals, coaching |
@@ -236,7 +236,7 @@ Add secret: repo **Settings → Secrets → Actions → `ANTHROPIC_API_KEY`**
 
 ---
 
-*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Claude migration and orchestration layer by Claude Sonnet 4.6.*
+*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Orchestration layer by Sonnet 4.6.*
 
 ## JARVIS v3
 
@@ -358,4 +358,4 @@ Persistent Storage: SQLite (metrics/docs/history)
 - Keep dashboard and heavy vision loops on separate threads.
 - Trim document index scope for faster local RAG response times.
 
-*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Claude migration and orchestration layer by Claude Sonnet 4.6, plus JARVIS local assistant modules.*
+*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Orchestration layer by Sonnet 4.6, plus JARVIS local assistant modules.*
