@@ -57,3 +57,6 @@ memory/mission_ledger.json.bak
 memory/mission_ledger.json.tmp
 memory/*.md.bak
 memory/*.md.tmp
+
+# Nested repos (cloned during exploration — not source)
+deepagents_repo/
