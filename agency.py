@@ -26,20 +26,28 @@ from pathlib import Path
 
 # ── Path setup ────────────────────────────────────────────────────────────────
 REPO_ROOT = Path(__file__).parent.resolve()
-SDK_PATH  = REPO_ROOT / "deepagents" / "libs" / "deepagents"
 
-for p in (str(SDK_PATH), str(REPO_ROOT)):
-    if p not in sys.path:
-        sys.path.insert(0, p)
-
-# ── Imports ───────────────────────────────────────────────────────────────────
+# Import deepagents FIRST (before adding REPO_ROOT to sys.path)
+# to avoid the shallow deepagents/ docs dir (no __init__.py)
+# shadowing the real SDK install as a namespace package.
 try:
     from deepagents import create_deep_agent, SubAgent
     from deepagents.backends import FilesystemBackend
 except ImportError as e:
-    print(f"❌  deepagents SDK not found: {e}")
-    print("    Run: pip install -e deepagents/libs/deepagents")
-    sys.exit(1)
+    SDK_PATH = REPO_ROOT / "deepagents" / "libs" / "deepagents"
+    if str(SDK_PATH) not in sys.path:
+        sys.path.insert(0, str(SDK_PATH))
+    try:
+        from deepagents import create_deep_agent, SubAgent
+        from deepagents.backends import FilesystemBackend
+    except ImportError:
+        print(f"❌  deepagents SDK not found: {e}")
+        print("    Run: pip install -e deepagents/libs/deepagents")
+        sys.exit(1)
+
+# Add repo root for local module resolution (providers/, memory/, etc.)
+if str(REPO_ROOT) not in sys.path:
+    sys.path.append(str(REPO_ROOT))
 
 try:
     from langchain_ollama import ChatOllama

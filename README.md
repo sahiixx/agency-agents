@@ -1,18 +1,18 @@
-# The Agency — Claude-Powered Multi-Agent Swarm
+# The Agency — Ollama-Powered Multi-Agent Swarm
 
-> 152 specialized AI agents · Claude Sonnet 4.6 · Titans Memory · Production Ready
+> 152 specialized AI agents · Local Ollama · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-19%2F19-brightgreen)](tests/agent_tests.py)
 [![Lint](https://img.shields.io/badge/lint-ruff%20clean-success)](https://docs.astral.sh/ruff/)
 [![Score](https://img.shields.io/badge/system%20score-90%2F90-gold)](agency.py)
-[![Model](https://img.shields.io/badge/model-claude--sonnet--4--6-blue)](https://anthropic.com)
+[![Model](https://img.shields.io/badge/model-ollama-local-green)](https://ollama.com)
 
 ---
 
 ## What This Is
 
-A swarm of **152 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Claude Sonnet 4.6**.
+A swarm of **152 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **local Ollama**.
 
 Every mission passes through a sequential delegation pipeline and ends with a **Claude Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
 
@@ -28,8 +28,8 @@ cd agency-agents
 # 2. Install (one command)
 bash setup.sh
 
-# 3. Set API key
-export ANTHROPIC_API_KEY="sk-ant-..."
+# 3. Ensure Ollama is running
+export OLLAMA_HOST=http://localhost:11434
 
 # 4. Run
 python3 agency.py --list-agents
@@ -186,10 +186,10 @@ Score:          90/90 — Grade A, Production Ready
 
 ## Tech Stack
 
-- **Model**: `claude-sonnet-4-6` via `langchain-anthropic`
+- **Model**: `llama3.1` (or any Ollama model) via `langchain-ollama`
 - **SDK**: `deepagents` v0.4.10 — LangGraph-based agent harness
 - **Memory**: `FilesystemBackend` + `MemoryMiddleware` + `TitansMemory`
-- **Zero OpenAI** — fully Anthropic-native
+- **Fully offline** — no cloud API keys required
 
 ---
 
@@ -209,16 +209,16 @@ Open `agency_ui.html` in any browser for a full mission control dashboard:
 ```bash
 # Manual install
 pip install -e deepagents/libs/deepagents
-pip install langchain-anthropic anthropic langchain langchain-core
+pip install langchain-ollama langchain langchain-core
 
 # Environment
-export ANTHROPIC_API_KEY="sk-ant-..."
+export OLLAMA_HOST=http://localhost:11434
 
 # Tests
 python3 tests/agent_tests.py                        # structural (offline)
 python3 tests/test_security_audit_swarm.py          # security swarm (offline)
 python3 tests/test_real_estate_swarm.py             # real estate swarm (offline)
-ANTHROPIC_API_KEY=... python3 tests/agent_tests.py  # + live LLM
+python3 tests/agent_tests.py  # + live LLM (needs Ollama running)
 ```
 
 ---
@@ -227,16 +227,16 @@ ANTHROPIC_API_KEY=... python3 tests/agent_tests.py  # + live LLM
 
 `.github/workflows/ci.yml` runs on every push and PR:
 - **Structural tests** — always run, no API key needed
-- **Live LLM tests** — run on push to `main` if `ANTHROPIC_API_KEY` secret is set
+- **Live LLM tests** — run on push to `main` if Ollama is available
 - **Security gate** — `security-gate.yml` validates the security audit swarm on every push/PR (syntax check, test suite, dry-run)
 - **Real estate gate** — `security-gate.yml` validates the real estate swarm on every push/PR (syntax check, test suite, dry-run)
 - **Dependabot** — weekly pip and GitHub Actions updates, grouped by package family
 
-Add secret: repo **Settings → Secrets → Actions → `ANTHROPIC_API_KEY`**
+Ensure Ollama is available in CI or skip live LLM tests
 
 ---
 
-*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Claude migration and orchestration layer by Claude Sonnet 4.6.*
+*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Ollama migration and orchestration layer by sahiix.*
 
 ## JARVIS v3
 
