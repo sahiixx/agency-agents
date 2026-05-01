@@ -12,7 +12,7 @@
 
 ## What This Is
 
-A swarm of **152 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Sonnet 4.6**.
+A swarm of **163 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Sonnet 4.6**.
 
 Every mission passes through a sequential delegation pipeline and ends with a **Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
 
