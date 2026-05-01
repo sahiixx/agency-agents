@@ -1,6 +1,6 @@
 # The Agency — AI-Powered Multi-Agent Swarm
 
-> 152 specialized AI agents · Sonnet 4.6 · Titans Memory · Production Ready
+> 163 specialized AI agents · Sonnet 4.6 · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-19%2F19-brightgreen)](tests/agent_tests.py)
@@ -58,7 +58,7 @@ agency_ui.html                   ← Mission Control UI (open in browser)
 setup.sh                         ← One-command install
 tests/agent_tests.py             ← 19 tests (offline + live LLM)
 tests/test_security_audit_swarm.py ← 15 structural tests
-tests/test_real_estate_swarm.py  ← 18 structural tests
+tests/test_real_estate_swarm.py  ← 38 structural tests
 ```
 
 **Other pipeline scripts:**
@@ -101,15 +101,15 @@ python3 agency.py --mission "..." --agents security,qa,core
 
 ---
 
-## Agent Roster — 152 Agents
+## Agent Roster — 163 Agents
 
 | Directory | Agents | Domain |
 |---|---|---|
-| `engineering/` | 21 | Frontend, backend, DevOps, security, AI, data |
+| `engineering/` | 22 | Frontend, backend, DevOps, security, AI, data |
 | `marketing/` | 19 | SEO, content, growth, social, paid media |
 | `game-development/` | 19 | Godot, Roblox, Unity, Unreal Engine |
-| `specialized/` | 18 | Orchestrators, Reasoning Core, compliance, identity |
-| `integrations/` | 13 | Cursor, Claude Code, Windsurf, OpenClaw, Gemini CLI |
+| `specialized/` | 25 | Orchestrators, Reasoning Core, compliance, identity |
+| `integrations/` | 11 | Cursor, Claude Code, Windsurf, OpenClaw, Gemini CLI, bridges |
 | `design/` | 8 | UX, brand, visual, inclusive design |
 | `sales/` | 8 | Account, pipeline, proposals, coaching |
 | `testing/` | 8 | QA, accessibility, performance, API |
@@ -119,8 +119,9 @@ python3 agency.py --mission "..." --agents security,qa,core
 | `spatial-computing/` | 6 | VisionOS, XR, spatial interfaces |
 | `real-estate/` | 9 | Lead gen, property matching, compliance, CRM, negotiation |
 | `product/` | 4 | Strategy, research, prioritization |
+| `business/` | 5 | Analytics, operations, marketing, sales, content |
 | `.cursor/rules/` | 128 | Cursor IDE agent rules (`.mdc` format) |
-| `skills/` | 140 | [skills.sh](https://skills.sh) compatible skills |
+| `skills/` | 152 | [skills.sh](https://skills.sh) compatible skills |
 
 ### Install via skills.sh
 
@@ -174,9 +175,9 @@ After every mission, `TitansMemory` records the verdict, computes a surprise sco
 ## System Health
 
 ```
-Tests:          52/52 passing (4 need live API key)
+Tests:          72/72 passing (4 need live API key)
 Graph:          6 nodes — MemoryMiddleware.before_agent wired
-Registry:       152 agents across 14 directories + 128 Cursor rules
+Registry:       163 agents across 15 directories + 128 Cursor rules
 Lock files:     10 checked — 0 stale vulnerable pins
 Security:       dependabot.yml active — weekly auto-updates
 Score:          90/90 — Grade A, Production Ready
