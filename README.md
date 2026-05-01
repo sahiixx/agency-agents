@@ -1,6 +1,6 @@
 # The Agency — AI-Powered Multi-Agent Swarm
 
-> 163 specialized AI agents · Sonnet 4.6 · Titans Memory · Production Ready
+> 161 specialized AI agents · Sonnet 4.6 · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-19%2F19-brightgreen)](tests/agent_tests.py)
@@ -12,7 +12,7 @@
 
 ## What This Is
 
-A swarm of **163 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Sonnet 4.6**.
+A swarm of **161 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **Sonnet 4.6**.
 
 Every mission passes through a sequential delegation pipeline and ends with a **Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
 
@@ -101,7 +101,7 @@ python3 agency.py --mission "..." --agents security,qa,core
 
 ---
 
-## Agent Roster — 163 Agents
+## Agent Roster — 161 Agents
 
 | Directory | Agents | Domain |
 |---|---|---|
@@ -109,7 +109,7 @@ python3 agency.py --mission "..." --agents security,qa,core
 | `marketing/` | 19 | SEO, content, growth, social, paid media |
 | `game-development/` | 19 | Godot, Roblox, Unity, Unreal Engine |
 | `specialized/` | 25 | Orchestrators, Reasoning Core, compliance, identity |
-| `integrations/` | 11 | Cursor, Claude Code, Windsurf, OpenClaw, Gemini CLI, bridges |
+| `integrations/` | 9 | Cursor, Claude Code, Windsurf, OpenClaw, Gemini CLI, bridges |
 | `design/` | 8 | UX, brand, visual, inclusive design |
 | `sales/` | 8 | Account, pipeline, proposals, coaching |
 | `testing/` | 8 | QA, accessibility, performance, API |
@@ -177,7 +177,7 @@ After every mission, `TitansMemory` records the verdict, computes a surprise sco
 ```
 Tests:          72/72 passing (4 need live API key)
 Graph:          6 nodes — MemoryMiddleware.before_agent wired
-Registry:       163 agents across 15 directories + 128 Cursor rules
+Registry:       161 agents across 15 directories + 128 Cursor rules
 Lock files:     10 checked — 0 stale vulnerable pins
 Security:       dependabot.yml active — weekly auto-updates
 Score:          90/90 — Grade A, Production Ready
