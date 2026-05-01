@@ -159,7 +159,7 @@ After every mission, `TitansMemory` records the verdict, computes a surprise sco
 | `3c322ec` | 🔧 Fix agency.py wiring — FilesystemBackend for MemoryMiddleware |
 | `855202e` | 🏁 Complete system — all gaps closed |
 | `2bddeb0` | 🏗️ Infrastructure: CI, CLAUDE.md, setup, env template |
-| `0e81afb` | 🧠 Claude Integration: Full Anthropic migration + Reasoning Core |
+| `0e81afb` | 🧠 Model Integration: Full Anthropic migration + Reasoning Core |
 
 ---
 
