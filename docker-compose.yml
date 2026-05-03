@@ -1,9 +1,13 @@
 services:
   jarvis-core:
+    image: sahiix-agency-agents:latest
     build: .
-    command: python jarvis/main.py
+    ports:
+      - "8100-8110:8100-8110"
     volumes:
       - ./:/app
+    restart: unless-stopped
+    working_dir: /app
   ollama:
     image: ollama/ollama:latest
     ports:

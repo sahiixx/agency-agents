@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from jarvis.modules.ai.personality_engine import PersonalityEngine
 
+import os
+import sys
 try:
     from core.engine import JarvisEngine  # type: ignore
 except Exception:  # pragma: no cover
@@ -39,12 +41,31 @@ class JarvisApp:
 
 def main() -> None:
     """Start full engine when available, otherwise run fallback shell."""
+    import sys, time
     print(BANNER)
     if JarvisEngine is not None:
         JarvisEngine().start()
         return
     app = JarvisApp()
     print(app.handle("JARVIS, status"))
+
+    # Container / daemon mode: block forever when no TTY is present
+    if os.getenv("JARVIS_DAEMON") or not sys.stdin or not sys.stdin.isatty():
+        print("[JARVIS] Daemon mode active. Standing by for commands.")
+        while True:
+            time.sleep(60)
+
+    # Interactive CLI mode
+    print("\nType 'quit' to exit.")
+    while True:
+        try:
+            text = input("[You] ").strip()
+            if text.lower() in ("quit", "exit", "bye"):
+                break
+            if text:
+                print(app.handle(text))
+        except (EOFError, KeyboardInterrupt):
+            break
 
 
 if __name__ == "__main__":

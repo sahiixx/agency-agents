@@ -428,7 +428,7 @@ def make_a2a_tools(urls: list[str]) -> list:
 
 # ── Agency A2A server pool ────────────────────────────────────────────────────
 
-BASE_PORT = 8100
+BASE_PORT = 8120
 
 def start_agency_a2a_servers(
     agent_names: list[str],

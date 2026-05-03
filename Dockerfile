@@ -17,4 +17,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY jarvis/ ./jarvis/
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-CMD ["python", "jarvis/main.py"]
+CMD ["python", "-m", "jarvis.main"]

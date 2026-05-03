@@ -1,0 +1,9 @@
+{
+  "name": "agency-agents",
+  "version": "1.0.0",
+  "url": "http://localhost:8766",
+  "description": "152 AI agent personas — Ollama-native, ecosystem.py orchestrator",
+  "capabilities": ["persona_agents", "ollama_native", "chat_completion", "agent_templates", "ecosystem_orchestration"],
+  "authentication": "bearer-token",
+  "well_known": "/.well-known/agent.json"
+}

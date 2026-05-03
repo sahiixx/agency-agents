@@ -118,6 +118,35 @@ AGENT_REGISTRY = {
     "biz-ops":       ("business/business-operations-agent.md",  "Operations — workflow automation, invoicing, HR, UAE compliance, onboarding"),
     # AGI agents
     "explorer":     ("specialized/specialized-autonomous-explorer.md", "Autonomous Explorer — open-ended knowledge discovery, self-directed research, ecosystem scanning"),
+    # ── Expanded engineering agents ────────────────────────────────────────────
+    "code-reviewer":("engineering/engineering-code-reviewer.md",                  "Code Reviewer — PR reviews, code quality, security linting, best-practice enforcement"),
+    "data-engineer":("engineering/engineering-data-engineer.md",                  "Data Engineer — pipelines, ETL, warehouses, data modeling"),
+    "mobile":       ("engineering/engineering-mobile-app-builder.md",             "Mobile App Builder — iOS, Android, React Native, Flutter"),
+    "sre":          ("engineering/engineering-sre.md",                          "SRE — observability, SLOs, incident management, chaos engineering"),
+    "database":     ("engineering/engineering-database-optimizer.md",           "Database Optimizer — query tuning, indexing, schema design"),
+    "git":          ("engineering/engineering-git-workflow-master.md",          "Git Workflow Master — branching, rebasing, monorepo, CI hooks"),
+    "incident":     ("engineering/engineering-incident-response-commander.md",  "Incident Response Commander — on-call, post-mortems, runbooks"),
+    # ── Expanded design agents ─────────────────────────────────────────────────
+    "ui-designer":  ("design/design-ui-designer.md",                            "UI Designer — visual design, design systems, component libraries"),
+    "brand":        ("design/design-brand-guardian.md",                         "Brand Guardian — brand consistency, voice, visual identity"),
+    "ux-researcher":("design/design-ux-researcher.md",                          "UX Researcher — user interviews, usability testing, journey mapping"),
+    # ── Expanded marketing agents ──────────────────────────────────────────────
+    "seo":          ("marketing/marketing-seo-specialist.md",                   "SEO Specialist — technical SEO, backlinks, ranking optimization"),
+    "social":       ("marketing/marketing-social-media-strategist.md",          "Social Media Strategist — content calendars, engagement, analytics"),
+    "app-store":    ("marketing/marketing-app-store-optimizer.md",              "App Store Optimizer — ASO, screenshots, reviews, metadata"),
+    # ── Expanded sales agents ──────────────────────────────────────────────────
+    "account":      ("sales/sales-account-strategist.md",                       "Account Strategist — account planning, expansion, retention"),
+    "sales-eng":    ("sales/sales-engineer.md",                                 "Sales Engineer — demos, PoCs, technical objection handling"),
+    # ── Expanded testing agents ────────────────────────────────────────────────
+    "accessibility":("testing/testing-accessibility-auditor.md",                "Accessibility Auditor — WCAG, screen readers, inclusive design"),
+    "api-tester":   ("testing/testing-api-tester.md",                           "API Tester — contract testing, load testing, fuzzing"),
+    "perf":         ("testing/testing-performance-benchmarker.md",              "Performance Benchmarker — latency, throughput, profiling"),
+    # ── Expanded specialized agents ────────────────────────────────────────────
+    "mcp-builder":  ("specialized/specialized-mcp-builder.md",                  "MCP Builder — Model Context Protocol servers, tool schemas, integrations"),
+    "blockchain":   ("specialized/blockchain-security-auditor.md",              "Blockchain Security Auditor — smart contract audits, DeFi, ZK"),
+    "compliance":   ("specialized/compliance-auditor.md",                       "Compliance Auditor — GDPR, SOC2, ISO27001, UAE regulations"),
+    "dev-advocate": ("specialized/specialized-developer-advocate.md",           "Developer Advocate — docs, SDKs, community, developer relations"),
+    "jira":         ("project-management/project-management-jira-workflow-steward.md", "Jira Workflow Steward — boards, sprints, automation, reporting"),
 }
 
 PRESETS = {
@@ -145,10 +174,25 @@ PRESETS = {
     "n8n":        ["pm", "devops", "backend", "core"],
     # Sovereign — full ecosystem with all business + RE + security agents
     "sovereign":  ["pm", "backend", "frontend", "security", "devops", "ai",
-                   "biz-sales", "biz-mkt", "biz-ops", "re-leads", "re-intel", "core"],
+                   "biz-sales", "biz-mkt", "biz-ops", "biz-analytics",
+                   "re-leads", "re-intel", "core"],
     # AGI presets
     "explore":    ["explorer", "ai", "core"],
     "agi":        ["explorer", "pm", "backend", "frontend", "security", "ai", "qa", "core"],
+    # ALL — every agent in the registry (maximum coverage)
+    "all":        ["pm", "frontend", "backend", "ai", "security", "devops", "qa",
+                   "design", "growth", "copywriter", "sales",
+                   "code-reviewer", "data-engineer", "mobile", "sre", "database", "git", "incident",
+                   "ui-designer", "brand", "ux-researcher",
+                   "seo", "social", "app-store",
+                   "account", "sales-eng",
+                   "accessibility", "api-tester", "perf",
+                   "mcp-builder", "blockchain", "compliance", "dev-advocate", "jira",
+                   "prompt-arch", "spy", "docs", "wpscan", "linux", "learn", "cloudflare", "trust",
+                   "re-leads", "re-match", "re-copy", "re-deal", "re-intel", "re-comply", "re-crm", "re-pitch", "re-refer",
+                   "biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops",
+                   "explorer",
+                   "core"],
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -233,6 +277,16 @@ PARALLEL_GROUPS = {
     # AGI: explore then verify
     "explore":    [["explorer", "ai"], ["core"]],
     "agi":        [["explorer", "pm"], ["backend", "frontend", "security", "ai"], ["qa"], ["core"]],
+    # ALL: maximum agent coverage — grouped by domain for parallel execution
+    "all":        [
+        ["pm", "explorer", "spy", "prompt-arch", "learn", "biz-analytics", "re-intel"],
+        ["backend", "frontend", "ai", "security", "devops", "mobile", "database", "git", "incident", "code-reviewer", "data-engineer", "sre", "wpscan", "linux", "cloudflare"],
+        ["design", "ui-designer", "brand", "ux-researcher", "growth", "accessibility"],
+        ["copywriter", "seo", "social", "app-store", "biz-content", "biz-mkt", "re-copy"],
+        ["sales", "account", "sales-eng", "biz-sales", "re-leads", "re-match", "re-deal", "re-pitch", "re-refer"],
+        ["qa", "compliance", "jira", "biz-ops", "re-comply", "re-crm", "trust", "mcp-builder", "blockchain", "dev-advocate", "docs", "api-tester", "perf"],
+        ["core"],
+    ],
 }
 
 
@@ -249,7 +303,8 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
                 adk_model: str = "gemini-2.0-flash",
                 autogen_model: str = "gpt-4o",
                 extra_tools: list | None = None,
-                dry_run: bool = False) -> str:
+                dry_run: bool = False,
+                stream: bool = False) -> str:
     invalid = [n for n in agent_names if n not in AGENT_REGISTRY]
     if invalid:
         print(f"❌  Unknown agents: {invalid}")
@@ -318,7 +373,7 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
     specialist_names = [n for n in agent_names if n != "core"]
     subagents = [build_subagent(n, llm) for n in specialist_names]
     for sa in subagents:
-        sa["tools"] = all_tools   # override with full tool set
+        sa["tools"] = MCP_TOOLS   # subagents get MCP tools only (A2A tools on orchestrator only)
         status      = "OK" if sa["system_prompt"] else "MISSING"
         prompt_len  = len(sa["system_prompt"])
         print(f"  [{status}]  {sa['name']} ({prompt_len:,} chars)  "
@@ -394,11 +449,28 @@ Delegate everything. You are the orchestrator and final judge."""
 
     with tracer.span("orchestrator"):
         try:
-            response = orchestrator.invoke(
-                {"messages": [HumanMessage(content=brief)]},
-                config={"recursion_limit": 50},
-            )
-            final = response["messages"][-1].content
+            if stream:
+                print("  Streaming orchestration steps...")
+                final_messages = []
+                for step in orchestrator.stream(
+                    {"messages": [HumanMessage(content=brief)]},
+                    config={"recursion_limit": 20},
+                ):
+                    keys = list(step.keys())
+                    print(f"    [{keys[0]}]", flush=True)
+                    for key, value in step.items():
+                        if key == "model" and value.get("messages"):
+                            final_messages = value["messages"]
+                if final_messages:
+                    final = final_messages[-1].content
+                else:
+                    final = "[No response generated]"
+            else:
+                response = orchestrator.invoke(
+                    {"messages": [HumanMessage(content=brief)]},
+                    config={"recursion_limit": 50},
+                )
+                final = response["messages"][-1].content
             # Estimate tokens from response length (no callback needed)
             tracer.add_tokens(
                 input_tokens=len(brief) // 4,
@@ -508,6 +580,8 @@ Examples:
     parser.add_argument("--preset",        choices=list(PRESETS), default="full",
                         help="Agent preset (default: full)")
     parser.add_argument("--list-agents",   action="store_true", help="List available agents and presets")
+    parser.add_argument("--stream",        action="store_true",
+                        help="Stream orchestration steps in real time (shows each agent delegation)")
     parser.add_argument("--dry-run",       action="store_true",
                         help="Print pipeline without making API calls (useful for testing)")
     parser.add_argument("--safety-scan",   action="store_true",
@@ -749,6 +823,7 @@ Examples:
         autogen_model=args.autogen_model,
         extra_tools=extra_tools,
         dry_run=args.dry_run,
+        stream=args.stream,
     )
 
 

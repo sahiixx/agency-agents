@@ -5,6 +5,7 @@ Uses langchain_ollama.ChatOllama as the LLM backend.
 """
 
 from __future__ import annotations
+import os
 import sys
 from pathlib import Path
 
@@ -27,6 +28,10 @@ class OllamaProvider(BaseProvider):
             from langchain_ollama import ChatOllama
         except ImportError:
             raise ImportError("langchain-ollama not installed. Run: pip install langchain-ollama")
+        # The ollama Python client (used internally by ChatOllama) respects
+        # OLLAMA_HOST env var. Ensure it is set so the client does not try
+        # IPv6 localhost first and hang indefinitely.
+        os.environ.setdefault("OLLAMA_HOST", base_url)
         return ChatOllama(model=model, base_url=base_url, **kwargs)
 
     def run_agent(

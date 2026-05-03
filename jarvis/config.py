@@ -25,7 +25,7 @@ RESPONSES_FILE = DATA_DIR / "responses.json"
 WORKFLOWS_FILE = DATA_DIR / "workflows.json"
 
 # AI Brain
-OLLAMA_MODEL = "llama3"
+OLLAMA_MODEL = "kimi-k2.6:cloud"
 OLLAMA_URL = "http://localhost:11434"
 USE_LOCAL_LLM = True
 
@@ -37,8 +37,8 @@ USE_WHISPER = True
 TTS_ENGINE = "piper"  # or "pyttsx3"
 
 # Vision
-FACE_AUTH_ENABLED = False
-GESTURE_CONTROL_ENABLED = False
+FACE_AUTH_ENABLED = True
+GESTURE_CONTROL_ENABLED = True
 
 # Smart Home
 HOME_ASSISTANT_URL = ""
@@ -77,13 +77,13 @@ EYE_TRACKING = False
 MOOD_TRACKING = True
 
 # Creative (v3)
-IMAGE_GEN_ENABLED = False
+IMAGE_GEN_ENABLED = True
 SD_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
-MUSIC_GEN_ENABLED = False
-VOICE_CLONING_ENABLED = False
+MUSIC_GEN_ENABLED = True
+VOICE_CLONING_ENABLED = True
 
 # Productivity (v3)
-GOOGLE_CALENDAR_ENABLED = False
+GOOGLE_CALENDAR_ENABLED = True
 GOOGLE_CREDENTIALS_PATH = ""
 POMODORO_WORK_MINS = 25
 POMODORO_BREAK_MINS = 5
@@ -92,22 +92,22 @@ FOCUS_BLOCKED_APPS = ["discord", "steam", "reddit"]
 # Security (v3)
 PASSWORD_VAULT_ENABLED = True
 BREACH_CHECK_INTERVAL_HOURS = 24
-NETWORK_SCAN_ENABLED = False
+NETWORK_SCAN_ENABLED = True
 
 # Communication (v3)
 DISCORD_BOT_TOKEN = ""
 DISCORD_CHANNEL_ID = ""
 
 # Hardware (v3)
-BLUETOOTH_ENABLED = False
+BLUETOOTH_ENABLED = True
 USB_MONITORING = True
-CAFFEINE_MODE = False
+CAFFEINE_MODE = True
 
 # AI (v3)
 PERSONALITY_MODE = "professional"
 PERSISTENT_MEMORY = True
 MULTI_AGENT = True
-DREAM_MODE = False
+DREAM_MODE = True
 LEARNING_ENGINE = True
 
 # Auto-Update (v3)
@@ -115,4 +115,4 @@ AUTO_UPDATE_CHECK = True
 GITHUB_REPO = "sahiixx/agency-agents"
 
 # Docker (v3)
-DOCKER_MODE = False
+DOCKER_MODE = True

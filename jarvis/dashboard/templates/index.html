@@ -8,20 +8,194 @@
 </head>
 <body>
   <main>
-    <h1>{{ title }}</h1>
-    <p>Local-first dashboard running at <strong>http://localhost:8080</strong></p>
-    <section>
-      <h2>Module Toggles</h2>
-      <ul>
-      {% for module in modules %}
-        <li><label><input type="checkbox" checked /> {{ module }}</label></li>
-      {% endfor %}
-      </ul>
+    <header>
+      <h1>{{ title }}</h1>
+      <p class="subtitle">Local-first control center running at <strong>http://localhost:{{ port }}</strong></p>
+    </header>
+
+    <section id="health-section">
+      <h2>Live Health Grid</h2>
+      <div id="health-grid" class="grid">Loading...</div>
     </section>
-    <section>
-      <h2>Command History</h2>
-      <pre id="history">No commands yet.</pre>
+
+    <section id="docker-section">
+      <h2>Docker Containers</h2>
+      <div id="docker-grid" class="grid">Loading...</div>
+    </section>
+
+    <section id="modules-section">
+      <h2>Module Toggles</h2>
+      <div id="modules-grid" class="grid"></div>
+    </section>
+
+    <section id="command-section">
+      <h2>Command Console</h2>
+      <div class="console-row">
+        <textarea id="command-input" rows="2" placeholder="Enter command (status, restart svc, logs svc, agents, ping)..."></textarea>
+        <button id="send-btn">Send</button>
+      </div>
+      <pre id="command-output" class="output">Type a command and hit Send.</pre>
+      <h3>History</h3>
+      <pre id="history" class="output">No commands yet.</pre>
+    </section>
+
+    <section id="logs-section">
+      <h2>Logs Stream</h2>
+      <pre id="logs" class="output">Loading...</pre>
     </section>
   </main>
+
+  <script>
+    const API_BASE = '';
+
+    async function fetchHealth() {
+      try {
+        const res = await fetch(`${API_BASE}/api/health`);
+        const data = await res.json();
+        const grid = document.getElementById('health-grid');
+        grid.innerHTML = '';
+        for (const [name, info] of Object.entries(data)) {
+          const el = document.createElement('div');
+          el.className = 'card ' + (info.status === 'up' ? 'up' : 'down');
+          el.innerHTML = `
+            <div class="card-title">${name}</div>
+            <div class="card-status">${info.status.toUpperCase()}</div>
+            <div class="card-meta">${info.response_time_ms}ms</div>
+          `;
+          grid.appendChild(el);
+        }
+      } catch (e) {
+        document.getElementById('health-grid').textContent = 'Error loading health data';
+      }
+    }
+
+    async function fetchDocker() {
+      try {
+        const res = await fetch(`${API_BASE}/api/docker`);
+        const data = await res.json();
+        const grid = document.getElementById('docker-grid');
+        grid.innerHTML = '';
+        for (const [name, info] of Object.entries(data)) {
+          const healthy = info.status === 'running' && (info.health === 'healthy' || info.health === 'none');
+          const el = document.createElement('div');
+          el.className = 'card ' + (healthy ? 'up' : 'down');
+          el.innerHTML = `
+            <div class="card-title">${name}</div>
+            <div class="card-status">${info.status.toUpperCase()}</div>
+            <div class="card-meta">${info.health || ''} ${info.error || ''}</div>
+          `;
+          grid.appendChild(el);
+        }
+      } catch (e) {
+        document.getElementById('docker-grid').textContent = 'Error loading docker data';
+      }
+    }
+
+    async function fetchModules() {
+      try {
+        const res = await fetch(`${API_BASE}/api/modules`);
+        const data = await res.json();
+        const grid = document.getElementById('modules-grid');
+        grid.innerHTML = '';
+        for (const [module, state] of Object.entries(data)) {
+          const el = document.createElement('div');
+          el.className = 'card toggle-card ' + (state ? 'up' : 'down');
+          el.innerHTML = `
+            <div class="card-title">${module}</div>
+            <label class="switch">
+              <input type="checkbox" ${state ? 'checked' : ''} data-module="${module}">
+              <span class="slider"></span>
+            </label>
+            <div class="card-meta">${state ? 'ENABLED' : 'DISABLED'}</div>
+          `;
+          grid.appendChild(el);
+        }
+        grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+          cb.addEventListener('change', async (e) => {
+            const mod = e.target.dataset.module;
+            const res = await fetch(`${API_BASE}/toggle/${mod}`, { method: 'POST' });
+            if (res.ok) {
+              fetchModules();
+            } else {
+              alert('Failed to toggle module');
+              fetchModules();
+            }
+          });
+        });
+      } catch (e) {
+        document.getElementById('modules-grid').textContent = 'Error loading modules';
+      }
+    }
+
+    async function fetchHistory() {
+      try {
+        const res = await fetch(`${API_BASE}/api/history?limit=20`);
+        const data = await res.json();
+        const el = document.getElementById('history');
+        if (!data.length) {
+          el.textContent = 'No commands yet.';
+          return;
+        }
+        el.textContent = data.map(h => `[${new Date(h.timestamp * 1000).toLocaleTimeString()}] $ ${h.command}\n${h.output}`).join('\n---\n');
+      } catch (e) {
+        document.getElementById('history').textContent = 'Error loading history';
+      }
+    }
+
+    async function fetchLogs() {
+      try {
+        const res = await fetch(`${API_BASE}/api/logs?lines=20`);
+        const data = await res.json();
+        const el = document.getElementById('logs');
+        if (!data.length) {
+          el.textContent = 'No logs yet.';
+          return;
+        }
+        el.textContent = data.join('\n');
+      } catch (e) {
+        document.getElementById('logs').textContent = 'Error loading logs';
+      }
+    }
+
+    async function sendCommand() {
+      const input = document.getElementById('command-input');
+      const cmd = input.value.trim();
+      if (!cmd) return;
+      const out = document.getElementById('command-output');
+      out.textContent = 'Running...';
+      try {
+        const res = await fetch(`${API_BASE}/command`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: cmd })
+        });
+        const data = await res.json();
+        out.textContent = data.output || JSON.stringify(data, null, 2);
+        input.value = '';
+        fetchHistory();
+      } catch (e) {
+        out.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    document.getElementById('send-btn').addEventListener('click', sendCommand);
+    document.getElementById('command-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendCommand();
+      }
+    });
+
+    function refreshAll() {
+      fetchHealth();
+      fetchDocker();
+      fetchModules();
+      fetchHistory();
+      fetchLogs();
+    }
+
+    refreshAll();
+    setInterval(refreshAll, 5000);
+  </script>
 </body>
 </html>

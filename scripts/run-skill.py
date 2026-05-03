@@ -340,18 +340,142 @@ OUTPUT_INSTRUCTIONS = {
 
 # ── Core agent runner ────────────────────────────────────────────────────────
 
+# ── Ollama client wrapper (Anthropic-compatible subset) ─────────────────────
+
+class _OllamaStreamCtx:
+    """Context manager that yields text chunks from Ollama's streaming /api/chat."""
+
+    def __init__(self, url: str, payload: dict):
+        self.url = url
+        self.payload = payload
+        self._resp = None
+        self._buf = ""
+        self._input_tokens = 0
+        self._output_tokens = 0
+
+    def __enter__(self):
+        data = json.dumps(self.payload).encode()
+        req = urllib.request.Request(self.url, data=data, headers={"Content-Type": "application/json"})
+        self._resp = urllib.request.urlopen(req)
+        return self
+
+    def __exit__(self, *args):
+        if self._resp:
+            self._resp.close()
+
+    @property
+    def text_stream(self):
+        for line in self._resp:
+            line = line.decode().strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            msg = obj.get("message", {})
+            chunk = msg.get("content", "")
+            if chunk:
+                self._buf += chunk
+                yield chunk
+            if "prompt_eval_count" in obj:
+                self._input_tokens = obj["prompt_eval_count"]
+            if "eval_count" in obj:
+                self._output_tokens = obj["eval_count"]
+
+    def get_final_message(self):
+        class _U:
+            input_tokens = self._input_tokens
+            output_tokens = self._output_tokens
+        class _M:
+            usage = _U()
+        return _M()
+
+
+class _OllamaMessages:
+    def __init__(self, base_url: str, model: str):
+        self._url = f"{base_url}/api/chat"
+        self._model = model
+
+    def stream(self, *, model=None, max_tokens=None, system=None, messages=None, **kwargs):
+        payload = {
+            "model": self._model,
+            "messages": messages or [],
+            "stream": True,
+        }
+        if system:
+            payload["system"] = system
+        return _OllamaStreamCtx(self._url, payload)
+
+    def create(self, *, model=None, max_tokens=None, system=None, messages=None, tools=None, **kwargs):
+        payload = {
+            "model": self._model,
+            "messages": messages or [],
+            "stream": False,
+        }
+        if system:
+            payload["system"] = system
+        if tools:
+            payload["tools"] = tools
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(self._url, data=data, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req) as resp:
+            obj = json.loads(resp.read())
+        msg = obj.get("message", {})
+        content_text = msg.get("content", "")
+
+        # Tool calls from Ollama
+        tool_calls = msg.get("tool_calls", [])
+        if tool_calls:
+            class _Block:
+                pass
+            blocks = []
+            for tc in tool_calls:
+                b = _Block()
+                b.type = "tool_use"
+                b.name = tc.get("function", {}).get("name", "")
+                try:
+                    b.input = json.loads(tc.get("function", {}).get("arguments", "{}"))
+                except json.JSONDecodeError:
+                    b.input = {}
+                b.id = tc.get("id", "")
+                blocks.append(b)
+            if content_text:
+                b = _Block()
+                b.type = "text"
+                b.text = content_text
+                blocks.insert(0, b)
+        else:
+            class _Block:
+                pass
+            b = _Block()
+            b.type = "text"
+            b.text = content_text
+            blocks = [b]
+
+        class _R:
+            content = blocks
+            class _U:
+                input_tokens = obj.get("prompt_eval_count", 0)
+                output_tokens = obj.get("eval_count", 0)
+            usage = _U()
+        return _R()
+
+
+class _OllamaClient:
+    def __init__(self, model: str, base_url: str):
+        self.messages = _OllamaMessages(base_url, model)
+
+
 def get_client():
     """
     Create and return an Ollama client configured from the `OLLAMA_HOST` environment variable.
 
     Attempts to connect to Ollama at OLLAMA_HOST (default http://localhost:11434).
-
-    Returns:
-        dict: A dict with 'model' and 'base_url' keys for Ollama.
     """
-    model = os.environ.get("AGENCY_MODEL", "llama3.1")
+    _model = os.environ.get("AGENCY_MODEL", "llama3.1")
     base_url = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-    return {"model": model, "base_url": base_url}
+    return _OllamaClient(_model, base_url)
 
 
 def run_agent(client, system_prompt: str, task: str, *,
