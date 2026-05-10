@@ -5,7 +5,6 @@ from __future__ import annotations
 from jarvis.modules.ai.personality_engine import PersonalityEngine
 
 import os
-import sys
 try:
     from core.engine import JarvisEngine  # type: ignore
 except Exception:  # pragma: no cover
@@ -41,7 +40,8 @@ class JarvisApp:
 
 def main() -> None:
     """Start full engine when available, otherwise run fallback shell."""
-    import sys, time
+    import sys
+    import time
     print(BANNER)
     if JarvisEngine is not None:
         JarvisEngine().start()
