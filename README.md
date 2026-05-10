@@ -228,12 +228,11 @@ python3 tests/agent_tests.py  # + live LLM (needs Ollama running)
 
 `.github/workflows/ci.yml` runs on every push and PR:
 - **Structural tests** — always run, no API key needed
-- **Live LLM tests** — run on push to `main` if Ollama is available
+- **Live LLM tests** — run on push to `main` only when `ANTHROPIC_API_KEY` secret is set
+- **JARVIS Quality Gates** — run on every PR and push to `main`: `ruff` lint, `mypy` type check, `pytest`, `bandit` security scan, and Docker image build
 - **Security gate** — `security-gate.yml` validates the security audit swarm on every push/PR (syntax check, test suite, dry-run)
 - **Real estate gate** — `security-gate.yml` validates the real estate swarm on every push/PR (syntax check, test suite, dry-run)
 - **Dependabot** — weekly pip and GitHub Actions updates, grouped by package family
-
-Ensure Ollama is available in CI or skip live LLM tests
 
 ---
 
