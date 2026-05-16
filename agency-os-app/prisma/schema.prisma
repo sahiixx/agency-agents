@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Agent {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String?
+  filePath    String?
+  runCount    Int      @default(0)
+  lastRunAt   DateTime?
+  createdAt   DateTime @default(now())
+  jobs        Job[]
+}
+
+model CrawlJob {
+  id            String    @id @default(cuid())
+  url           String
+  engine        String    @default("auto")
+  selector      String?
+  status        String    @default("queued")
+  resultCount   Int       @default(0)
+  error         String?
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+  results       Result[]
+}
+
+model Result {
+  id        Int      @id @default(autoincrement())
+  jobId     String
+  job       CrawlJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  source    String
+  data      Json
+  createdAt DateTime @default(now())
+}
+
+model Proxy {
+  id         String    @id @default(cuid())
+  host       String
+  port       Int
+  protocol   String    @default("http")
+  status     String    @default("active")
+  lastUsedAt DateTime?
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  name        String
+  agentId     String
+  agent       Agent     @relation(fields: [agentId], references: [id])
+  query       String
+  status      String    @default("pending")
+  output      String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+}

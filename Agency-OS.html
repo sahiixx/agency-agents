@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Agency · Mission Control OS</title>
+<style>
+:root{--midnight:#0a0e1a;--slate-900:#111827;--slate-800:#1f2937;--slate-700:#374151;--slate-600:#4b5563;--slate-400:#9ca3af;--slate-300:#d1d5db;--slate-100:#f3f4f6;--gold-400:#fbbf24;--gold-500:#f59e0b;--emerald-400:#34d399;--emerald-500:#10b981;--rose-500:#f43f5e;--blue-500:#3b82f6;--violet-500:#8b5cf6;--font-sans:system-ui,-apple-system,sans-serif;--font-mono:'SF Mono',Monospace;--r:0.5rem;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--midnight);color:var(--slate-300);line-height:1.6;min-height:100vh}
+.container{max-width:1400px;margin:0 auto;padding:0 1.5rem}
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-4{gap:1rem}.gap-6{gap:1.5rem}
+.grid{display:grid;gap:1.5rem}
+
+/* Header */
+.header{background:linear-gradient(180deg,var(--slate-900) 0%,transparent 100%);border-bottom:1px solid var(--slate-800);padding:1rem 0;position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}
+.brand{font-size:1.5rem;font-weight:800;color:var(--gold-400);letter-spacing:-0.02em}
+.brand span{color:var(--slate-100)}
+.badge{background:var(--emerald-600);color:#fff;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:.25rem .75rem;border-radius:9999px}
+.status-dot{width:8px;height:8px;background:var(--emerald-500);border-radius:50%;box-shadow:0 0 8px var(--emerald-500);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Hero */
+.hero{padding:4rem 0 3rem;background:radial-gradient(ellipse at 50% 0%,rgba(251,191,36,.08) 0%,transparent 60%)}
+.hero-title{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:var(--slate-100);line-height:1.1;letter-spacing:-.03em}
+.hero-title .highlight{color:var(--gold-400)}
+.hero-subtitle{font-size:1.125rem;color:var(--slate-400);max-width:600px;margin-top:1rem}
+
+/* Stats */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin:2rem 0}
+.stat-card{background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);padding:1.5rem;transition:all .2s}
+.stat-card:hover{border-color:var(--gold-500);transform:translateY(-2px)}
+.stat-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--slate-400);margin-bottom:.5rem}
+.stat-value{font-size:1.75rem;font-weight:800;color:var(--slate-100);font-family:var(--font-mono)}
+.stat-value.gold{color:var(--gold-400)}.stat-value.emerald{color:var(--emerald-400)}.stat-value.violet{color:var(--violet-500)}
+
+/* Section */
+.section{padding:3rem 0}
+.section-title{font-size:1.25rem;font-weight:700;color:var(--slate-100);margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem}
+.icon{width:32px;height:32px;background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:1rem}
+
+/* Cards */
+.card{background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);padding:1.5rem;transition:all .2s;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold-500),var(--emerald-500));opacity:0;transition:opacity .2s}
+.card:hover::before{opacity:1}.card:hover{border-color:var(--slate-600);transform:translateY(-2px)}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.card-title{font-size:1rem;font-weight:700;color:var(--slate-100)}
+.card-meta{font-size:.75rem;color:var(--slate-400);margin-top:.25rem}
+.card-desc{font-size:.875rem;color:var(--slate-400);margin-top:.5rem}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border-radius:var(--r);font-size:.875rem;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--gold-500);color:var(--midnight)}.btn-primary:hover{background:var(--gold-400)}
+.btn-secondary{background:var(--slate-700);color:var(--slate-100)}.btn-secondary:hover{background:var(--slate-600)}
+.btn-sm{padding:.375rem .75rem;font-size:.75rem}
+.btn-group{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+
+/* Agent list */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.agent-card{background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);padding:1rem;transition:all .2s;display:flex;flex-direction:column;gap:.5rem}
+.agent-card:hover{border-color:var(--slate-600)}
+.agent-name{font-size:.875rem;font-weight:700;color:var(--slate-100)}
+.agent-cat{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-400)}
+.agent-desc{font-size:.8rem;color:var(--slate-400);line-height:1.4}
+
+/* Search */
+.search{width:100%;background:var(--slate-900);border:1px solid var(--slate-700);border-radius:var(--r);padding:.75rem 1rem;color:var(--slate-100);font-size:.875rem;margin-bottom:1.5rem}
+.search:focus{outline:none;border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(251,191,36,.1)}
+
+/* Pipeline launcher */
+.pipeline-card{background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);padding:1.5rem}
+.pipeline-title{font-size:1rem;font-weight:700;color:var(--slate-100);margin-bottom:.5rem}
+.pipeline-desc{font-size:.875rem;color:var(--slate-400);margin-bottom:1rem}
+.pipeline-meta{display:flex;gap:1rem;font-size:.75rem;color:var(--slate-400);margin-bottom:1rem}
+
+/* Quick links */
+.link-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem}
+.link-card{background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);padding:1rem;text-decoration:none;color:inherit;transition:all .2s;display:flex;align-items:center;gap:1rem}
+.link-card:hover{border-color:var(--gold-500);transform:translateY(-2px)}
+.link-icon{font-size:1.5rem}
+.link-text{font-weight:600;color:var(--slate-100)}.link-sub{font-size:.75rem;color:var(--slate-400)}
+
+/* Footer */
+.footer{border-top:1px solid var(--slate-800);padding:2rem 0;margin-top:3rem;text-align:center;color:var(--slate-400);font-size:.875rem}
+
+/* Responsive */
+@media(max-width:768px){.grid{grid-template-columns:1fr!important}.stats-bar{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container flex justify-between items-center">
+    <div class="brand">The Agency <span>· OS</span></div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <div class="status-dot"></div>
+        <span style="font-size:.8rem;color:var(--slate-400)">Kimi Provider Online</span>
+      </div>
+      <span class="badge">v2.1</span>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <h1 class="hero-title">Agency<br><span class="highlight">Mission Control</span></h1>
+    <p class="hero-subtitle">Unified orchestration for 192 agents, 6 repositories, and 12 pipeline presets. One command center to rule them all.</p>
+
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-label">Total Agents</div><div class="stat-value gold">192</div></div>
+      <div class="stat-card"><div class="stat-label">Repositories</div><div class="stat-value">6</div></div>
+      <div class="stat-card"><div class="stat-label">Pipeline Presets</div><div class="stat-value emerald">12</div></div>
+      <div class="stat-card"><div class="stat-label">Skills Installed</div><div class="stat-value violet">154</div></div>
+      <div class="stat-card"><div class="stat-label">Kimi Provider</div><div class="stat-value emerald">Active</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Repositories -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">📦</span> Repositories</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">agency-agents</div><div class="card-meta">Main framework · Python</div></div>
+          <span class="badge" style="background:var(--blue-500)">Core</span>
+        </div>
+        <div class="card-desc">152 specialized AI agents, Titans memory, deepagents SDK, multi-pipeline orchestration.</div>
+        <div class="btn-group">
+          <a href="https://github.com/sahiixx/agency-agents" target="_blank" class="btn btn-secondary btn-sm">GitHub</a>
+          <span class="btn btn-primary btn-sm" onclick="alert('Run: python3 agency.py --mission \"...\" --provider kimi')">Launch</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">sovereign-swarm-v2</div><div class="card-meta">Swarm runtime · Python</div></div>
+          <span class="badge" style="background:var(--violet-500)">Runtime</span>
+        </div>
+        <div class="card-desc">Production-hardened Python swarm with Docker support. Second-gen orchestration engine.</div>
+        <div class="btn-group">
+          <span class="btn btn-secondary btn-sm">Docker</span>
+          <span class="btn btn-secondary btn-sm">PyProject</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">moltworker</div><div class="card-meta">Task workers · Node.js</div></div>
+          <span class="badge" style="background:var(--emerald-600)">Workers</span>
+        </div>
+        <div class="card-desc">Async Node.js worker system. Webhook consumers, API processors, background job queue.</div>
+        <div class="btn-group">
+          <span class="btn btn-secondary btn-sm">NPM</span>
+          <span class="btn btn-secondary btn-sm">Node 18+</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Fixfizx</div><div class="card-meta">Product · Private</div></div>
+          <span class="badge" style="background:var(--rose-500)">Product</span>
+        </div>
+        <div class="card-desc">Your proprietary product/brand. Build pipeline target for Agency swarms.</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">campaigns</div><div class="card-meta">Marketing ops</div></div>
+          <span class="badge" style="background:var(--gold-600)">Marketing</span>
+        </div>
+        <div class="card-desc">Active marketing campaign assets and automation workflows.</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">workspace</div><div class="card-meta">General</div></div>
+          <span class="badge" style="background:var(--slate-600)">Workspace</span>
+        </div>
+        <div class="card-desc">General development workspace and experiments.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pipeline Launcher -->
+<section class="section" style="background:var(--slate-900)">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">🚀</span> Pipeline Launcher</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(350px,1fr))">
+      <div class="pipeline-card">
+        <div class="pipeline-title">Fullstack SaaS Builder</div>
+        <div class="pipeline-desc">PM → Architect → Frontend ↔ QA → Backend ↔ QA → Security → Core</div>
+        <div class="pipeline-meta"><span>💻 Frontend</span><span>🔌 Backend</span><span>🔒 Security</span></div>
+        <div class="btn-group">
+          <span class="btn btn-primary btn-sm" onclick="copyCmd('python3 pipelines/kimi_fullstack_pipeline.py --mission \"Build a SaaS landing page\" --preset saas --output ./output/saas')">Copy Command</span>
+        </div>
+      </div>
+      <div class="pipeline-card">
+        <div class="pipeline-title">Real Estate UAE Swarm</div>
+        <div class="pipeline-desc">Leads → Matching → Deals → CRM/Pitch/Referral → Core</div>
+        <div class="pipeline-meta"><span>🇦🇪 UAE</span><span>🏠 Property</span><span>💰 Investment</span></div>
+        <div class="btn-group">
+          <span class="btn btn-primary btn-sm" onclick="copyCmd('python3 real_estate_swarm.py --mission \"Full pipeline: intake to close\" --scope full')">Copy Command</span>
+        </div>
+      </div>
+      <div class="pipeline-card">
+        <div class="pipeline-title">Security Audit Swarm</div>
+        <div class="pipeline-desc">PM → Security → Compliance → QA → Core</div>
+        <div class="pipeline-meta"><span>🔐 OWASP</span><span>📋 SOC2</span><span>🛡️ Threat Model</span></div>
+        <div class="btn-group">
+          <span class="btn btn-primary btn-sm" onclick="copyCmd('python3 security_audit_swarm.py --mission \"Audit auth system\" --mode full')">Copy Command</span>
+        </div>
+      </div>
+      <div class="pipeline-card">
+        <div class="pipeline-title">SaaS Dominance Swarm</div>
+        <div class="pipeline-desc">PM → Copy → Frontend → QA → Core</div>
+        <div class="pipeline-meta"><span>📝 Copy</span><span>🎨 Design</span><span>📈 Growth</span></div>
+        <div class="btn-group">
+          <span class="btn btn-primary btn-sm" onclick="copyCmd('python3 saas_dominance_swarm.py --mission \"Launch landing page\"')">Copy Command</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Agent Registry -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">🤖</span> Agent Registry</h2>
+    <input type="text" class="search" id="agentSearch" placeholder="Search 192 agents by name, category, or skill...">
+    <div class="agent-grid" id="agentGrid"></div>
+  </div>
+</section>
+
+<!-- Quick Links -->
+<section class="section" style="background:var(--slate-900)">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">🔗</span> Quick Access</h2>
+    <div class="link-grid">
+      <a href="./projects/dubai-dashboard/index.html" class="link-card">
+        <span class="link-icon">🇦🇪</span>
+        <div><div class="link-text">Dubai RE Dashboard</div><div class="link-sub">Live market data · ROI calc</div></div>
+      </a>
+      <a href="./kimi_bridge/bridge.py" class="link-card">
+        <span class="link-icon">🔧</span>
+        <div><div class="link-text">Kimi Bridge</div><div class="link-sub">Tool-execution provider</div></div>
+      </a>
+      <a href="./pipelines/kimi_fullstack_pipeline.py" class="link-card">
+        <span class="link-icon">🚀</span>
+        <div><div class="link-text">Fullstack Pipeline</div><div class="link-sub">Dev-QA loops · Real tools</div></div>
+      </a>
+      <a href="./SAHIL_ORCHESTRATOR_MANIFEST.md" class="link-card">
+        <span class="link-icon">📋</span>
+        <div><div class="link-text">Manifest</div><div class="link-sub">Complete Agency OS map</div></div>
+      </a>
+      <a href="./memory/AGENTS.md" class="link-card">
+        <span class="link-icon">🧠</span>
+        <div><div class="link-text">Agency Memory</div><div class="link-sub">Shared context · Titans</div></div>
+      </a>
+      <a href="./agency_ui.html" class="link-card">
+        <span class="link-icon">🖥️</span>
+        <div><div class="link-text">Legacy UI</div><div class="link-sub">Original mission control</div></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p><strong style="color:var(--slate-100)">The Agency · Mission Control OS</strong><br>
+    Built by AgentsOrchestrator (Kimi CLI) · Provider: <span style="color:var(--emerald-400)">kimi</span> · Model: tool-execution<br>
+    <a href="https://github.com/sahiixx/agency-agents" target="_blank" style="color:var(--gold-400);text-decoration:none">github.com/sahiixx/agency-agents</a></p>
+  </div>
+</footer>
+
+<script>
+const AGENTS=[
+{cat:"Orchestration",name:"AgentsOrchestrator",desc:"Autonomous pipeline manager. PM → Architect → Dev-QA → Integration."},
+{cat:"Project Management",name:"Project Manager Senior",desc:"Converts specs to tasks. Realistic scope, exact requirements."},
+{cat:"Design",name:"UX Architect",desc:"Technical architecture + CSS systems + implementation guidance."},
+{cat:"Design",name:"UI Designer",desc:"Visual design systems, component libraries, pixel-perfect interfaces."},
+{cat:"Engineering",name:"Frontend Developer",desc:"React, Vue, Angular, modern web, performance optimization."},
+{cat:"Engineering",name:"Backend Architect",desc:"Scalable systems, APIs, databases, cloud infrastructure."},
+{cat:"Engineering",name:"Senior Developer",desc:"Laravel, Livewire, FluxUI, advanced CSS, Three.js."},
+{cat:"Engineering",name:"AI Engineer",desc:"ML models, LLM integration, RAG, data pipelines."},
+{cat:"Engineering",name:"DevOps Automator",desc:"CI/CD, infrastructure automation, cloud operations."},
+{cat:"Engineering",name:"Security Engineer",desc:"Threat modeling, vulnerability review, secure architecture."},
+{cat:"Engineering",name:"Database Optimizer",desc:"Schema design, query optimization, PostgreSQL, MySQL."},
+{cat:"Engineering",name:"Mobile App Builder",desc:"Native iOS/Android, cross-platform frameworks."},
+{cat:"Testing",name:"Reality Checker",desc:"Evidence-based certification. Defaults to NEEDS_WORK."},
+{cat:"Testing",name:"Evidence Collector",desc:"Screenshot-obsessed QA. Requires visual proof."},
+{cat:"Testing",name:"API Tester",desc:"Comprehensive API validation, performance testing."},
+{cat:"Marketing",name:"Growth Hacker",desc:"Rapid user acquisition, viral loops, conversion funnels."},
+{cat:"Marketing",name:"Content Creator",desc:"Multi-platform campaigns, editorial calendars, storytelling."},
+{cat:"Marketing",name:"SEO Specialist",desc:"Technical SEO, content optimization, link authority."},
+{cat:"Sales",name:"Deal Strategist",desc:"MEDDPICC qualification, competitive positioning, win planning."},
+{cat:"Sales",name:"Outbound Strategist",desc:"Signal-based multi-channel prospecting sequences."},
+{cat:"Real Estate",name:"Lead Qualification",desc:"Scores inbound/outbound leads using financial signals."},
+{cat:"Real Estate",name:"Property Matching",desc:"Pairs buyer profiles with optimal UAE listings."},
+{cat:"Real Estate",name:"Deal Negotiation",desc:"Offer structuring, counter-offer strategy, commission optimization."},
+{cat:"Real Estate",name:"RERA Compliance",desc:"UAE brokerage compliance, AML, Form A/B/F, escrow."},
+{cat:"Real Estate",name:"Investor Pitch",desc:"Data-driven investment proposals for HNW buyers."},
+{cat:"Real Estate",name:"CRM Pipeline",desc:"Lead lifecycle, conversion rates, agent scorecards."},
+{cat:"Real Estate",name:"Market Intelligence",desc:"DLD data, price trends, supply pipelines, rental yields."},
+{cat:"Specialized",name:"Claude Reasoning Core",desc:"Final GO/NO-GO gate. Constitutional review, ethics."},
+{cat:"Specialized",name:"Prompt Architect",desc:"Designs/audits agent prompts using 26 universal patterns."},
+{cat:"Specialized",name:"Trust Graph Operator",desc:"Neo4j trust scores, entity reputation, relationship mapping."},
+{cat:"Specialized",name:"MCP Builder",desc:"Model Context Protocol servers for custom AI tools."},
+{cat:"Specialized",name:"Linux Sysadmin",desc:"Filesystem, services, hardening, server operations."},
+{cat:"Specialized",name:"Model QA",desc:"End-to-end ML model audit, replication, calibration."},
+{cat:"Specialized",name:"AI Tools Reverse Engineer",desc:"Competitive intel on 31+ AI coding tools."},
+{cat:"Support",name:"Analytics Reporter",desc:"Dashboards, KPI tracking, strategic decision support."},
+{cat:"Support",name:"Finance Tracker",desc:"Financial planning, budget management, performance analysis."},
+{cat:"Support",name:"Legal Compliance",desc:"Legal compliance, data handling, regulatory standards."},
+];
+
+function renderAgents(filter=""){
+  const grid=document.getElementById("agentGrid");
+  const term=filter.toLowerCase();
+  const matches=AGENTS.filter(a=>a.name.toLowerCase().includes(term)||a.cat.toLowerCase().includes(term)||a.desc.toLowerCase().includes(term));
+  grid.innerHTML=matches.map(a=>`
+    <div class="agent-card">
+      <div class="agent-cat">${a.cat}</div>
+      <div class="agent-name">${a.name}</div>
+      <div class="agent-desc">${a.desc}</div>
+    </div>
+  `).join("");
+}
+
+function copyCmd(cmd){
+  navigator.clipboard.writeText(cmd).then(()=>alert("Command copied to clipboard!\n\n"+cmd));
+}
+
+document.getElementById("agentSearch").addEventListener("input",e=>renderAgents(e.target.value));
+renderAgents();
+</script>
+</body>
+</html>

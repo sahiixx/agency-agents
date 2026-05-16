@@ -230,7 +230,7 @@ def get_llm(provider: str = "ollama", ollama_model: str = DEFAULT_MODEL,
         print(f"  Provider: AutoGen ({autogen_model})")
         return p.get_llm(model=autogen_model)
 
-    if provider in ("rasa", "n8n"):
+    if provider in ("rasa", "n8n", "kimi"):
         print(f"  Provider: {provider} (external service — Ollama used for orchestration)")
         from providers.ollama_provider import OllamaProvider
         return OllamaProvider().get_llm(model=ollama_model, base_url=ollama_base_url)
@@ -589,9 +589,9 @@ Examples:
 
     # ── Provider
     parser.add_argument("--provider",
-                        choices=["ollama", "anthropic", "claude", "openai", "adk", "autogen", "rasa", "n8n"],
+                        choices=["ollama", "anthropic", "claude", "openai", "adk", "autogen", "rasa", "n8n", "kimi"],
                         default="ollama",
-                        help="LLM/agent provider (default: ollama)")
+                        help="LLM/agent provider (default: ollama). Use 'kimi' to delegate to Kimi CLI subagents (falls back to Ollama for orchestration)")
     parser.add_argument("--ollama-model",  default=DEFAULT_MODEL,
                         help=f"Ollama model name (default: {DEFAULT_MODEL})")
     parser.add_argument("--ollama-url",    default="http://localhost:11434",

@@ -1,0 +1,130 @@
+{
+  "metadata": {
+    "source": "Dubai Land Department",
+    "date": "2026-05-11",
+    "version": "1.0.0"
+  },
+  "market_summary": {
+    "avg_price_sqft_apartment": 1918,
+    "avg_price_sqft_villa": 2061,
+    "avg_gross_yield_apartment": 6.4,
+    "avg_gross_yield_villa": 4.8,
+    "yoy_growth": 18,
+    "forecast_2026": "8-12%",
+    "total_transactions_2024": 180520,
+    "total_value_2024_aed_billion": 522.1
+  },
+  "areas": [
+    {
+      "id": "palm",
+      "name": "Palm Jumeirah",
+      "tier": "luxury",
+      "price_sqft": 4820,
+      "yield_min": 4.0,
+      "yield_max": 6.0,
+      "appreciation": 10,
+      "types": ["apartment", "villa"],
+      "metro": false,
+      "waterfront": true
+    },
+    {
+      "id": "downtown",
+      "name": "Downtown Dubai",
+      "tier": "luxury",
+      "price_sqft": 3450,
+      "yield_min": 4.5,
+      "yield_max": 5.5,
+      "appreciation": 12,
+      "types": ["apartment"],
+      "metro": true,
+      "waterfront": false
+    },
+    {
+      "id": "marina",
+      "name": "Dubai Marina",
+      "tier": "premium",
+      "price_sqft": 2061,
+      "yield_min": 5.5,
+      "yield_max": 7.2,
+      "appreciation": 9,
+      "types": ["apartment"],
+      "metro": true,
+      "waterfront": true
+    },
+    {
+      "id": "business",
+      "name": "Business Bay",
+      "tier": "premium",
+      "price_sqft": 2673,
+      "yield_min": 5.5,
+      "yield_max": 6.5,
+      "appreciation": 11,
+      "types": ["apartment"],
+      "metro": true,
+      "waterfront": false
+    },
+    {
+      "id": "hills",
+      "name": "Dubai Hills Estate",
+      "tier": "mid",
+      "price_sqft": 1580,
+      "yield_min": 5.5,
+      "yield_max": 6.5,
+      "appreciation": 10,
+      "types": ["apartment", "villa", "townhouse"],
+      "metro": false,
+      "waterfront": false
+    },
+    {
+      "id": "jvc",
+      "name": "Jumeirah Village Circle",
+      "tier": "value",
+      "price_sqft": 1448,
+      "yield_min": 7.0,
+      "yield_max": 9.0,
+      "appreciation": 8,
+      "types": ["apartment", "townhouse"],
+      "metro": false,
+      "waterfront": false
+    },
+    {
+      "id": "south",
+      "name": "Dubai South",
+      "tier": "value",
+      "price_sqft": 985,
+      "yield_min": 7.0,
+      "yield_max": 7.8,
+      "appreciation": 9,
+      "types": ["apartment", "villa"],
+      "metro": false,
+      "waterfront": false
+    },
+    {
+      "id": "intl",
+      "name": "International City",
+      "tier": "value",
+      "price_sqft": 725,
+      "yield_min": 7.0,
+      "yield_max": 8.0,
+      "appreciation": 7,
+      "types": ["apartment"],
+      "metro": false,
+      "waterfront": false
+    }
+  ],
+  "transaction_costs": {
+    "dld_fee_pct": 4,
+    "agent_commission_pct": 2,
+    "trustee_fee_aed": 4000,
+    "mortgage_registration_pct": 0.25,
+    "valuation_fee_aed": 3500,
+    "total_estimate_pct": 7
+  },
+  "golden_visa": {
+    "minimum_property_value_aed": 2000000,
+    "duration_years": 10,
+    "renewable": true,
+    "family_sponsorship": true,
+    "business_ownership_pct": 100
+  }
+}

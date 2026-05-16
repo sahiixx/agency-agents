@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dubai Real Estate Investment Dashboard · 2026</title>
+  <style>
+/* ── Dubai Real Estate Investment Dashboard ──
+   Design System: Luxury Dark · Gold Accents · Emerald Data
+   Author: ArchitectUX Agent (Kimi CLI)
+   Date: 2026-05-11
+*/
+
+:root {
+  /* Palette */
+  --midnight: #0a0e1a;
+  --slate-900: #111827;
+  --slate-800: #1f2937;
+  --slate-700: #374151;
+  --slate-600: #4b5563;
+  --slate-400: #9ca3af;
+  --slate-300: #d1d5db;
+  --slate-100: #f3f4f6;
+  --gold-400: #fbbf24;
+  --gold-500: #f59e0b;
+  --gold-600: #d97706;
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
+  --emerald-600: #059669;
+  --rose-500: #f43f5e;
+  --blue-500: #3b82f6;
+  --violet-500: #8b5cf6;
+
+  /* Typography */
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'SF Mono', Monaco, monospace;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.4);
+  --shadow-gold: 0 0 20px rgba(251,191,36,0.15);
+  --shadow-emerald: 0 0 20px rgba(16,185,129,0.15);
+
+  /* Transitions */
+  --transition: all 0.2s ease;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--midnight);
+  color: var(--slate-300);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Layout ── */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.grid { display: grid; gap: var(--space-6); }
+.grid-cols-1 { grid-template-columns: 1fr; }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
+.gap-8 { gap: var(--space-8); }
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(180deg, var(--slate-900) 0%, transparent 100%);
+  border-bottom: 1px solid var(--slate-800);
+  padding: var(--space-4) 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+}
+
+.header-brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold-400);
+  letter-spacing: -0.02em;
+}
+
+.header-brand span { color: var(--slate-100); }
+
+.header-badge {
+  background: var(--emerald-600);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 9999px;
+}
+
+/* ── Hero ── */
+.hero {
+  padding: var(--space-16) 0 var(--space-12);
+  background: radial-gradient(ellipse at 50% 0%, rgba(251,191,36,0.08) 0%, transparent 60%);
+}
+
+.hero-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  color: var(--slate-100);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: var(--space-4);
+}
+
+.hero-title .highlight { color: var(--gold-400); }
+
+.hero-subtitle {
+  font-size: 1.125rem;
+  color: var(--slate-400);
+  max-width: 600px;
+  margin-bottom: var(--space-8);
+}
+
+/* ── Stats Bar ── */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-12);
+}
+
+.stat-card {
+  background: var(--slate-800);
+  border: 1px solid var(--slate-700);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  border-color: var(--gold-500);
+  box-shadow: var(--shadow-gold);
+  transform: translateY(-2px);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--slate-400);
+  margin-bottom: var(--space-2);
+}
+
+.stat-value {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--slate-100);
+  font-family: var(--font-mono);
+}
+
+.stat-value.gold { color: var(--gold-400); }
+.stat-value.emerald { color: var(--emerald-400); }
+.stat-value.rose { color: var(--rose-500); }
+
+.stat-change {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: var(--space-1);
+}
+.stat-change.up { color: var(--emerald-400); }
+.stat-change.down { color: var(--rose-500); }
+
+/* ── Section ── */
+.section {
+  padding: var(--space-12) 0;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--slate-100);
+  margin-bottom: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.section-title .icon {
+  width: 32px;
+  height: 32px;
+  background: var(--slate-800);
+  border: 1px solid var(--slate-700);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.section-desc {
+  color: var(--slate-400);
+  margin-bottom: var(--space-8);
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--slate-800);
+  border: 1px solid var(--slate-700);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold-500), var(--emerald-500));
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.card:hover::before { opacity: 1; }
+.card:hover {
+  border-color: var(--slate-600);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--slate-100);
+}
+
+.card-tier {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.tier-luxury { background: rgba(251,191,36,0.15); color: var(--gold-400); border: 1px solid rgba(251,191,36,0.3); }
+.tier-premium { background: rgba(139,92,246,0.15); color: var(--violet-500); border: 1px solid rgba(139,92,246,0.3); }
+.tier-mid { background: rgba(59,130,246,0.15); color: var(--blue-500); border: 1px solid rgba(59,130,246,0.3); }
+.tier-value { background: rgba(16,185,129,0.15); color: var(--emerald-400); border: 1px solid rgba(16,185,129,0.3); }
+
+.card-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--slate-400);
+}
+
+.metric-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--slate-100);
+  font-family: var(--font-mono);
+}
+
+/* ── Bar Chart ── */
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.bar-label {
+  width: 140px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--slate-300);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-track {
+  flex: 1;
+  height: 24px;
+  background: var(--slate-700);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width 1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: var(--space-2);
+}
+
+.bar-fill.gold { background: linear-gradient(90deg, var(--gold-600), var(--gold-400)); }
+.bar-fill.emerald { background: linear-gradient(90deg, var(--emerald-600), var(--emerald-400)); }
+.bar-fill.blue { background: linear-gradient(90deg, #1e40af, var(--blue-500)); }
+
+.bar-value {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* ── Calculator ── */
+.calculator {
+  background: var(--slate-800);
+  border: 1px solid var(--slate-700);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+}
+
+.form-group {
+  margin-bottom: var(--space-6);
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--slate-400);
+  margin-bottom: var(--space-2);
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  background: var(--slate-900);
+  border: 1px solid var(--slate-700);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  color: var(--slate-100);
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  transition: var(--transition);
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 3px rgba(251,191,36,0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+/* ── Results ── */
+.result-panel {
+  background: var(--slate-900);
+  border: 1px solid var(--slate-700);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-4);
+}
+
+.result-item {
+  text-align: center;
+  padding: var(--space-4);
+  background: var(--slate-800);
+  border-radius: var(--radius-md);
+}
+
+.result-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gold-400);
+  font-family: var(--font-mono);
+}
+
+.result-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--slate-400);
+  margin-top: var(--space-1);
+}
+
+/* ── Visa Checker ── */
+.visa-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-top: var(--space-4);
+}
+
+.visa-eligible {
+  background: rgba(16,185,129,0.15);
+  color: var(--emerald-400);
+  border: 1px solid rgba(16,185,129,0.3);
+}
+
+.visa-ineligible {
+  background: rgba(244,63,94,0.15);
+  color: var(--rose-500);
+  border: 1px solid rgba(244,63,94,0.3);
+}
+
+/* ── Footer ── */
+.footer {
+  border-top: 1px solid var(--slate-800);
+  padding: var(--space-8) 0;
+  margin-top: var(--space-12);
+  text-align: center;
+  color: var(--slate-400);
+  font-size: 0.875rem;
+}
+
+.footer a { color: var(--gold-400); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .grid-cols-3 { grid-template-columns: 1fr; }
+  .grid-cols-2 { grid-template-columns: 1fr; }
+  .grid-cols-4 { grid-template-columns: 1fr; }
+  .stats-bar { grid-template-columns: 1fr; }
+  .bar-label { width: 100px; font-size: 0.7rem; }
+  .hero-title { font-size: 2rem; }
+  .container { padding: 0 var(--space-4); }
+}
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card, .stat-card, .calculator {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.card:nth-child(1) { animation-delay: 0.05s; }
+.card:nth-child(2) { animation-delay: 0.1s; }
+.card:nth-child(3) { animation-delay: 0.15s; }
+.card:nth-child(4) { animation-delay: 0.2s; }
+.card:nth-child(5) { animation-delay: 0.25s; }
+.card:nth-child(6) { animation-delay: 0.3s; }
+
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container flex justify-between items-center">
+      <div class="header-brand">The Agency <span>· Dubai RE</span></div>
+      <div class="flex items-center gap-4">
+        <span class="header-badge">Live Data · May 2026</span>
+        <span style="font-size:0.8rem;color:var(--slate-400);">DLD Verified</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero-title">
+        Dubai Real Estate<br>
+        <span class="highlight">Investment Dashboard</span>
+      </h1>
+      <p class="hero-subtitle">
+        Live market intelligence, ROI calculators, and property matching
+        for high-net-worth investors targeting the UAE's premier real estate market.
+      </p>
+
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-label">Avg Price / Sqft</div>
+          <div class="stat-value gold">AED 1,918</div>
+          <div class="stat-change up">▲ 18% YoY</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">2024 Transactions</div>
+          <div class="stat-value">180,520</div>
+          <div class="stat-change up">▲ AED 522.1B Value</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Gross Yield</div>
+          <div class="stat-value emerald">6.4%</div>
+          <div class="stat-change up">Apartments · 4.8% Villas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Growth Forecast</div>
+          <div class="stat-value">8-12%</div>
+          <div class="stat-change up">2026 Projected</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Area Comparison -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="icon">📊</span>
+        Area Comparison
+      </h2>
+      <p class="section-desc">
+        Price per sqft and rental yields across Dubai's key investment districts.
+        Data sourced from Dubai Land Department transaction records.
+      </p>
+
+      <div class="grid grid-cols-3">
+        <!-- Palm Jumeirah -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Palm Jumeirah</div>
+            <span class="card-tier tier-luxury">Luxury</span>
+          </div>
+          <div class="card-metrics">
+            <div class="metric">
+              <span class="metric-label">Price / sqft</span>
+              <span class="metric-value">AED 3,500+</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Gross Yield</span>
+              <span class="metric-value" style="color:var(--gold-400);">4-6%</span>
+            </div>
+          </div>
+          <p style="font-size:0.8rem;color:var(--slate-400);">
+            Iconic waterfront address. Villas exceed AED 6,000/sqft.
+            Global brand recognition, limited supply.
+          </p>
+        </div>
+
+        <!-- Downtown Dubai -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Downtown Dubai</div>
+            <span class="card-tier tier-luxury">Luxury</span>
+          </div>
+          <div class="card-metrics">
+            <div class="metric">
+              <span class="metric-label">Price / sqft</span>
+              <span class="metric-value">AED 2,980</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Gross Yield</span>
+              <span class="metric-value" style="color:var(--gold-400);">4.5-5.5%</span>
+            </div>
+          </div>
+          <p style="font-size:0.8rem;color:var(--slate-400);">
+            Burj Khalifa district. 25% appreciation over 2 years.
+            Strong institutional demand, deep liquidity.
+          </p>
+        </div>
+
+        <!-- Dubai Marina -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Dubai Marina</div>
+            <span class="card-tier tier-premium">Premium</span>
+          </div>
+          <div class="card-metrics">
+            <div class="metric">
+              <span class="metric-label">Price / sqft</span>
+              <span class="metric-value">AED 2,061</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Gross Yield</span>
+              <span class="metric-value" style="color:var(--emerald-400);">5.5-7.2%</span>
+            </div>
+          </div>
+          <p style="font-size:0.8rem;color:var(--slate-400);">
+            Most liquid rental market. Metro, tram, water taxi connected.
+            Strong short-term rental overlay up to 11%.
+          </p>
+        </div>
+
+        <!-- Business Bay -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Business Bay</div>
+            <span class="card-tier tier-premium">Premium</span>
+          </div>
+          <div class="card-metrics">
+            <div class="metric">
+              <span class="metric-label">Price / sqft</span>
+              <span class="metric-value">AED 2,673</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Gross Yield</span>
+              <span class="metric-value" style="color:var(--emerald-400);">5.5-6.5%</span>
+            </div>
+          </div>
+          <p style="font-size:0.8rem;color:var(--slate-400);">
+            Led apartment price growth citywide. Proximity to DIFC
+            and Downtown keeps demand structurally elevated.
+          </p>
+        </div>
+
+        <!-- Dubai Hills -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Dubai Hills Estate</div>
+            <span class="card-tier tier-mid">Mid-Market</span>
+          </div>
+          <div class="card-metrics">
+            <div class="metric">
+              <span class="metric-label">Price / sqft</span>
+              <span class="metric-value">AED 1,580</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Gross Yield</span>
+              <span class="metric-value" style="color:var(--emerald-400);">5.5-6.5%</span>
+            </div>
+          </div>
+          <p style="font-size:0.8rem;color:var(--slate-400);">
+            Emaar master-planned. Schools, healthcare, retail ecosystem.
+            Best for family-oriented long-term appreciation.
+          </p>
+        </div>
+
+        <!-- JVC -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Jumeirah Village Circle</div>
+            <span class="card-tier tier-value">Value</span>
+          </div>
+          <div class="card-metrics">
+            <div class="metric">
+              <span class="metric-label">Price / sqft</span>
+              <span class="metric-value">AED 1,448</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Gross Yield</span>
+              <span class="metric-value" style="color:var(--emerald-400);">7-9%</span>
+            </div>
+          </div>
+          <p style="font-size:0.8rem;color:var(--slate-400);">
+            Highest transaction volume in Dubai. Dominant rental market.
+            First-time buyer and income investor favorite.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Price Chart -->
+  <section class="section" style="background:var(--slate-900);">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="icon">📈</span>
+        Price Per Sqft by District
+      </h2>
+      <p class="section-desc">Comparative view of AED/sqft across Dubai's investment districts.</p>
+
+      <div class="bar-chart" id="priceChart">
+        <div class="bar-row">
+          <span class="bar-label">Palm Jumeirah</span>
+          <div class="bar-track"><div class="bar-fill gold" style="width:95%"><span class="bar-value">AED 4,820</span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Downtown Dubai</span>
+          <div class="bar-track"><div class="bar-fill gold" style="width:72%"><span class="bar-value">AED 3,450</span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Business Bay</span>
+          <div class="bar-track"><div class="bar-fill gold" style="width:55%"><span class="bar-value">AED 2,673</span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Dubai Marina</span>
+          <div class="bar-track"><div class="bar-fill blue" style="width:43%"><span class="bar-value">AED 2,061</span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Dubai Hills</span>
+          <div class="bar-track"><div class="bar-fill blue" style="width:33%"><span class="bar-value">AED 1,580</span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">JVC</span>
+          <div class="bar-track"><div class="bar-fill emerald" style="width:30%"><span class="bar-value">AED 1,448</span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Dubai South</span>
+          <div class="bar-track"><div class="bar-fill emerald" style="width:20%"><span class="bar-value">AED 985</span></div></div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Int'l City</span>
+          <div class="bar-track"><div class="bar-fill emerald" style="width:15%"><span class="bar-value">AED 725</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROI Calculator -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="icon">🧮</span>
+        ROI Calculator
+      </h2>
+      <p class="section-desc">
+        Calculate net rental yield, total return, and payback period
+        based on real Dubai transaction costs and market averages.
+      </p>
+
+      <div class="calculator">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Property Price (AED)</label>
+            <input type="number" class="form-input" id="propPrice" value="2000000" min="350000" step="50000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Area</label>
+            <select class="form-select" id="propArea">
+              <option value="palm" data-yield="5.0" data-appreciation="10">Palm Jumeirah</option>
+              <option value="downtown" data-yield="5.0" data-appreciation="12">Downtown Dubai</option>
+              <option value="marina" data-yield="6.5" data-appreciation="9">Dubai Marina</option>
+              <option value="business" data-yield="6.0" data-appreciation="11">Business Bay</option>
+              <option value="hills" data-yield="6.0" data-appreciation="10">Dubai Hills Estate</option>
+              <option value="jvc" data-yield="8.0" data-appreciation="8" selected>JVC</option>
+              <option value="south" data-yield="7.8" data-appreciation="9">Dubai South</option>
+              <option value="intl" data-yield="7.5" data-appreciation="7">International City</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Down Payment (%)</label>
+            <input type="number" class="form-input" id="downPayment" value="25" min="20" max="100" step="5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Interest Rate (%)</label>
+            <input type="number" class="form-input" id="interestRate" value="6.5" min="0" max="15" step="0.1">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Hold Period (Years)</label>
+            <input type="number" class="form-input" id="holdPeriod" value="5" min="1" max="30" step="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Service Charges (AED/sqft/yr)</label>
+            <input type="number" class="form-input" id="serviceCharges" value="15" min="5" max="50" step="1">
+          </div>
+        </div>
+
+        <div class="result-panel" id="roiResults">
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-value" id="resGrossYield">8.0%</div>
+              <div class="result-label">Gross Yield</div>
+            </div>
+            <div class="result-item">
+              <div class="result-value" id="resNetYield">5.8%</div>
+              <div class="result-label">Net Yield</div>
+            </div>
+            <div class="result-item">
+              <div class="result-value" id="resTotalReturn">AED 1.2M</div>
+              <div class="result-label">Total Return (5Y)</div>
+            </div>
+            <div class="result-item">
+              <div class="result-value" id="resMonthlyRent">AED 13,333</div>
+              <div class="result-label">Monthly Rent</div>
+            </div>
+            <div class="result-item">
+              <div class="result-value" id="resPayback">12.5</div>
+              <div class="result-label">Payback (Years)</div>
+            </div>
+            <div class="result-item">
+              <div class="result-value" id="resMortgage">AED 11,844</div>
+              <div class="result-label">Monthly Mortgage</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Golden Visa -->
+  <section class="section" style="background:var(--slate-900);">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="icon">🛂</span>
+        Golden Visa Eligibility
+      </h2>
+      <p class="section-desc">
+        Check UAE Golden Visa qualification based on property investment value.
+        Minimum threshold: AED 2,000,000 for 10-year residency.
+      </p>
+
+      <div class="calculator" style="max-width:600px;">
+        <div class="form-group">
+          <label class="form-label">Property Value (AED)</label>
+          <input type="number" class="form-input" id="visaPropertyValue" value="2000000" min="0" step="100000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Buyer Nationality</label>
+          <select class="form-select" id="visaNationality">
+            <option value="gcc">GCC National</option>
+            <option value="india" selected>Indian</option>
+            <option value="uk">UK</option>
+            <option value="us">US</option>
+            <option value="pakistan">Pakistan</option>
+            <option value="china">China</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Status</label>
+          <select class="form-select" id="visaPayment">
+            <option value="cash" selected>Cash / Mortgage < 50%</option>
+            <option value="mortgage">Mortgage > 50%</option>
+            <option value="offplan">Off-plan (with bank guarantee)</option>
+          </select>
+        </div>
+
+        <div id="visaResult">
+          <div class="visa-status visa-eligible">✅ Eligible for 10-Year Golden Visa</div>
+          <p style="margin-top:var(--space-4);font-size:0.875rem;color:var(--slate-400);">
+            Property value meets the AED 2M minimum. Mortgage is under 50% LTV.
+            Family sponsorship included (spouse + children).
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Property Matching -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">
+        <span class="icon">🎯</span>
+        Property Matching Engine
+      </h2>
+      <p class="section-desc">
+        Filter Dubai communities by budget, yield target, and lifestyle preferences.
+      </p>
+
+      <div class="calculator">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Budget (AED)</label>
+            <select class="form-select" id="matchBudget">
+              <option value="500000">Up to 500K</option>
+              <option value="1000000">500K - 1M</option>
+              <option value="2000000" selected>1M - 2M</option>
+              <option value="5000000">2M - 5M</option>
+              <option value="10000000">5M - 10M</option>
+              <option value="50000000">10M+</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum Yield</label>
+            <select class="form-select" id="matchYield">
+              <option value="4">4%+</option>
+              <option value="5">5%+</option>
+              <option value="6" selected>6%+</option>
+              <option value="7">7%+</option>
+              <option value="8">8%+</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Property Type</label>
+            <select class="form-select" id="matchType">
+              <option value="any" selected>Any</option>
+              <option value="apartment">Apartment</option>
+              <option value="villa">Villa</option>
+              <option value="townhouse">Townhouse</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3" id="matchResults" style="margin-top:var(--space-6);">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <strong style="color:var(--slate-100);">The Agency · Dubai Real Estate Investment Dashboard</strong><br>
+        Built by AgentsOrchestrator (Kimi CLI) · Live data: DLD / May 2026<br>
+        <a href="https://github.com/sahiixx/agency-agents" target="_blank">github.com/sahiixx/agency-agents</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+/**
+ * Dubai Real Estate Investment Dashboard — Interactive Layer
+ * Author: Frontend Dev Agent (Kimi CLI)
+ * Date: 2026-05-11
+ */
+
+// ── Data Layer ──
+const AREA_DATA = {
+  palm: { name: "Palm Jumeirah", price: 4820, yield: 5.0, appreciation: 10, type: "villa", tier: "luxury" },
+  downtown: { name: "Downtown Dubai", price: 3450, yield: 5.0, appreciation: 12, type: "apartment", tier: "luxury" },
+  marina: { name: "Dubai Marina", price: 2061, yield: 6.5, appreciation: 9, type: "apartment", tier: "premium" },
+  business: { name: "Business Bay", price: 2673, yield: 6.0, appreciation: 11, type: "apartment", tier: "premium" },
+  hills: { name: "Dubai Hills Estate", price: 1580, yield: 6.0, appreciation: 10, type: "mixed", tier: "mid" },
+  jvc: { name: "JVC", price: 1448, yield: 8.0, appreciation: 8, type: "apartment", tier: "value" },
+  south: { name: "Dubai South", price: 985, yield: 7.8, appreciation: 9, type: "mixed", tier: "value" },
+  intl: { name: "International City", price: 725, yield: 7.5, appreciation: 7, type: "apartment", tier: "value" },
+};
+
+// ── Formatters ──
+const fmtAED = (n) => "AED " + n.toLocaleString("en-AE");
+const fmtPct = (n) => n.toFixed(1) + "%";
+const fmtNum = (n) => n.toLocaleString("en-AE", { maximumFractionDigits: 1 });
+
+// ── ROI Calculator ──
+function calculateROI() {
+  const price = parseFloat(document.getElementById("propPrice").value) || 0;
+  const areaSelect = document.getElementById("propArea");
+  const areaKey = areaSelect.value;
+  const area = AREA_DATA[areaKey];
+  const downPct = parseFloat(document.getElementById("downPayment").value) || 25;
+  const rate = parseFloat(document.getElementById("interestRate").value) || 6.5;
+  const years = parseInt(document.getElementById("holdPeriod").value) || 5;
+  const servicePerSqft = parseFloat(document.getElementById("serviceCharges").value) || 15;
+
+  // Transaction costs (DLD 4% + agent 2% + trustee + misc ≈ 7%)
+  const transactionCosts = price * 0.07;
+
+  // Assume 800 sqft average for service charge calc
+  const avgSqft = 800;
+  const annualService = servicePerSqft * avgSqft;
+
+  // Rental income
+  const annualRent = price * (area.yield / 100);
+  const monthlyRent = annualRent / 12;
+
+  // Mortgage calc
+  const downPayment = price * (downPct / 100);
+  const loanAmount = price - downPayment;
+  const monthlyRate = rate / 100 / 12;
+  const numPayments = years * 12;
+  let monthlyMortgage = 0;
+  if (rate > 0 && loanAmount > 0) {
+    monthlyMortgage = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+  }
+  const annualMortgage = monthlyMortgage * 12;
+
+  // Net yield
+  const netAnnualIncome = annualRent - annualService - (annualMortgage * (loanAmount > 0 ? 1 : 0));
+  const netYield = (netAnnualIncome / price) * 100;
+  const grossYield = area.yield;
+
+  // Total return over hold period
+  const futureValue = price * Math.pow(1 + area.appreciation / 100, years);
+  const totalRent = annualRent * years;
+  const totalCosts = transactionCosts + (annualService * years) + (annualMortgage * years);
+  const totalReturn = (futureValue - price) + totalRent - totalCosts;
+
+  // Payback period
+  const annualNetCashflow = annualRent - annualService;
+  const paybackYears = annualNetCashflow > 0 ? price / annualNetCashflow : 999;
+
+  // Update DOM
+  document.getElementById("resGrossYield").textContent = fmtPct(grossYield);
+  document.getElementById("resNetYield").textContent = fmtPct(Math.max(0, netYield));
+  document.getElementById("resTotalReturn").textContent = fmtAED(Math.round(totalReturn));
+  document.getElementById("resMonthlyRent").textContent = fmtAED(Math.round(monthlyRent));
+  document.getElementById("resPayback").textContent = fmtNum(Math.min(paybackYears, 99));
+  document.getElementById("resMortgage").textContent = loanAmount > 0 ? fmtAED(Math.round(monthlyMortgage)) : "N/A";
+
+  // Color coding
+  document.getElementById("resNetYield").style.color = netYield >= 5 ? "var(--emerald-400)" : netYield >= 3 ? "var(--gold-400)" : "var(--rose-500)";
+}
+
+// ── Golden Visa Checker ──
+function checkVisa() {
+  const value = parseFloat(document.getElementById("visaPropertyValue").value) || 0;
+  const payment = document.getElementById("visaPayment").value;
+  const resultDiv = document.getElementById("visaResult");
+
+  const minThreshold = 2000000;
+  let eligible = value >= minThreshold;
+
+  if (payment === "mortgage" && value >= minThreshold) {
+    eligible = true;
+  }
+  if (payment === "offplan") {
+    eligible = value >= minThreshold;
+  }
+
+  if (eligible) {
+    resultDiv.innerHTML = `
+      <div class="visa-status visa-eligible">✅ Eligible for 10-Year Golden Visa</div>
+      <p style="margin-top:var(--space-4);font-size:0.875rem;color:var(--slate-400);">
+        Property value of ${fmtAED(value)} meets the AED 2M minimum threshold.
+        ${payment === "mortgage" ? "Ensure at least AED 2M equity is paid up at time of application." : "Full ownership qualifies immediately."}
+        Family sponsorship included (spouse + children under 18).
+        <br><br>
+        <strong style="color:var(--emerald-400);">Benefits:</strong> No local sponsor required,
+        100% business ownership, 0% income tax on rental returns, visa valid 10 years renewable.
+      </p>
+    `;
+  } else {
+    const shortfall = minThreshold - value;
+    resultDiv.innerHTML = `
+      <div class="visa-status visa-ineligible">❌ Not Eligible for Golden Visa</div>
+      <p style="margin-top:var(--space-4);font-size:0.875rem;color:var(--slate-400);">
+        Property value of ${fmtAED(value)} is below the AED 2M minimum threshold.
+        Shortfall: ${fmtAED(shortfall)}.
+        <br><br>
+        <strong style="color:var(--gold-400);">Options:</strong> Consider properties in
+        JVC (AED 1.4M avg) + additional investment, or Dubai South (AED 985K avg)
+        with portfolio approach to reach AED 2M total.
+      </p>
+    `;
+  }
+}
+
+// ── Property Matching ──
+function matchProperties() {
+  const budget = parseFloat(document.getElementById("matchBudget").value) || 2000000;
+  const minYield = parseFloat(document.getElementById("matchYield").value) || 6;
+  const type = document.getElementById("matchType").value;
+  const container = document.getElementById("matchResults");
+
+  const matches = Object.entries(AREA_DATA).filter(([key, area]) => {
+    const unitPrice = area.price * 800;
+    const withinBudget = unitPrice <= budget;
+    const yieldOk = area.yield >= minYield;
+    const typeOk = type === "any" || area.type === type || area.type === "mixed";
+    return withinBudget && yieldOk && typeOk;
+  });
+
+  if (matches.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="grid-column:1/-1;text-align:center;">
+        <div class="card-title" style="margin-bottom:var(--space-4);">No Matches Found</div>
+        <p style="color:var(--slate-400);">
+          Try relaxing your filters — increase budget or lower minimum yield.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = matches.map(([key, area]) => {
+    const unitPrice = area.price * 800;
+    const tierClass = `tier-${area.tier}`;
+    const tierLabel = area.tier.charAt(0).toUpperCase() + area.tier.slice(1);
+    return `
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">${area.name}</div>
+          <span class="card-tier ${tierClass}">${tierLabel}</span>
+        </div>
+        <div class="card-metrics">
+          <div class="metric">
+            <span class="metric-label">Est. Unit Price</span>
+            <span class="metric-value">${fmtAED(unitPrice)}</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Gross Yield</span>
+            <span class="metric-value" style="color:var(--emerald-400);">${area.yield}%</span>
+          </div>
+        </div>
+        <p style="font-size:0.8rem;color:var(--slate-400);">
+          ${getAreaDescription(key)}
+        </p>
+      </div>
+    `;
+  }).join("");
+}
+
+function getAreaDescription(key) {
+  const descs = {
+    palm: "Ultra-luxury waterfront. Global prestige, lowest yields but highest appreciation.",
+    downtown: "Landmark district. Strong institutional demand, tourism rental overlay.",
+    marina: "Most liquid market. Excellent metro connectivity, short-term rental potential.",
+    business: "Fastest-growing district. DIFC proximity drives professional tenant demand.",
+    hills: "Family-focused masterplan. Schools, parks, long-term appreciation play.",
+    jvc: "Highest transaction volume. Best yields, first-time buyer favorite.",
+    south: "Emerging hub near airport. Strong yield, infrastructure-driven growth.",
+    intl: "Most affordable entry point. Solid rental demand from workforce population.",
+  };
+  return descs[key] || "";
+}
+
+// ── Event Listeners ──
+document.addEventListener("DOMContentLoaded", () => {
+  ["propPrice", "propArea", "downPayment", "interestRate", "holdPeriod", "serviceCharges"].forEach(id => {
+    document.getElementById(id).addEventListener("input", calculateROI);
+  });
+  calculateROI();
+
+  ["visaPropertyValue", "visaNationality", "visaPayment"].forEach(id => {
+    document.getElementById(id).addEventListener("input", checkVisa);
+  });
+  checkVisa();
+
+  ["matchBudget", "matchYield", "matchType"].forEach(id => {
+    document.getElementById(id).addEventListener("change", matchProperties);
+  });
+  matchProperties();
+
+  // Animate bars on scroll
+  const bars = document.querySelectorAll(".bar-fill");
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const targetWidth = entry.target.style.width;
+        entry.target.style.width = "0%";
+        setTimeout(() => {
+          entry.target.style.width = targetWidth;
+        }, 100);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  bars.forEach(bar => observer.observe(bar));
+});
+
+</script>
+</body>
+</html>

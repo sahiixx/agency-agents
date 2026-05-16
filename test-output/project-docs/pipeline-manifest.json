@@ -1,0 +1,38 @@
+{
+  "mission": "Build a Next.js task manager",
+  "preset": "saas",
+  "working_dir": "./test-output",
+  "steps": [
+    {
+      "step": 1,
+      "agent": "pm",
+      "task": "Decompose this mission into a detailed task list. Quote EXACT requirements from the spec. Do NOT add luxury features.\n\nMISSION: Build a Next.js task manager\n\nSave the task list to './test-output/project-tasks/tasklist.md'.",
+      "script": "test-output/.kimi_runs/run_pm_1778467104.py"
+    },
+    {
+      "step": 2,
+      "agent": "architect",
+      "task": "Read the task list from './test-output/project-tasks/tasklist.md'. Create technical architecture and UX foundation.\n\nDeliverables:\n  1. CSS design system (save to './test-output/css/design-system.css')\n  2. Component architecture doc (save to './test-output/project-docs/architecture.md')\n  3. Database schema (save to './test-output/project-docs/schema.sql')\n\nMISSION: Build a Next.js task manager",
+      "script": "test-output/.kimi_runs/run_architect_1778467104.py"
+    },
+    {
+      "step": 3,
+      "agent": "security",
+      "task": "Review the implementation for security vulnerabilities.\nCheck './test-output/src/' and './test-output/api/' for OWASP risks, injection flaws, auth issues, and secrets leakage.\nSave audit report to './test-output/project-docs/security-audit.md'.",
+      "script": "test-output/.kimi_runs/run_security_1778467104.py"
+    },
+    {
+      "step": 4,
+      "agent": "frontend",
+      "task": "Integrate frontend and backend. Ensure API contracts match.\nTest end-to-end flows. Fix any mismatches.\nSave integration notes to './test-output/project-docs/integration.md'.",
+      "script": "test-output/.kimi_runs/run_frontend_1778467104.py"
+    },
+    {
+      "step": 5,
+      "agent": "core",
+      "task": "Perform final integration testing on the completed system.\nCross-validate all QA findings with comprehensive automated screenshots.\nDefault to 'NEEDS WORK' unless overwhelming evidence proves production readiness.\n\nReview all files in './test-output/src/' and './test-output/api/'.\nCheck './test-output/project-docs/security-audit.md'.\nSave final verdict to './test-output/project-docs/VERDICT.md'.",
+      "script": "test-output/.kimi_runs/run_qa_1778467104.py"
+    }
+  ],
+  "generated_at": 1778467104
+}

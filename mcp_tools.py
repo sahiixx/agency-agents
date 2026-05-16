@@ -818,6 +818,48 @@ def web_pentest(target_url: str, scan_profile: str = "passive") -> str:
         })
 
 
+# ── Tool 20: Kimi Subagent ────────────────────────────────────────────────────
+@tool
+def kimi_subagent(agent_name: str, query: str, work_dir: str = "/tmp/agency-kimi") -> str:
+    """Spawn a Kimi CLI subagent to execute a task with tool access.
+    
+    This delegates work to the Kimi coding agent (sahiixx/agency-kimi) which runs
+    as a separate subprocess with its own tool-execution capabilities. Use this when
+    the current Ollama agent needs specialized coding, file operations, or web
+    crawling that Kimi handles better.
+    
+    Args:
+        agent_name: Descriptive name for this subagent run (e.g. 'frontend-builder').
+        query:      The task prompt / mission for Kimi to execute.
+        work_dir:   Working directory for Kimi to read/write files.
+    Returns the subagent's output text.
+    Environment: KIMI_CLI_PATH (default: kimi).
+    """
+    import json as _json
+    from providers import get_provider
+    try:
+        kimi = get_provider("kimi")
+        result = kimi.run_agent(
+            system_prompt=f"You are {agent_name}, a specialized agent in The Agency ecosystem.",
+            query=query,
+            agent_name=agent_name,
+            work_dir=work_dir,
+            timeout=300,
+        )
+        return _json.dumps({
+            "status":   "ok",
+            "agent":    agent_name,
+            "output":   result.output[:4000] if result.output else "",
+            "duration": result.duration,
+            "metadata": result.metadata,
+        }, indent=2, default=str)
+    except Exception as e:
+        return _json.dumps({
+            "error": str(e),
+            "note": "Ensure kimi CLI is installed and authenticated (pip install kimi-cli)",
+        })
+
+
 # ── Registry ─────────────────────────────────────────────────────────────────
 MCP_TOOLS = [
     web_search,
@@ -842,6 +884,8 @@ MCP_TOOLS = [
     airecon_scan,
     scan_secrets,
     web_pentest,
+    # Phase 8 — Kimi subagent delegation
+    kimi_subagent,
 ]
 
 # ── Dynamic tools from MCP Registry (non-fatal) ───────────────────────────────

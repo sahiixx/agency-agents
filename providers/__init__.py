@@ -37,10 +37,13 @@ def get_provider(name: str) -> "BaseProvider":
     if name == "autogen":
         from providers.autogen_provider import AutoGenProvider
         return AutoGenProvider()
+    if name == "kimi":
+        from providers.kimi_provider import KimiProvider
+        return KimiProvider()
     if name == "rasa":
         from providers.rasa_provider import RasaProvider
         return RasaProvider()
     if name == "n8n":
         from providers.n8n_provider import N8NProvider
         return N8NProvider()
-    raise ValueError(f"Unknown provider '{name}'. Choices: anthropic, ollama, openai, adk, autogen, rasa, n8n")
+    raise ValueError(f"Unknown provider '{name}'. Choices: anthropic, ollama, openai, adk, autogen, rasa, n8n, kimi")

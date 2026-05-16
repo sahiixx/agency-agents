@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dubai Real Estate Investment Dashboard · Live 2026 Data</title>
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <style>
+    /* Inline critical styles for instant render */
+    .loading { opacity: 0.5; pointer-events: none; }
+    .error { color: #f43f5e; background: rgba(244,63,94,0.1); padding: 1rem; border-radius: 0.75rem; margin: 1rem 0; }
+    .success { color: #34d399; background: rgba(52,211,153,0.1); padding: 1rem; border-radius: 0.75rem; margin: 1rem 0; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(251,191,36,0.3); border-top-color: #fbbf24; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container flex justify-between items-center">
+      <div class="header-brand">Dubai<span>Invest</span>OS</div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <span class="header-badge">Live Data</span>
+        <span style="font-size:0.8rem;color:var(--slate-400);">DLD · May 2026</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero-title">Dubai Real Estate<br><span class="highlight">Investment Intelligence</span></h1>
+      <p class="hero-subtitle">Live market data, ROI calculations, and Golden Visa eligibility — powered by real DLD transaction records.</p>
+
+      <!-- Live Stats -->
+      <div class="stats-bar" id="stats-bar">
+        <div class="stat-card loading">
+          <div class="stat-label">Avg Price / Sqft</div>
+          <div class="stat-value gold" id="stat-price">—</div>
+          <div class="stat-change up" id="stat-yoy">—</div>
+        </div>
+        <div class="stat-card loading">
+          <div class="stat-label">2024 Transactions</div>
+          <div class="stat-value" id="stat-trans">—</div>
+        </div>
+        <div class="stat-card loading">
+          <div class="stat-label">Avg Gross Yield</div>
+          <div class="stat-value emerald" id="stat-yield">—</div>
+        </div>
+        <div class="stat-card loading">
+          <div class="stat-label">Market Value 2024</div>
+          <div class="stat-value" id="stat-value">—</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Area Comparison -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title"><span class="icon">🏙️</span> Area Comparison</h2>
+      <p class="section-desc">Transaction-weighted average prices across Dubai's key investment districts.</p>
+      <div class="grid grid-cols-2" id="area-cards">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Price Chart -->
+  <section class="section" style="background:linear-gradient(180deg, transparent, rgba(17,24,39,0.5));">
+    <div class="container">
+      <h2 class="section-title"><span class="icon">📊</span> Price per Sqft by District</h2>
+      <p class="section-desc">Relative price positioning. Palm Jumeirah and Emirates Hills lead the luxury tier.</p>
+      <div class="card">
+        <div class="bar-chart" id="price-chart">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROI Calculator -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title"><span class="icon">🧮</span> ROI Calculator</h2>
+      <p class="section-desc">Real numbers with Dubai-specific costs: DLD fees, agent commission, mortgage rates.</p>
+      <div class="calculator">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Property Price (AED)</label>
+            <input type="number" class="form-input" id="calc-price" value="2000000" step="50000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Area</label>
+            <select class="form-select" id="calc-area"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Down Payment (%)</label>
+            <input type="number" class="form-input" id="calc-down" value="25" min="10" max="100">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mortgage Rate (%)</label>
+            <input type="number" class="form-input" id="calc-rate" value="6.5" step="0.1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Hold Period (Years)</label>
+            <input type="number" class="form-input" id="calc-years" value="10" min="1" max="30">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rent Growth / Year (%)</label>
+            <input type="number" class="form-input" id="calc-growth" value="3" step="0.5">
+          </div>
+        </div>
+        <button onclick="calculateROI()" style="background:linear-gradient(90deg, var(--gold-600), var(--gold-400)); color:#0a0e1a; border:none; padding:0.875rem 2rem; border-radius:0.75rem; font-weight:700; font-size:1rem; cursor:pointer; width:100%; margin-top:0.5rem;">
+          Calculate ROI
+        </button>
+        <div id="roi-result"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Golden Visa -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title"><span class="icon">🛂</span> Golden Visa Eligibility</h2>
+      <p class="section-desc">10-year residency through property investment. Real DLD rules applied.</p>
+      <div class="grid grid-cols-2">
+        <div class="calculator">
+          <div class="form-group">
+            <label class="form-label">Property Price (AED)</label>
+            <input type="number" class="form-input" id="visa-price" value="2500000" step="50000">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Property Status</label>
+              <select class="form-select" id="visa-status">
+                <option value="completed">Completed</option>
+                <option value="offplan">Off-Plan</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Financing</label>
+              <select class="form-select" id="visa-mortgage">
+                <option value="false">Cash Purchase</option>
+                <option value="true">Mortgaged</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" id="paid-group" style="display:none;">
+            <label class="form-label">Amount Paid to DLD (AED)</label>
+            <input type="number" class="form-input" id="visa-paid" value="2500000" step="50000">
+          </div>
+          <button onclick="checkVisa()" style="background:linear-gradient(90deg, var(--emerald-600), var(--emerald-400)); color:#0a0e1a; border:none; padding:0.875rem 2rem; border-radius:0.75rem; font-weight:700; font-size:1rem; cursor:pointer; width:100%; margin-top:0.5rem;">
+            Check Eligibility
+          </button>
+          <div id="visa-result"></div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;justify-content:center;">
+          <h3 style="color:var(--slate-100);margin-bottom:1rem;font-size:1.125rem;">Golden Visa Benefits</h3>
+          <ul style="list-style:none;padding:0;color:var(--slate-300);line-height:2;">
+            <li>✅ 10-year renewable residency</li>
+            <li>✅ No local sponsor required</li>
+            <li>✅ Sponsor family + domestic workers</li>
+            <li>✅ Stay outside UAE > 6 months</li>
+            <li>✅ Esaad privilege card access</li>
+            <li>✅ Minimum: AED 2,000,000 property</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Property Matcher -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title"><span class="icon">🎯</span> Property Matcher</h2>
+      <p class="section-desc">Match your budget and goals to the optimal Dubai districts.</p>
+      <div class="calculator">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Max Budget (AED)</label>
+            <input type="number" class="form-input" id="match-budget" value="3000000" step="100000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Property Type</label>
+            <select class="form-select" id="match-type">
+              <option value="">Any</option>
+              <option value="Apartment">Apartment</option>
+              <option value="Villa">Villa</option>
+              <option value="Townhouse">Townhouse</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Minimum Yield (%)</label>
+          <input type="range" class="form-input" id="match-yield" min="0" max="10" value="5" step="0.5" oninput="document.getElementById('yield-label').textContent = this.value + '%'">
+          <div style="text-align:center;color:var(--gold-400);font-weight:700;margin-top:0.5rem;" id="yield-label">5%</div>
+        </div>
+        <button onclick="matchProperties()" style="background:linear-gradient(90deg, var(--blue-500), var(--violet-500)); color:white; border:none; padding:0.875rem 2rem; border-radius:0.75rem; font-weight:700; font-size:1rem; cursor:pointer; width:100%; margin-top:0.5rem;">
+          Find Matches
+        </button>
+        <div id="match-result"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>Built by <strong>AgentsOrchestrator</strong> (Kimi CLI) · Data sourced from Dubai Land Department · May 2026</p>
+      <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--slate-500);">
+        Not financial advice. Verify all figures with DLD and licensed RERA brokers before investment.
+      </p>
+    </div>
+  </footer>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

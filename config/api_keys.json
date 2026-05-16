@@ -1,0 +1,31 @@
+{
+  "providers": {
+    "kimi": {
+      "base_url": "https://api.kimi.com/coding/v1",
+      "model": "kimi-k2.6",
+      "api_key": ""
+    },
+    "openrouter": {
+      "base_url": "https://openrouter.ai/api/v1",
+      "model": "meta-llama/llama-3.3-70b-instruct",
+      "api_key": ""
+    },
+    "google": {
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "model": "gemini-2.5-flash-preview",
+      "api_key": ""
+    },
+    "openai": {
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini",
+      "api_key": ""
+    },
+    "ollama": {
+      "base_url": "http://127.0.0.1:11434/v1",
+      "model": "gemma4:31b-cloud",
+      "api_key": ""
+    }
+  },
+  "priority": ["kimi", "openrouter", "google", "openai", "ollama"],
+  "dsl_endpoint": "http://127.0.0.1:18800/api/v1/mission"
+}

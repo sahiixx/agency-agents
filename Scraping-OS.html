@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Agency · Scraping OS</title>
+<style>
+:root{--midnight:#0a0e1a;--slate-900:#111827;--slate-800:#1f2937;--slate-700:#374151;--slate-600:#4b5563;--slate-400:#9ca3af;--slate-300:#d1d5db;--gold-400:#fbbf24;--gold-500:#f59e0b;--emerald-400:#34d399;--emerald-500:#10b981;--rose-500:#f43f5e;--blue-500:#3b82f6;--violet-500:#8b5cf6;--cyan-500:#06b6d4;--font-sans:system-ui,-apple-system,sans-serif;--font-mono:'SF Mono',Monospace;--r:0.5rem;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--midnight);color:var(--slate-300);line-height:1.6;min-height:100vh}
+.container{max-width:1400px;margin:0 auto;padding:0 1.5rem}
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-4{gap:1rem}.gap-6{gap:1.5rem}
+.grid{display:grid;gap:1.5rem}
+
+/* Header */
+.header{background:linear-gradient(180deg,var(--slate-900) 0%,transparent 100%);border-bottom:1px solid var(--slate-800);padding:1rem 0;position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}
+.brand{font-size:1.5rem;font-weight:800;color:var(--gold-400);letter-spacing:-0.02em}
+.brand span{color:var(--slate-100)}
+.badge{background:var(--cyan-500);color:#fff;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:.25rem .75rem;border-radius:9999px}
+
+/* Hero */
+.hero{padding:4rem 0 3rem;background:radial-gradient(ellipse at 50% 0%,rgba(6,182,212,.08) 0%,transparent 60%)}
+.hero-title{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:var(--slate-100);line-height:1.1;letter-spacing:-.03em}
+.hero-title .highlight{color:var(--cyan-500)}
+.hero-subtitle{font-size:1.125rem;color:var(--slate-400);max-width:650px;margin-top:1rem}
+
+/* Stats */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin:2rem 0}
+.stat-card{background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);padding:1.5rem;transition:all .2s}
+.stat-card:hover{border-color:var(--cyan-500);transform:translateY(-2px)}
+.stat-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--slate-400);margin-bottom:.5rem}
+.stat-value{font-size:1.75rem;font-weight:800;color:var(--slate-100);font-family:var(--font-mono)}
+.stat-value.cyan{color:var(--cyan-500)}.stat-value.emerald{color:var(--emerald-400)}.stat-value.gold{color:var(--gold-400)}
+
+/* Section */
+.section{padding:3rem 0}
+.section-title{font-size:1.25rem;font-weight:700;color:var(--slate-100);margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem}
+.icon{width:32px;height:32px;background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:1rem}
+
+/* Framework cards */
+.fw-card{background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);padding:1.5rem;transition:all .2s;position:relative;overflow:hidden}
+.fw-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cyan-500),var(--emerald-500));opacity:0;transition:opacity .2s}
+.fw-card:hover::before{opacity:1}.fw-card:hover{border-color:var(--slate-600);transform:translateY(-2px)}
+.fw-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.fw-name{font-size:1.25rem;font-weight:800;color:var(--slate-100)}
+.fw-lang{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:.25rem .5rem;border-radius:var(--r);background:rgba(59,130,246,.15);color:var(--blue-500);border:1px solid rgba(59,130,246,.3)}
+.fw-lang.python{background:rgba(251,191,36,.15);color:var(--gold-400);border:1px solid rgba(251,191,36,.3)}
+.fw-desc{font-size:.875rem;color:var(--slate-400);margin-bottom:1rem}
+.fw-features{display:flex;flex-wrap:wrap;gap:.5rem}
+.fw-feature{font-size:.7rem;font-weight:600;padding:.25rem .5rem;border-radius:var(--r);background:var(--slate-700);color:var(--slate-300)}
+
+/* Comparison table */
+.compare-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.compare-table th{background:var(--slate-800);color:var(--slate-100);text-align:left;padding:.75rem 1rem;font-weight:600;border-bottom:2px solid var(--slate-700)}
+.compare-table td{padding:.75rem 1rem;border-bottom:1px solid var(--slate-700);color:var(--slate-300)}
+.compare-table tr:hover td{background:rgba(6,182,212,.05)}
+.compare-table .yes{color:var(--emerald-400);font-weight:700}.compare-table .no{color:var(--slate-600)}
+.compare-table .partial{color:var(--gold-400)}
+
+/* Code generator */
+.gen-panel{background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);padding:1.5rem}
+.gen-title{font-size:1rem;font-weight:700;color:var(--slate-100);margin-bottom:1rem}
+.form-group{margin-bottom:1rem}
+.form-label{display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-400);margin-bottom:.5rem}
+.form-input,.form-select{width:100%;background:var(--slate-900);border:1px solid var(--slate-700);border-radius:var(--r);padding:.625rem .875rem;color:var(--slate-100);font-size:.875rem;font-family:var(--font-mono);transition:all .2s}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--cyan-500);box-shadow:0 0 0 3px rgba(6,182,212,.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+/* Code output */
+.code-block{background:var(--slate-900);border:1px solid var(--slate-700);border-radius:var(--r);padding:1rem;font-family:var(--font-mono);font-size:.8rem;color:var(--slate-300);overflow-x:auto;white-space:pre;margin-top:1rem;max-height:400px;overflow-y:auto}
+.code-block .kw{color:var(--violet-500)}.code-block .str{color:var(--emerald-400)}.code-block .fn{color:var(--blue-500)}.code-block .cm{color:var(--slate-600)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border-radius:var(--r);font-size:.875rem;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:all .2s}
+.btn-cyan{background:var(--cyan-500);color:var(--midnight)}.btn-cyan:hover{background:#22d3ee}
+.btn-secondary{background:var(--slate-700);color:var(--slate-100)}.btn-secondary:hover{background:var(--slate-600)}
+.btn-sm{padding:.375rem .75rem;font-size:.75rem}
+.btn-group{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+
+/* Job queue */
+.job-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 80px;gap:1rem;padding:.75rem 1rem;background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);margin-bottom:.5rem;align-items:center;font-size:.875rem}
+.job-row:hover{border-color:var(--slate-600)}
+.job-name{font-weight:600;color:var(--slate-100)}
+.job-fw{font-size:.75rem;padding:.125rem .5rem;border-radius:var(--r);background:var(--slate-700);color:var(--slate-300);text-align:center}
+.job-fw.crawlee{background:rgba(59,130,246,.15);color:var(--blue-500)}
+.job-fw.scrapling{background:rgba(251,191,36,.15);color:var(--gold-400)}
+.job-status{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.job-status.queued{color:var(--slate-400)}.job-status.running{color:var(--cyan-500)}.job-status.done{color:var(--emerald-400)}.job-status.failed{color:var(--rose-500)}
+
+/* Proxy manager */
+.proxy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem}
+.proxy-card{background:var(--slate-800);border:1px solid var(--slate-700);border-radius:var(--r);padding:1rem}
+.proxy-status{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:.5rem}
+.proxy-status.active{background:var(--emerald-500);box-shadow:0 0 6px var(--emerald-500)}
+.proxy-status.dead{background:var(--rose-500)}
+
+/* Tabs */
+.tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--slate-700);padding-bottom:.5rem}
+.tab{padding:.5rem 1rem;font-size:.875rem;font-weight:600;color:var(--slate-400);cursor:pointer;border-radius:var(--r);transition:all .2s;border:none;background:none}
+.tab:hover{color:var(--slate-100)}.tab.active{background:var(--slate-700);color:var(--slate-100)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* Footer */
+.footer{border-top:1px solid var(--slate-800);padding:2rem 0;margin-top:3rem;text-align:center;color:var(--slate-400);font-size:.875rem}
+
+@media(max-width:768px){.grid{grid-template-columns:1fr!important}.stats-bar{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.job-row{grid-template-columns:1fr;gap:.25rem}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container flex justify-between items-center">
+    <div class="brand">The Agency <span>· Scraping OS</span></div>
+    <div class="flex items-center gap-4">
+      <span style="font-size:.8rem;color:var(--slate-400)">Crawlee + Scrapling Unified</span>
+      <span class="badge">v1.0</span>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <h1 class="hero-title">Unified Web Scraping<br><span class="highlight">Operating System</span></h1>
+    <p class="hero-subtitle">One command center for Crawlee and Scrapling. Launch crawlers, manage proxies, monitor jobs, and explore data — all from a single interface.</p>
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-label">Frameworks</div><div class="stat-value cyan">2</div></div>
+      <div class="stat-card"><div class="stat-label">Crawler Types</div><div class="stat-value">6</div></div>
+      <div class="stat-card"><div class="stat-label">Proxy Slots</div><div class="stat-value emerald">12</div></div>
+      <div class="stat-card"><div class="stat-label">Active Jobs</div><div class="stat-value gold" id="activeJobs">0</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Frameworks -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">🕷️</span> Frameworks</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(350px,1fr))">
+      <div class="fw-card">
+        <div class="fw-header">
+          <div class="fw-name">Crawlee</div>
+          <span class="fw-lang python">Python</span>
+        </div>
+        <div class="fw-desc">Apify's production crawling framework. Request queues, retries, proxy rotation, session management, and storage. Playwright / BeautifulSoup / Adaptive crawlers.</div>
+        <div class="fw-features">
+          <span class="fw-feature">PlaywrightCrawler</span>
+          <span class="fw-feature">BeautifulSoupCrawler</span>
+          <span class="fw-feature">AdaptiveCrawler</span>
+          <span class="fw-feature">RequestQueue</span>
+          <span class="fw-feature">ProxyRotation</span>
+          <span class="fw-feature">Dataset</span>
+        </div>
+        <div class="btn-group">
+          <a href="./crawlee-repo/README.md" class="btn btn-secondary btn-sm">Docs</a>
+          <span class="btn btn-cyan btn-sm" onclick="switchTab('crawlee')">Generate</span>
+        </div>
+      </div>
+      <div class="fw-card">
+        <div class="fw-header">
+          <div class="fw-name">Scrapling</div>
+          <span class="fw-lang python">Python</span>
+        </div>
+        <div class="fw-desc">Adaptive scraping that survives site redesigns. Self-healing selectors, stealth fetchers, Cloudflare bypass, spider framework with pause/resume.</div>
+        <div class="fw-features">
+          <span class="fw-feature">Adaptive Selectors</span>
+          <span class="fw-feature">StealthFetcher</span>
+          <span class="fw-feature">Spider</span>
+          <span class="fw-feature">CLI</span>
+          <span class="fw-feature">MCP Server</span>
+          <span class="fw-feature">Anti-Bot</span>
+        </div>
+        <div class="btn-group">
+          <a href="./scrapling-repo/README.md" class="btn btn-secondary btn-sm">Docs</a>
+          <span class="btn btn-cyan btn-sm" onclick="switchTab('scrapling')">Generate</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Comparison -->
+<section class="section" style="background:var(--slate-900)">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">⚖️</span> Comparison</h2>
+    <table class="compare-table">
+      <thead><tr><th>Feature</th><th>Crawlee</th><th>Scrapling</th></tr></thead>
+      <tbody>
+        <tr><td>Language</td><td>Python / Node.js</td><td>Python</td></tr>
+        <tr><td>HTTP Crawling</td><td class="yes">✓ Built-in</td><td class="yes">✓ Built-in</td></tr>
+        <tr><td>Browser Crawling</td><td class="yes">✓ Playwright/Puppeteer</td><td class="yes">✓ Playwright/Chrome</td></tr>
+        <tr><td>Adaptive Selectors</td><td class="partial">△ Experimental</td><td class="yes">✓ Core feature</td></tr>
+        <tr><td>Anti-Bot Bypass</td><td class="yes">✓ Fingerprinting</td><td class="yes">✓ Stealth fetchers</td></tr>
+        <tr><td>Proxy Rotation</td><td class="yes">✓ Built-in</td><td class="yes">✓ Built-in</td></tr>
+        <tr><td>Request Queue</td><td class="yes">✓ Persistent</td><td class="yes">✓ Pause/resume</td></tr>
+        <tr><td>CLI Tool</td><td class="partial">△ Apify CLI</td><td class="yes">✓ Native</td></tr>
+        <tr><td>MCP Server</td><td class="no">✗</td><td class="yes">✓ Built-in</td></tr>
+        <tr><td>Cloud Platform</td><td class="yes">✓ Apify</td><td class="no">✗ Self-hosted</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Code Generator -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">⚡</span> Code Generator</h2>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('crawlee')" id="tab-crawlee">Crawlee</button>
+      <button class="tab" onclick="switchTab('scrapling')" id="tab-scrapling">Scrapling</button>
+      <button class="tab" onclick="switchTab('unified')" id="tab-unified">Unified</button>
+    </div>
+
+    <div class="tab-content active" id="content-crawlee">
+      <div class="gen-panel">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Target URL</label>
+            <input type="text" class="form-input" id="crawlee-url" value="https://example.com/products">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Crawler Type</label>
+            <select class="form-select" id="crawlee-type">
+              <option value="beautifulsoup">BeautifulSoupCrawler</option>
+              <option value="playwright">PlaywrightCrawler</option>
+              <option value="adaptive">AdaptivePlaywrightCrawler</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">CSS Selector</label>
+            <input type="text" class="form-input" id="crawlee-selector" value=".product-item">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Requests</label>
+            <input type="number" class="form-input" id="crawlee-max" value="50">
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-cyan btn-sm" onclick="generateCrawlee()">Generate Code</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyCode('crawlee-code')">Copy</button>
+        </div>
+        <div class="code-block" id="crawlee-code">Click "Generate Code" to see Crawlee boilerplate...</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="content-scrapling">
+      <div class="gen-panel">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Target URL</label>
+            <input type="text" class="form-input" id="scrapling-url" value="https://example.com/products">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fetcher</label>
+            <select class="form-select" id="scrapling-fetcher">
+              <option value="stealth">StealthyFetcher</option>
+              <option value="dynamic">DynamicFetcher</option>
+              <option value="basic">Fetcher</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">CSS Selector</label>
+            <input type="text" class="form-input" id="scrapling-selector" value=".product-item">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mode</label>
+            <select class="form-select" id="scrapling-mode">
+              <option value="single">Single Page</option>
+              <option value="spider">Spider Crawl</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-cyan btn-sm" onclick="generateScrapling()">Generate Code</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyCode('scrapling-code')">Copy</button>
+        </div>
+        <div class="code-block" id="scrapling-code">Click "Generate Code" to see Scrapling boilerplate...</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="content-unified">
+      <div class="gen-panel">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Target URL</label>
+            <input type="text" class="form-input" id="unified-url" value="https://example.com/products">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Engine</label>
+            <select class="form-select" id="unified-engine">
+              <option value="crawlee">Crawlee (Queue + Storage)</option>
+              <option value="scrapling">Scrapling (Stealth + Adaptive)</option>
+              <option value="auto">Auto-select</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">CSS Selector</label>
+            <input type="text" class="form-input" id="unified-selector" value=".product-item">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Proxy</label>
+            <select class="form-select" id="unified-proxy">
+              <option value="none">None</option>
+              <option value="rotating">Rotating</option>
+              <option value="stealth">Stealth Mode</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-cyan btn-sm" onclick="generateUnified()">Generate Code</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyCode('unified-code')">Copy</button>
+        </div>
+        <div class="code-block" id="unified-code">Click "Generate Code" to see unified boilerplate...</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Job Queue -->
+<section class="section" style="background:var(--slate-900)">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">📋</span> Job Queue</h2>
+    <div id="jobQueue"></div>
+    <div class="btn-group" style="margin-top:1rem">
+      <button class="btn btn-cyan btn-sm" onclick="addJob()">+ Add Demo Job</button>
+      <button class="btn btn-secondary btn-sm" onclick="clearJobs()">Clear All</button>
+    </div>
+  </div>
+</section>
+
+<!-- Proxy Manager -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">🌐</span> Proxy Manager</h2>
+    <div class="proxy-grid" id="proxyGrid"></div>
+  </div>
+</section>
+
+<!-- Quick Links -->
+<section class="section" style="background:var(--slate-900)">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">🔗</span> Quick Access</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr))">
+      <a href="./Agency-OS.html" class="fw-card" style="text-decoration:none;color:inherit">
+        <div class="fw-name">🏢 Agency OS</div>
+        <div class="fw-desc" style="margin-top:.5rem">Main mission control for all 192 agents and 6 repos.</div>
+      </a>
+      <a href="./crawlee-repo/README.md" class="fw-card" style="text-decoration:none;color:inherit">
+        <div class="fw-name">📘 Crawlee Docs</div>
+        <div class="fw-desc" style="margin-top:.5rem">Apify's crawling framework documentation and examples.</div>
+      </a>
+      <a href="./scrapling-repo/README.md" class="fw-card" style="text-decoration:none;color:inherit">
+        <div class="fw-name">📗 Scrapling Docs</div>
+        <div class="fw-desc" style="margin-top:.5rem">Adaptive scraping framework with anti-bot capabilities.</div>
+      </a>
+      <a href="./scraping_os/unified_crawler.py" class="fw-card" style="text-decoration:none;color:inherit">
+        <div class="fw-name">🔧 Unified API</div>
+        <div class="fw-desc" style="margin-top:.5rem">Python integration layer for both frameworks.</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p><strong style="color:var(--slate-100)">The Agency · Scraping OS</strong><br>
+    Crawlee + Scrapling Unified · Built by AgentsOrchestrator (Kimi CLI)<br>
+    <a href="https://github.com/sahiixx/agency-agents" target="_blank" style="color:var(--cyan-500);text-decoration:none">github.com/sahiixx/agency-agents</a></p>
+  </div>
+</footer>
+
+<script>
+/* --- Tabs --- */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('content-'+name).classList.add('active');
+}
+
+/* --- Code Generators --- */
+function generateCrawlee(){
+  const url=document.getElementById('crawlee-url').value;
+  const type=document.getElementById('crawlee-type').value;
+  const sel=document.getElementById('crawlee-selector').value;
+  const maxReq=document.getElementById('crawlee-max').value;
+  let code='';
+  if(type==='beautifulsoup'){
+    code=`import asyncio
+from crawlee.beautifulsoup_crawler import BeautifulSoupCrawler, BeautifulSoupCrawlingContext
+
+async def main():
+    crawler = BeautifulSoupCrawler(max_requests_per_crawl=${maxReq})
+
+    @crawler.router.default_handler
+    async def handler(context: BeautifulSoupCrawlingContext) -> None:
+        context.log.info(f'Processing {context.request.url} ...')
+        for item in context.soup.select('${sel}'):
+            await context.push_data({
+                'url': context.request.url,
+                'title': item.get_text(strip=True),
+            })
+        await context.enqueue_links()
+
+    await crawler.run(['${url}'])
+    await crawler.export_data('results.json')
+
+if __name__ == '__main__':
+    asyncio.run(main())`;
+  } else if(type==='playwright'){
+    code=`import asyncio
+from crawlee.playwright_crawler import PlaywrightCrawler, PlaywrightCrawlingContext
+
+async def main():
+    crawler = PlaywrightCrawler(max_requests_per_crawl=${maxReq}, headless=True)
+
+    @crawler.router.default_handler
+    async def handler(context: PlaywrightCrawlingContext) -> None:
+        context.log.info(f'Processing {context.request.url} ...')
+        await context.page.wait_for_load_state('networkidle')
+        items = await context.page.query_selector_all('${sel}')
+        for item in items:
+            text = await item.inner_text()
+            await context.push_data({'url': context.request.url, 'title': text.strip()})
+        await context.enqueue_links()
+
+    await crawler.run(['${url}'])
+    await crawler.export_data('results.json')
+
+if __name__ == '__main__':
+    asyncio.run(main())`;
+  } else {
+    code=`import asyncio
+from crawlee.crawlers import AdaptivePlaywrightCrawler, AdaptivePlaywrightCrawlingContext
+
+async def main():
+    crawler = AdaptivePlaywrightCrawler(max_requests_per_crawl=${maxReq})
+
+    @crawler.router.default_handler
+    async def handler(context: AdaptivePlaywrightCrawlingContext) -> None:
+        context.log.info(f'Processing {context.request.url} ...')
+        await context.page.wait_for_load_state('networkidle')
+        items = await context.page.query_selector_all('${sel}')
+        for item in items:
+            text = await item.inner_text()
+            await context.push_data({'url': context.request.url, 'title': text.strip()})
+        await context.enqueue_links()
+
+    await crawler.run(['${url}'])
+    await crawler.export_data('results.json')
+
+if __name__ == '__main__':
+    asyncio.run(main())`;
+  }
+  document.getElementById('crawlee-code').textContent=code;
+}
+
+function generateScrapling(){
+  const url=document.getElementById('scrapling-url').value;
+  const fetcher=document.getElementById('scrapling-fetcher').value;
+  const sel=document.getElementById('scrapling-selector').value;
+  const mode=document.getElementById('scrapling-mode').value;
+  let code='';
+  if(mode==='single'){
+    const fetcherClass=fetcher==='stealth'?'StealthyFetcher':fetcher==='dynamic'?'DynamicFetcher':'Fetcher';
+    code=`from scrapling.fetchers import ${fetcherClass}
+
+# Fetch and parse
+page = ${fetcherClass}.fetch('${url}', headless=True)
+items = page.css('${sel}', auto_save=True)
+
+for item in items:
+    print({
+        'title': item.css('h2::text').get(),
+        'price': item.css('.price::text').get(),
+        'link': item.css('a::attr(href)').get(),
+    })
+
+# Later, if site redesigns:
+# items = page.css('${sel}', adaptive=True)  # self-healing!`;
+  } else {
+    code=`from scrapling.spiders import Spider, Response
+
+class ProductSpider(Spider):
+    name = "products"
+    start_urls = ["${url}"]
+
+    async def parse(self, response: Response):
+        for item in response.css('${sel}'):
+            yield {
+                'title': item.css('h2::text').get(),
+                'price': item.css('.price::text').get(),
+                'link': item.css('a::attr(href)').get(),
+            }
+        # Follow pagination
+        for next_page in response.css('a.next::attr(href)').getall():
+            yield response.follow(next_page)
+
+# Run with 4 concurrent sessions
+ProductSpider(concurrent_sessions=4).start()`;
+  }
+  document.getElementById('scrapling-code').textContent=code;
+}
+
+function generateUnified(){
+  const url=document.getElementById('unified-url').value;
+  const engine=document.getElementById('unified-engine').value;
+  const sel=document.getElementById('unified-selector').value;
+  const proxy=document.getElementById('unified-proxy').value;
+  let code=`# Unified Scraping OS — The Agency
+from scraping_os import UnifiedCrawler, ProxyManager
+
+# Configure proxy rotation
+proxies = ProxyManager()
+${proxy==='rotating'?'proxies.load_from_file("proxies.txt")':'proxies.set_stealth_mode()'}
+
+# Launch crawler
+crawler = UnifiedCrawler(
+    engine='${engine}',
+    proxy_manager=proxies,
+    headless=True,
+    max_requests=50,
+)
+
+@crawler.on_data
+def handle_data(item):
+    print(f"Scraped: {item}")
+
+# Run crawl
+crawler.run('${url}', selector='${sel}')
+crawler.export('results.json')`;
+  document.getElementById('unified-code').textContent=code;
+}
+
+function copyCode(id){
+  const text=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(()=>alert('Code copied to clipboard!'));
+}
+
+/* --- Job Queue --- */
+let jobs=[
+  {name:'Dubai Property Scraper',fw:'crawlee',status:'done',time:'2m 14s',items:342},
+  {name:'Bayut Lead Extractor',fw:'scrapling',status:'running',time:'1m 02s',items:89},
+  {name:'Competitor Price Monitor',fw:'crawlee',status:'queued',time:'--',items:0},
+];
+function renderJobs(){
+  const el=document.getElementById('jobQueue');
+  if(jobs.length===0){el.innerHTML='<div style="color:var(--slate-400);padding:1rem">No jobs in queue.</div>';return;}
+  el.innerHTML=jobs.map((j,i)=>`
+    <div class="job-row">
+      <div class="job-name">${j.name}</div>
+      <div class="job-fw ${j.fw}">${j.fw}</div>
+      <div class="job-status ${j.status}">${j.status}</div>
+      <div style="font-size:.8rem;color:var(--slate-400)">${j.items} items · ${j.time}</div>
+      <button class="btn btn-secondary btn-sm" onclick="removeJob(${i})">×</button>
+    </div>
+  `).join('');
+  document.getElementById('activeJobs').textContent=jobs.filter(j=>j.status==='running').length;
+}
+function addJob(){
+  const names=['Product Catalog Scraper','News Aggregator','Social Media Monitor','Job Board Crawler','Price Comparison Bot'];
+  const fws=['crawlee','scrapling'];
+  const stats=['queued','running','done'];
+  const n=names[Math.floor(Math.random()*names.length)];
+  jobs.unshift({name:n,fw:fws[Math.floor(Math.random()*fws.length)],status:stats[Math.floor(Math.random()*stats.length)],time:'0s',items:0});
+  renderJobs();
+}
+function removeJob(i){jobs.splice(i,1);renderJobs();}
+function clearJobs(){jobs=[];renderJobs();}
+renderJobs();
+
+/* --- Proxy Manager --- */
+const proxies=[
+  {host:'us-proxy-1.example.com',port:8080,status:'active',loc:'US-East',type:'Residential'},
+  {host:'eu-proxy-1.example.com',port:3128,status:'active',loc:'EU-West',type:'Datacenter'},
+  {host:'asia-proxy-1.example.com',port:8080,status:'active',loc:'SG',type:'Residential'},
+  {host:'us-proxy-2.example.com',port:8080,status:'dead',loc:'US-West',type:'Datacenter'},
+  {host:'rotating.example.com',port:443,status:'active',loc:'Global',type:'Rotating'},
+];
+function renderProxies(){
+  document.getElementById('proxyGrid').innerHTML=proxies.map(p=>`
+    <div class="proxy-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+        <span style="font-weight:700;color:var(--slate-100);font-size:.875rem">${p.host}:${p.port}</span>
+        <span class="proxy-status ${p.status}"></span>
+      </div>
+      <div style="font-size:.8rem;color:var(--slate-400);display:flex;gap:1rem">
+        <span>📍 ${p.loc}</span>
+        <span>🔌 ${p.type}</span>
+      </div>
+    </div>
+  `).join('');
+}
+renderProxies();
+</script>
+</body>
+</html>
