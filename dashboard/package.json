@@ -9,11 +9,11 @@
     "lint":  "next lint"
   },
   "dependencies": {
-    "next":           "15.2.9",
+    "next":           "15.5.18",
     "react":          "^18.3.1",
     "react-dom":      "^18.3.1",
     "@ai-sdk/openai": "^0.0.36",
-    "ai":             "^3.3.0",
+    "ai":             "^6.0.184",
     "swr":            "^2.2.5",
     "lucide-react":   "^0.446.0",
     "clsx":           "^2.1.1"
