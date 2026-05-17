@@ -9,5 +9,5 @@ wikipedia>=1.4.0
 pyjokes>=0.7.2
 schedule>=1.2.0
 screen-brightness-control>=0.22.0
-Pillow>=10.0.0
+Pillow>=12.2.0
 speedtest-cli>=2.1.3
