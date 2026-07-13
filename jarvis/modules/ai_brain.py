@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import requests  # type: ignore[import-untyped]
 
@@ -20,17 +20,25 @@ class AIBrain:
     base_url: str = "http://localhost:11434"
     history: List[Dict[str, str]] = field(default_factory=list)
 
-    KEYWORD_FALLBACKS = {
-        "quantum": "Quantum computing uses qubits that can represent multiple states at once.",
-        "summarize": "Please provide text to summarize.",
-        "python": "I can draft Python scripts once local LLM is available.",
-    }
+    KEYWORD_FALLBACKS: Dict[str, str] = field(
+        default_factory=lambda: {
+            "quantum": "Quantum computing uses qubits that can represent multiple states at once.",
+            "summarize": "Please provide text to summarize.",
+            "python": "I can draft Python scripts once local LLM is available.",
+        }
+    )
 
     def ask(self, prompt: str) -> AIResponse:
         self.history.append({"role": "user", "content": prompt})
-        payload = {"model": self.model, "messages": self.history, "stream": False}
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": self.history,
+            "stream": False,
+        }
         try:
-            response = requests.post(f"{self.base_url}/api/chat", json=payload, timeout=30)
+            response = requests.post(
+                f"{self.base_url}/api/chat", json=payload, timeout=30
+            )
             response.raise_for_status()
             data = response.json()
             message = data.get("message", {}).get("content", "")
