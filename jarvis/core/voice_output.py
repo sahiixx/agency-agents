@@ -6,8 +6,8 @@ import queue
 import threading
 from typing import Any
 
-from config import SPEECH_RATE, VOICE_INDEX
-from utils.logger import setup_logger
+from jarvis.config import SPEECH_RATE, VOICE_INDEX
+from jarvis.utils.logger import setup_logger
 
 try:
     import pyttsx3  # type: ignore

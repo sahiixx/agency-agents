@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import subprocess
 
-from config import IS_LINUX, IS_WINDOWS
-from utils.platform_utils import command_exists, run_command
+from jarvis.config import IS_LINUX, IS_WINDOWS
+from jarvis.utils.platform_utils import command_exists, run_command
 
 
 class SystemControl:

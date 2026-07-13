@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from config import LOG_FILE, LOG_LEVEL
+from jarvis.config import LOG_FILE, LOG_LEVEL
 
 
 def setup_logger(name: str = "jarvis") -> logging.Logger:

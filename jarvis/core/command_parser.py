@@ -6,12 +6,8 @@ import difflib
 from dataclasses import dataclass
 from typing import Any
 
-try:
-    from config import COMMANDS_FILE  # type: ignore
-    from utils.helpers import load_json  # type: ignore
-except Exception:  # pragma: no cover
-    from jarvis.config import COMMANDS_FILE
-    from jarvis.utils.helpers import load_json
+from jarvis.config import COMMANDS_FILE
+from jarvis.utils.helpers import load_json
 
 try:
     from fuzzywuzzy import process  # type: ignore

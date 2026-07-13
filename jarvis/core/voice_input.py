@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from config import WAKE_WORD
-from utils.logger import setup_logger
+from jarvis.config import WAKE_WORD
+from jarvis.utils.logger import setup_logger
 
 try:
     import speech_recognition as sr  # type: ignore
