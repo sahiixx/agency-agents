@@ -27,9 +27,13 @@ from pathlib import Path
 # ── Path setup ────────────────────────────────────────────────────────────────
 REPO_ROOT = Path(__file__).parent.resolve()
 
-# Import deepagents FIRST (before adding REPO_ROOT to sys.path)
-# to avoid the shallow deepagents/ docs dir (no __init__.py)
-# shadowing the real SDK install as a namespace package.
+# The local `deepagents/` dir is a docs folder (no __init__.py) that Python sees as a
+# namespace package and uses to shadow the real installed SDK. Prepend the SDK's inner
+# package path so `import deepagents` resolves to the real SDK, not the docs shadow.
+SDK_INNER = REPO_ROOT / "deepagents" / "libs" / "deepagents"
+if str(SDK_INNER) not in sys.path:
+    sys.path.insert(0, str(SDK_INNER))
+
 try:
     from deepagents import create_deep_agent, SubAgent
     from deepagents.backends import FilesystemBackend
@@ -62,14 +66,26 @@ from mcp_tools import MCP_TOOLS
 from observability import AgencyTracer
 from providers import get_provider
 
-# ── Phase 2: sahiixx-bus integration ──────────────────────────────────────────
-from safety_proxy import safety_scan_input, gate_kill, track_mission_cost, assign_identity_role
-from orchestration_bridge import (
-    publish_mission,
-    subscribe_to_results,
-    register_agency_services,
-    publish_verdict,
-)
+# ── Phase 2: sahiixx-bus integration (optional) ──────────────────────────────
+# sahiixx-bus is an optional dependency. When it isn't installed, the orchestrator
+# still runs in local-only mode (registry, presets, --list-agents all work); only the
+# A2A bus publish/subscribe + safety-council gating are skipped with a warning.
+try:
+    from safety_proxy import safety_scan_input, gate_kill, track_mission_cost, assign_identity_role
+except ImportError:
+    safety_scan_input = gate_kill = track_mission_cost = assign_identity_role = None
+    print("⚠️  sahiixx-bus not installed — safety proxy disabled (local-only mode).")
+
+try:
+    from orchestration_bridge import (
+        publish_mission,
+        subscribe_to_results,
+        register_agency_services,
+        publish_verdict,
+    )
+except ImportError:
+    publish_mission = subscribe_to_results = register_agency_services = publish_verdict = None
+    print("⚠️  sahiixx-bus not installed — orchestration bridge disabled (local-only mode).")
 
 # A2A imports handled lazily in run_mission (optional dependency: starlette)
 
@@ -322,7 +338,10 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
     # Phase 2 — safety scan mission goal before any agent construction
     if not dry_run:
         try:
-            asyncio.run(safety_scan_input(goal, identity="orchestrator"))
+            if safety_scan_input is not None:
+                asyncio.run(safety_scan_input(goal, identity="orchestrator"))
+            else:
+                print("  ⚠️  safety scan skipped (sahiixx-bus not installed)")
         except Exception as scan_err:
             print(f"  ⚠️  Safety scan warning: {scan_err}")
 
@@ -365,9 +384,10 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
         # Phase 2 — register with sahiixx-bus SwarmBus / A2ARouter
         if not dry_run:
             try:
-                asyncio.run(register_agency_services(port_map))
-            except Exception as bus_err:
-                print(f"  ⚠️  Bus registration warning: {bus_err}")
+                if register_agency_services is not None:
+                    asyncio.run(register_agency_services(port_map))
+            except Exception as reg_err:
+                print(f"  ⚠️  Agency service registration warning: {reg_err}")
 
         a2a_urls  = [f"http://localhost:{p}" for p in port_map.values()]
         a2a_tools = make_a2a_tools(a2a_urls)
@@ -448,10 +468,14 @@ Delegate everything. You are the orchestrator and final judge."""
     estimated_cost = 0.0
     if not dry_run:
         try:
-            mission_bus_id = asyncio.run(publish_mission(goal, preset, agent_names))
-            # Rough cost heuristic: $0.003 per 1K input chars + $2 buffer
-            estimated_cost = (len(brief) / 1000) * 0.003 + 2.0
-            asyncio.run(track_mission_cost(mission_bus_id, estimated_cost=estimated_cost))
+            if publish_mission is not None:
+                mission_bus_id = asyncio.run(publish_mission(goal, preset, agent_names))
+                # Rough cost heuristic: $0.003 per 1K input chars + $2 buffer
+                estimated_cost = (len(brief) / 1000) * 0.003 + 2.0
+                if track_mission_cost is not None:
+                    asyncio.run(track_mission_cost(mission_bus_id, estimated_cost=estimated_cost))
+            else:
+                print("  ⚠️  mission bus publish skipped (sahiixx-bus not installed)")
         except Exception as bus_err:
             print(f"  ⚠️  Bus publish warning: {bus_err}")
 
@@ -507,7 +531,10 @@ Delegate everything. You are the orchestrator and final judge."""
                 "CONDITIONAL GO" if "conditional" in final.lower() else
                 "GO"
             )
-            asyncio.run(publish_verdict(mission_bus_id, verdict_str, final))
+            if publish_verdict is not None:
+                asyncio.run(publish_verdict(mission_bus_id, verdict_str, final))
+            else:
+                print(f"  ⚠️  verdict publish skipped (sahiixx-bus not installed)")
         except Exception as bus_err:
             print(f"  ⚠️  Bus finalize warning: {bus_err}")
 
@@ -654,7 +681,11 @@ Examples:
             print("❌  --safety-scan requires --mission")
             sys.exit(1)
         try:
-            result = asyncio.run(safety_scan_input(args.mission, identity="orchestrator"))
+            if safety_scan_input is not None:
+                result = asyncio.run(safety_scan_input(args.mission, identity="orchestrator"))
+            else:
+                print("  ⚠️  safety scan unavailable (sahiixx-bus not installed)")
+                sys.exit(0)
             print(f"\n{'='*65}")
             print("  SAFETY SCAN RESULT")
             print(f"{'='*65}")
