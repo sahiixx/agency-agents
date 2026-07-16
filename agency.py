@@ -110,6 +110,12 @@ AGENT_REGISTRY = {
     "re-crm":    ("real-estate/real-estate-crm-pipeline-orchestrator.md",     "CRM pipeline — lead lifecycle, routing, stage management, reporting"),
     "re-pitch":  ("real-estate/real-estate-investor-pitch-specialist.md",     "Investor pitch — HNW proposals, ROI analysis, golden visa"),
     "re-refer":  ("real-estate/real-estate-post-sale-referral-engine.md",     "Post-sale — client retention, referral generation, repeat business"),
+    # Sovereign Prompt + Spec Pack (lead machine) — E2E pipeline personas
+    "re-capture":  ("real-estate/lead-capture-agent.md",        "Lead Capture — normalize WhatsApp/Telegram/web/portal signals into unified Lead object"),
+    "re-qual":     ("real-estate/qualification-agent.md",       "Qualification — score leads by intent/budget/timeline/fit; pipeline entry vs nurture vs drop"),
+    "re-geo":      ("real-estate/geo-match-agent.md",           "GEO Match — match qualified leads to communities/properties with rationales"),
+    "re-sched":    ("real-estate/scheduling-agent.md",          "Scheduling — propose viewings/calls; Tier-2 gated, never auto-books"),
+    "re-report":   ("real-estate/reporting-agent.md",           "Reporting — funnels, latency, broker productivity for operator/brokers/investors"),
     # NOWHERE.AI business agents (Dubai/UAE digital services)
     "biz-sales":     ("business/business-sales-agent.md",       "B2B sales — lead qualification, proposals, pipeline management, AED pricing"),
     "biz-mkt":       ("business/business-marketing-agent.md",   "Digital marketing — bilingual campaigns, UAE channels, Ramadan/seasonal strategy"),
@@ -154,6 +160,8 @@ PRESETS = {
     "saas":       ["pm", "copywriter", "frontend", "qa", "core"],
     "research":   ["pm", "ai", "qa", "core"],
     "realestate": ["re-leads", "re-match", "re-copy", "re-deal", "re-intel", "re-comply", "re-crm", "re-pitch", "re-refer", "core"],
+    # Lead Machine (Sovereign Spec Pack) — E2E chain: capture -> qualify -> match -> schedule -> report
+    "lead-machine": ["re-capture", "re-qual", "re-geo", "re-sched", "re-report", "core"],
     # Dubai full-stack: NOWHERE.AI business agents (B2B sales/mkt/content/analytics/ops)
     # combined with core RE agents (leads, intel, compliance) for UAE market missions
     "dubai":      ["biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops",
