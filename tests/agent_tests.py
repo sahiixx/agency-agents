@@ -160,10 +160,146 @@ class TestReadme(unittest.TestCase):
         self.assertIn("langchain-ollama", content)
         self.assertIn("pip install", content)
 
+    # ── Tests for PR: Remove Claude branding from README ──────────────────
+
+    def _readme(self) -> str:
+        return (REPO_ROOT / "README.md").read_text()
+
+    def test_readme_title_is_ai_powered(self):
+        """Title must say 'AI-Powered', not 'Claude-Powered'."""
+        content = self._readme()
+        self.assertIn(
+            "AI-Powered Multi-Agent Swarm",
+            content,
+            "README title should read 'AI-Powered Multi-Agent Swarm'",
+        )
+
+    def test_readme_title_not_claude_powered(self):
+        """'Claude-Powered' must not appear in the README title line."""
+        first_line = self._readme().splitlines()[0]
+        self.assertNotIn(
+            "Claude-Powered",
+            first_line,
+            "README title must not contain 'Claude-Powered'",
+        )
+
+    def test_readme_subtitle_sonnet_no_claude_prefix(self):
+        """Subtitle badge line should reference 'Sonnet 4.6', not 'Claude Sonnet 4.6'."""
+        content = self._readme()
+        # The subtitle (second non-empty line starting with '>') must use Sonnet 4.6
+        subtitle_line = next(
+            line for line in content.splitlines() if line.startswith(">")
+        )
+        self.assertIn("Sonnet 4.6", subtitle_line)
+        self.assertNotIn("Claude Sonnet 4.6", subtitle_line)
+
+    def test_readme_description_uses_reasoning_core(self):
+        """Description paragraph must say 'Reasoning Core', not 'Claude Reasoning Core'."""
+        content = self._readme()
+        self.assertIn(
+            "Reasoning Core",
+            content,
+            "README must mention 'Reasoning Core'",
+        )
+
+    def test_readme_description_not_claude_reasoning_core(self):
+        """'Claude Reasoning Core' must not appear as a verdict label in the description."""
+        content = self._readme()
+        # The phrase was used in the body paragraph — it should now be gone.
+        # File paths (specialized-claude-reasoning-core.md) are still allowed.
+        lines_with_claude_reasoning = [
+            line for line in content.splitlines()
+            if "Claude Reasoning Core" in line
+            and "specialized-claude-reasoning-core" not in line
+        ]
+        self.assertEqual(
+            lines_with_claude_reasoning,
+            [],
+            f"Found 'Claude Reasoning Core' outside of file-path references: "
+            f"{lines_with_claude_reasoning}",
+        )
+
+    def test_readme_agent_table_specialized_uses_reasoning_core(self):
+        """The specialized/ row in the agent roster table must list 'Reasoning Core'."""
+        content = self._readme()
+        for line in content.splitlines():
+            if "`specialized/`" in line:
+                self.assertIn(
+                    "Reasoning Core",
+                    line,
+                    "specialized/ table row must include 'Reasoning Core'",
+                )
+                self.assertNotIn(
+                    "Claude Core",
+                    line,
+                    "specialized/ table row must not say 'Claude Core'",
+                )
+                break
+        else:
+            self.fail("Could not find the specialized/ row in the agent roster table")
+
+    def test_readme_footer_no_claude_migration(self):
+        """Footer credits must not contain 'Claude migration'."""
+        content = self._readme()
+        self.assertNotIn(
+            "Claude migration",
+            content,
+            "README footer must not mention 'Claude migration'",
+        )
+
+    def test_readme_footer_orchestration_layer(self):
+        """Footer credits must use the updated 'Orchestration layer by Sonnet 4.6' wording."""
+        content = self._readme()
+        self.assertIn(
+            "Orchestration layer by Sonnet 4.6",
+            content,
+            "README must contain 'Orchestration layer by Sonnet 4.6' in footer",
+        )
+
+    def test_readme_description_body_sonnet_no_claude_prefix(self):
+        """The 'What This Is' body paragraph must say 'Sonnet 4.6', not 'Claude Sonnet 4.6'."""
+        content = self._readme()
+        # Collect lines in the body that mention Sonnet 4.6
+        sonnet_lines = [
+            line for line in content.splitlines()
+            if "Sonnet 4.6" in line and line.startswith(("A swarm", "Every mission", "orchestrated"))
+        ]
+        # Also check no body line has 'Claude Sonnet 4.6'
+        bad_lines = [
+            line for line in content.splitlines()
+            if "Claude Sonnet 4.6" in line
+            and not line.strip().startswith(("#", "[![", "|", "*", "-"))
+        ]
+        self.assertEqual(
+            bad_lines,
+            [],
+            f"Body prose must not contain 'Claude Sonnet 4.6': {bad_lines}",
+        )
+
+    def test_readme_jarvis_footer_no_claude_migration(self):
+        """JARVIS section footer must not contain 'Claude migration'."""
+        content = self._readme()
+        jarvis_section = content[content.find("## JARVIS"):]
+        self.assertNotIn(
+            "Claude migration",
+            jarvis_section,
+            "JARVIS section footer must not mention 'Claude migration'",
+        )
+
+    def test_readme_jarvis_footer_orchestration_layer(self):
+        """JARVIS section footer must use the updated orchestration credit."""
+        content = self._readme()
+        jarvis_section = content[content.find("## JARVIS"):]
+        self.assertIn(
+            "Orchestration layer by Sonnet 4.6",
+            jarvis_section,
+            "JARVIS footer must contain 'Orchestration layer by Sonnet 4.6'",
+        )
+
 
 # ─── Live LLM Tests (only if Ollama is running) ───────────────────────
 
-LIVE = bool(os.environ.get("OLLAMA_HOST"))
+
 
 @unittest.skipUnless(LIVE, "Skipping live LLM tests — no Ollama connection")
 class TestAgentIdentityLive(unittest.TestCase):
