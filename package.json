@@ -1,0 +1,15 @@
+{
+  "name": "agency-agents",
+  "version": "3.0.0",
+  "private": true,
+  "description": "The Agency — 150+ specialized AI agent personas orchestrated by Python on cloud LLMs only (Anthropic/OpenAI/Gemini; no local models). package.json only configures Freebuff preview commands (the app itself is Python).",
+  "scripts": {
+    "setup": "uv pip install --system fastapi uvicorn pydantic",
+    "postinstall": "command -v uv >/dev/null 2>&1 && uv pip install --system fastapi uvicorn pydantic || true",
+    "dev": "python3 agency_os_server.py",
+    "preview": "python3 agency_os_server.py",
+    "start": "python3 agency_os_server.py",
+    "build": "mkdir -p dist && cp *.html dist/",
+    "agents:list": "python3 agency.py --list-agents"
+  }
+}

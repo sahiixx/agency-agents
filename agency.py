@@ -15,10 +15,12 @@ Usage:
   python3 agency.py --mission "Research AI trends" --preset research
   python3 agency.py --mission "Audit our security" --agents security,qa,core
   python3 agency.py --mission "Qualify these Dubai leads" --preset dubai
-  python3 agency.py --mission "Run this mission" --provider ollama --ollama-model llama3.1
+  python3 agency.py --mission "Run this mission" --provider anthropic --anthropic-model claude-sonnet-5
+  python3 agency.py --mission "Run this mission" --provider openai --openai-model gpt-5.1
 """
 
 import asyncio
+import os
 import sys
 import warnings
 import argparse
@@ -53,18 +55,19 @@ except ImportError as e:
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-try:
-    from langchain_ollama import ChatOllama
-    from langchain_core.messages import HumanMessage
-except ImportError as e:
-    print(f"❌  langchain-ollama not found: {e}")
-    print("    Run: pip install langchain-ollama")
-    sys.exit(1)
+from langchain_core.messages import HumanMessage
 
 from memory.titans_memory import TitansMemory
 from mcp_tools import MCP_TOOLS
 from observability import AgencyTracer
 from providers import get_provider
+
+# Optional third-party integrations (Sentry/Traceloop/LangSmith) — initialized
+# only when their keys are present; never raises when they are not.
+try:
+    from integrations import init_optional_integrations
+except ImportError:
+    init_optional_integrations = None
 
 # ── Phase 2: sahiixx-bus integration (optional) ──────────────────────────────
 # sahiixx-bus is an optional dependency. When it isn't installed, the orchestrator
@@ -90,8 +93,9 @@ except ImportError:
 # A2A imports handled lazily in run_mission (optional dependency: starlette)
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DEFAULT_PROVIDER = "ollama"
-DEFAULT_MODEL    = "llama3.1"
+# CLOUD-ONLY: the default provider is 'auto' → the first cloud provider with an
+# API key configured (Anthropic → OpenAI → Gemini). No local model runtime exists.
+DEFAULT_PROVIDER = os.getenv("AGENCY_PROVIDER", "auto")
 MEMORY_FILE      = "memory/AGENTS.md"  # relative to REPO_ROOT
 
 # ── Agent registry ────────────────────────────────────────────────────────────
@@ -169,6 +173,11 @@ AGENT_REGISTRY = {
     "compliance":   ("specialized/compliance-auditor.md",                       "Compliance Auditor — GDPR, SOC2, ISO27001, UAE regulations"),
     "dev-advocate": ("specialized/specialized-developer-advocate.md",           "Developer Advocate — docs, SDKs, community, developer relations"),
     "jira":         ("project-management/project-management-jira-workflow-steward.md", "Jira Workflow Steward — boards, sprints, automation, reporting"),
+    # ── 2026 refresh — agent-native engineering & safety specialists ──────────
+    "llm-finetuner":      ("engineering/engineering-local-llm-finetuner.md",       "Local LLM Fine-Tuning Engineer — LoRA/QLoRA, datasets, evals, GGUF export"),
+    "agent-observability": ("engineering/engineering-agent-observability.md",     "Agentic Observability Engineer — traces, spans, cost, evals, MCP telemetry"),
+    "safety-reviewer":    ("specialized/specialized-ai-safety-reviewer.md",      "AI Safety & Alignment Reviewer — red-teaming, policy, constitutional review"),
+    "agent-evaluator":    ("specialized/specialized-agent-evaluator.md",         "Agent Evaluator — LLM-as-judge evals, benchmarks, harnesses, regression gates"),
 }
 
 PRESETS = {
@@ -203,6 +212,8 @@ PRESETS = {
     # AGI presets
     "explore":    ["explorer", "ai", "core"],
     "agi":        ["explorer", "pm", "backend", "frontend", "security", "ai", "qa", "core"],
+    # AI platform ops — fine-tune, observe, evaluate, and safety-review agent systems
+    "aiops":      ["llm-finetuner", "agent-observability", "agent-evaluator", "safety-reviewer", "ai", "core"],
     # ALL — every agent in the registry (maximum coverage)
     "all":        ["pm", "frontend", "backend", "ai", "security", "devops", "qa",
                    "design", "growth", "copywriter", "sales",
@@ -216,31 +227,34 @@ PRESETS = {
                    "re-leads", "re-match", "re-copy", "re-deal", "re-intel", "re-comply", "re-crm", "re-pitch", "re-refer",
                    "biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops",
                    "explorer",
+                   "llm-finetuner", "agent-observability", "agent-evaluator", "safety-reviewer",
                    "core"],
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def get_llm(provider: str = "ollama", ollama_model: str = DEFAULT_MODEL,
-            ollama_base_url: str = "http://localhost:11434",
-            openai_model: str = "gpt-4o",
-            adk_model: str = "gemini-2.0-flash",
-            autogen_model: str = "gpt-4o") -> object:
-    """Return the configured LLM.
+def get_llm(provider: str = DEFAULT_PROVIDER,
+            openai_model: str = os.getenv("OPENAI_MODEL", "gpt-5.1"),
+            adk_model: str = os.getenv("GEMINI_MODEL", "gemini-3-flash"),
+            autogen_model: str = os.getenv("AUTOGEN_MODEL", "gpt-5.1")) -> object:
+    """Return the configured LLM — cloud-only, no local model runtime.
 
-    Supported providers: ollama (default), anthropic, openai, adk, autogen, rasa, n8n.
-    rasa and n8n do not currently provide a LangChain-compatible LLM here, so
-    selecting them still uses default/Ollama as the orchestration backbone.
+    Cloud providers: anthropic/claude, openai, adk (Gemini). 'auto' (the default)
+    resolves to the first cloud provider that has an API key configured.
+    rasa/n8n/kimi are external services that fall back to the cloud backbone for
+    orchestration.
     """
+    provider = (provider or DEFAULT_PROVIDER).lower()
+    if provider in ("", "auto"):
+        from providers import cloud_provider
+        provider = cloud_provider() or "anthropic"
+
     p = get_provider(provider)
 
-    if provider == "ollama":
-        print(f"  Provider: Ollama ({ollama_model} @ {ollama_base_url})")
-        return p.get_llm(model=ollama_model, base_url=ollama_base_url)
-
     if provider in ("anthropic", "claude"):
-        print(f"  Provider: Anthropic ({ollama_model})")
-        return p.get_llm(model=ollama_model)
+        model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
+        print(f"  Provider: Anthropic ({model})")
+        return p.get_llm(model=model)
 
     if provider == "openai":
         print(f"  Provider: OpenAI ({openai_model})")
@@ -255,11 +269,11 @@ def get_llm(provider: str = "ollama", ollama_model: str = DEFAULT_MODEL,
         return p.get_llm(model=autogen_model)
 
     if provider in ("rasa", "n8n", "kimi"):
-        print(f"  Provider: {provider} (external service — Ollama used for orchestration)")
-        from providers.ollama_provider import OllamaProvider
-        return OllamaProvider().get_llm(model=ollama_model, base_url=ollama_base_url)
+        print(f"  Provider: {provider} (external service — cloud backbone used for orchestration)")
+        from providers import get_cloud_llm
+        return get_cloud_llm("anthropic")
 
-    raise ValueError(f"Unknown provider '{provider}'")
+    raise ValueError(f"Unknown provider '{provider}' (choices: auto, anthropic, claude, openai, adk, autogen, rasa, n8n, kimi)")
 
 
 def load_agent(path: str) -> str:
@@ -270,7 +284,7 @@ def load_agent(path: str) -> str:
     return f.read_text()
 
 
-def build_subagent(name: str, llm: ChatOllama) -> SubAgent:
+def build_subagent(name: str, llm: object) -> SubAgent:
     path, description = AGENT_REGISTRY[name]
     return {
         "name":          name,
@@ -301,6 +315,7 @@ PARALLEL_GROUPS = {
     # AGI: explore then verify
     "explore":    [["explorer", "ai"], ["core"]],
     "agi":        [["explorer", "pm"], ["backend", "frontend", "security", "ai"], ["qa"], ["core"]],
+    "aiops":      [["llm-finetuner", "agent-observability", "agent-evaluator", "safety-reviewer", "ai"], ["core"]],
     # ALL: maximum agent coverage — grouped by domain for parallel execution
     "all":        [
         ["pm", "explorer", "spy", "prompt-arch", "learn", "biz-analytics", "re-intel"],
@@ -308,7 +323,7 @@ PARALLEL_GROUPS = {
         ["design", "ui-designer", "brand", "ux-researcher", "growth", "accessibility"],
         ["copywriter", "seo", "social", "app-store", "biz-content", "biz-mkt", "re-copy"],
         ["sales", "account", "sales-eng", "biz-sales", "re-leads", "re-match", "re-deal", "re-pitch", "re-refer"],
-        ["qa", "compliance", "jira", "biz-ops", "re-comply", "re-crm", "trust", "mcp-builder", "blockchain", "dev-advocate", "docs", "api-tester", "perf"],
+        ["llm-finetuner", "agent-observability", "agent-evaluator", "safety-reviewer", "qa", "compliance", "jira", "biz-ops", "re-comply", "re-crm", "trust", "mcp-builder", "blockchain", "dev-advocate", "docs", "api-tester", "perf"],
         ["core"],
     ],
 }
@@ -321,14 +336,16 @@ def _parallel_group_label(group: list[str]) -> str:
 # ── Core mission runner ───────────────────────────────────────────────────────
 
 def run_mission(goal: str, agent_names: list, preset: str = "full",
-                provider: str = "anthropic", ollama_model: str = "llama3.1",
-                ollama_base_url: str = "http://localhost:11434",
-                openai_model: str = "gpt-4o",
-                adk_model: str = "gemini-2.0-flash",
-                autogen_model: str = "gpt-4o",
+                provider: str = DEFAULT_PROVIDER,
+                openai_model: str = os.getenv("OPENAI_MODEL", "gpt-5.1"),
+                adk_model: str = os.getenv("GEMINI_MODEL", "gemini-3-flash"),
+                autogen_model: str = os.getenv("AUTOGEN_MODEL", "gpt-5.1"),
                 extra_tools: list | None = None,
                 dry_run: bool = False,
                 stream: bool = False) -> str:
+    if init_optional_integrations is not None:
+        init_optional_integrations()
+
     invalid = [n for n in agent_names if n not in AGENT_REGISTRY]
     if invalid:
         print(f"❌  Unknown agents: {invalid}")
@@ -347,8 +364,6 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
 
     llm = get_llm(
         provider=provider,
-        ollama_model=ollama_model,
-        ollama_base_url=ollama_base_url,
         openai_model=openai_model,
         adk_model=adk_model,
         autogen_model=autogen_model,
@@ -376,6 +391,7 @@ def run_mission(goal: str, agent_names: list, preset: str = "full",
 
     # Start A2A servers for this mission's agents
     print("  Starting A2A servers...")
+    port_map: dict = {}   # may stay empty when A2A deps are missing
     try:
         from a2a_protocol import start_agency_a2a_servers, register_servers, make_a2a_tools
         port_map = start_agency_a2a_servers(agent_names, AGENT_REGISTRY, REPO_ROOT)
@@ -595,9 +611,10 @@ Examples:
   python3 agency.py --mission "Research AI memory techniques" --preset research
   python3 agency.py --mission "Audit security posture" --agents security,qa,core
   python3 agency.py --mission "Qualify these Dubai B2B leads" --preset dubai
-  python3 agency.py --mission "Run offline" --provider ollama --ollama-model llama3.1
-  python3 agency.py --mission "Build API" --provider openai --openai-model gpt-4o
-  python3 agency.py --mission "Plan sprint" --provider adk --adk-model gemini-2.0-flash
+  # Cloud models only (default: auto → first configured cloud API key)
+  python3 agency.py --mission "Build API" --provider anthropic   # model via ANTHROPIC_MODEL (default claude-sonnet-5)
+  python3 agency.py --mission "Build API" --provider openai --openai-model gpt-5.1
+  python3 agency.py --mission "Plan sprint" --provider adk --adk-model gemini-3-flash
   python3 agency.py --mission "Automate email" --provider n8n
   python3 agency.py --mission "Scout targets" --tools airecon,trufflehog
   python3 agency.py --mission "Ship feature" --dry-run
@@ -624,19 +641,16 @@ Examples:
 
     # ── Provider
     parser.add_argument("--provider",
-                        choices=["ollama", "anthropic", "claude", "openai", "adk", "autogen", "rasa", "n8n", "kimi"],
-                        default="ollama",
-                        help="LLM/agent provider (default: ollama). Use 'kimi' to delegate to Kimi CLI subagents (falls back to Ollama for orchestration)")
-    parser.add_argument("--ollama-model",  default=DEFAULT_MODEL,
-                        help=f"Ollama model name (default: {DEFAULT_MODEL})")
-    parser.add_argument("--ollama-url",    default="http://localhost:11434",
-                        help="Ollama server URL (default: http://localhost:11434)")
-    parser.add_argument("--openai-model",  default="gpt-4o",
-                        help="OpenAI model name (default: gpt-4o)")
-    parser.add_argument("--adk-model",     default="gemini-2.0-flash",
-                        help="Google ADK / Gemini model (default: gemini-2.0-flash)")
-    parser.add_argument("--autogen-model", default="gpt-4o",
-                        help="AutoGen model name (default: gpt-4o)")
+                        choices=["auto", "anthropic", "claude", "openai", "adk", "autogen", "rasa", "n8n", "kimi"],
+                        default=DEFAULT_PROVIDER,
+                        help="LLM/agent provider — cloud only (default: auto → first configured cloud API key: Anthropic → OpenAI → Gemini). "
+                             "'kimi' delegates to Kimi CLI subagents (cloud backbone for orchestration)")
+    parser.add_argument("--openai-model",  default=os.getenv("OPENAI_MODEL", "gpt-5.1"),
+                        help="OpenAI model name (default: gpt-5.1)")
+    parser.add_argument("--adk-model",     default=os.getenv("GEMINI_MODEL", "gemini-3-flash"),
+                        help="Google ADK / Gemini model (default: gemini-3-flash)")
+    parser.add_argument("--autogen-model", default=os.getenv("AUTOGEN_MODEL", "gpt-5.1"),
+                        help="AutoGen model name (default: gpt-5.1)")
 
     # ── Extra tools
     parser.add_argument("--tools", type=str, default="",
@@ -855,8 +869,6 @@ Examples:
         agent_names,
         preset=args.preset,
         provider=args.provider,
-        ollama_model=args.ollama_model,
-        ollama_base_url=args.ollama_url,
         openai_model=args.openai_model,
         adk_model=args.adk_model,
         autogen_model=args.autogen_model,

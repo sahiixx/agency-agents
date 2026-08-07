@@ -1,18 +1,28 @@
-# The Agency — Ollama-Powered Multi-Agent Swarm
+# The Agency — Cloud-Powered Multi-Agent Swarm
 
-> 152 specialized AI agents · Local Ollama · Titans Memory · Production Ready
+> 152 specialized AI agents · Cloud LLMs (Anthropic / OpenAI / Gemini) · Titans Memory · Production Ready
 
 [![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/agent__tests-19%2F19-brightgreen)](tests/agent_tests.py)
 [![Lint](https://img.shields.io/badge/lint-ruff%20clean-success)](https://docs.astral.sh/ruff/)
 [![Score](https://img.shields.io/badge/system%20score-90%2F90-gold)](agency.py)
-[![Model](https://img.shields.io/badge/model-ollama-local-green)](https://ollama.com)
+[![Model](https://img.shields.io/badge/model-cloud-green)](https://console.anthropic.com)
+
+---
+
+## 2026 Refresh
+
+Brought fully up to date with the mid-2026 AI stack:
+- **Models**: **cloud only** — no local model runtime. Default backbone is `claude-sonnet-5` (`ANTHROPIC_MODEL`), with `gpt-5.1` (`OPENAI_MODEL`) and `gemini-3-flash` (`GEMINI_MODEL`) as alternatives. The runtime auto-picks the first configured cloud API key (`AGENCY_PROVIDER=auto`); local Ollama is opt-in via `--provider ollama`.
+- **New agents**: `llm-finetuner`, `agent-observability`, `agent-evaluator`, and `safety-reviewer` — covering local fine-tuning, agentic observability, eval-driven development, and AI safety gates. New `--preset aiops` runs them together.
+- **Agency-OS dashboard**: now includes a live **2026 Knowledge Base** panel (models, protocols, trends) and a **Builder.io CMS** panel — fetch published headless-CMS content from any content model via the Content Delivery API.
+- **Protocols**: MCP-first tool integration and A2A v0.3 agent interoperability remain the standard interfaces.
 
 ---
 
 ## What This Is
 
-A swarm of **152 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **local Ollama**.
+A swarm of **152 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **cloud LLMs only** (Anthropic / OpenAI / Gemini; see `integrations.py`).
 
 Every mission passes through a sequential delegation pipeline and ends with a **Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
 
@@ -28,8 +38,8 @@ cd agency-agents
 # 2. Install (one command)
 bash setup.sh
 
-# 3. Ensure Ollama is running
-export OLLAMA_HOST=http://localhost:11434
+# 3. Configure a cloud API key (Freebuff: Keys tab; locally: export)
+export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
 
 # 4. Run
 python3 agency.py --list-agents
@@ -187,10 +197,10 @@ Score:          90/90 — Grade A, Production Ready
 
 ## Tech Stack
 
-- **Model**: `llama3.1` (or any Ollama model) via `langchain-ollama`
+- **Model**: **cloud only**. Default `claude-sonnet-5` via `langchain-anthropic` (env `ANTHROPIC_MODEL`); alternatives `gpt-5.1` (`OPENAI_MODEL`) and `gemini-3-flash` (`GEMINI_MODEL`). Provider auto-selection via `AGENCY_PROVIDER` (default `auto`) — the first configured cloud key wins. Local Ollama is opt-in only (`--provider ollama`).
 - **SDK**: `deepagents` v0.4.10 — LangGraph-based agent harness
 - **Memory**: `FilesystemBackend` + `MemoryMiddleware` + `TitansMemory`
-- **Fully offline** — no cloud API keys required
+- **Providers**: all scripts resolve LLMs through `providers.get_cloud_llm()` — no direct `ChatOllama`/`ChatOpenAI`/`ChatAnthropic` imports outside `providers/`
 
 ---
 
@@ -210,16 +220,22 @@ Open `agency_ui.html` in any browser for a full mission control dashboard:
 ```bash
 # Manual install
 pip install -e deepagents/libs/deepagents
-pip install langchain-ollama langchain langchain-core
+pip install langchain-anthropic anthropic langchain langchain-core
+pip install langchain-openai langchain-google-genai   # optional cloud alternatives
 
-# Environment
-export OLLAMA_HOST=http://localhost:11434
+# Environment (cloud keys — Freebuff Keys tab)
+export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
+
+# Builder.io (optional — Agency-OS dashboard CMS panel)
+# Public API key from Builder.io Space Settings → API Keys.
+# The dashboard fetches published content models at /api/builder?model=<model>.
+export BUILDER_API_KEY=your_public_api_key
 
 # Tests
 python3 tests/agent_tests.py                        # structural (offline)
 python3 tests/test_security_audit_swarm.py          # security swarm (offline)
 python3 tests/test_real_estate_swarm.py             # real estate swarm (offline)
-python3 tests/agent_tests.py  # + live LLM (needs Ollama running)
+python3 tests/agent_tests.py  # + live LLM (needs a cloud API key: ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY)
 ```
 
 ---
@@ -236,7 +252,7 @@ python3 tests/agent_tests.py  # + live LLM (needs Ollama running)
 
 ---
 
-*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Ollama migration and orchestration layer by sahiix.*
+*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Cloud-models-only migration and orchestration layer by sahiix.*
 
 ## JARVIS v3
 
@@ -277,10 +293,10 @@ The repository now includes a `jarvis/` package with offline-first modules for:
 ### Ollama Setup Guide
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama3
-ollama pull mistral
-ollama pull qwen2.5
-ollama pull deepseek-coder
+ollama pull qwen3:8b
+ollama pull llama3.3:70b
+ollama pull deepseek-r1:32b
+ollama pull gemma3
 ```
 Run local server: `ollama serve` (default `http://localhost:11434`).
 
@@ -353,7 +369,7 @@ Persistent Storage: SQLite (metrics/docs/history)
 
 ### Performance Tips
 - Prefer `tiny/base` Whisper for low-latency CPUs; use `large-v3` with GPU.
-- Use smaller Ollama model for fast response (`llama3:8b`) and larger models for reasoning quality.
+- Use smaller Ollama model for fast response (`qwen3:4b`) and larger models for reasoning quality.
 - Enable GPU for `faster-whisper`, YOLO, and embeddings when available.
 - Keep dashboard and heavy vision loops on separate threads.
 - Trim document index scope for faster local RAG response times.

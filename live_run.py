@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-live_run.py — One command to run Ollama live inside The Agency.
+live_run.py — One command to run The Agency live on cloud models (no local models).
 
 Usage:
   python3 live_run.py
 
 What happens:
-  1. Ollama llama3.1 receives the mission
+  1. A cloud LLM (Anthropic / OpenAI / Gemini) receives the mission
   2. Orchestrator delegates to pm → backend → frontend (parallel) → qa → core
-  3. Each agent calls the local Ollama API with its specialist system prompt
+  3. Each agent calls the cloud API with its specialist system prompt
   4. MCP tools available: web_search, read_file, write_output, memory_recall
   5. A2A servers start — each agent is a live HTTP endpoint
   6. Observability prints per-agent latency and tokens
@@ -21,10 +21,6 @@ import sys
 import warnings
 warnings.filterwarnings("ignore")
 
-# ── Config ────────────────────────────────────────────────────────────────────
-OLLAMA_MODEL = "llama3.1"
-OLLAMA_BASE_URL = "http://localhost:11434"
-
 # ── Paths ─────────────────────────────────────────────────────────────────────
 from pathlib import Path
 REPO = Path(__file__).parent.resolve()
@@ -34,8 +30,8 @@ sys.path.insert(0, str(REPO))
 # ── Imports ───────────────────────────────────────────────────────────────────
 from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend
-from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
+from providers import get_cloud_llm
 from memory.titans_memory import TitansMemory
 from mcp_tools import MCP_TOOLS
 from observability import AgencyTracer
@@ -55,7 +51,7 @@ PRESET = "full"
 print(f"""
 ╔══════════════════════════════════════════════════════════════╗
 ║  THE AGENCY — LIVE RUN                                       ║
-║  Ollama (llama3.1) · deepagents · LangGraph                  ║
+║  Cloud LLM (auto) · deepagents · LangGraph                  ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Mission: {MISSION[:52]:<52} ║
 ║  Preset:  {PRESET:<52} ║
@@ -63,7 +59,7 @@ print(f"""
 """)
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
-llm    = ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
+llm    = get_cloud_llm()
 tracer = AgencyTracer(mission=MISSION, preset=PRESET)
 groups = agency.PARALLEL_GROUPS[PRESET]
 agents = [a for g in groups for a in g]
@@ -126,7 +122,7 @@ Delegate everything. You are the orchestrator and final judge."""
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 print(f"{'='*65}")
-print("  ORCHESTRATING — Ollama llama3.1 is live")
+print("  ORCHESTRATING — cloud LLM is live")
 print(f"{'='*65}\n")
 
 with tracer.span("full-mission"):
@@ -179,5 +175,5 @@ mem.inject_into_agents_md()
 print(f"  Memory: {verdict} (surprise={outcome.surprise:.2f}) — {mem.summary()}\n")
 
 print(f"{'='*65}")
-print("  DONE — The Agency ran live. Ollama. Real outputs.")
+print("  DONE — The Agency ran live. Cloud models. Real outputs.")
 print(f"{'='*65}")

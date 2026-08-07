@@ -16,7 +16,7 @@ class AIResponse:
 
 @dataclass
 class AIBrain:
-    model: str = "llama3"
+    model: str = "qwen3:8b"
     base_url: str = "http://localhost:11434"
     history: List[Dict[str, str]] = field(default_factory=list)
 

@@ -38,10 +38,17 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
+from integrations import init_optional_integrations, integration_summary
+
 # ── Config ───────────────────────────────────────────────────────────────────
 DB_PATH = Path("data/agency_os.db")
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 REPO_ROOT = Path(__file__).parent.resolve()
+
+
+def _port() -> int:
+    """Dashboard port — respects the $PORT injected by Freebuff previews."""
+    return int(os.environ.get("PORT", "9999"))
 
 # In-memory log buffer for SSE
 class EventBus:
@@ -237,10 +244,11 @@ except Exception as e:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    init_optional_integrations()
     print("=" * 60)
     print("  🚀 THE AGENCY — FULL STACK OS v2")
     print("  " + "=" * 60)
-    print("  http://localhost:9999/")
+    print(f"  http://localhost:{_port()}/")
     print("=" * 60)
     yield
 
@@ -375,6 +383,133 @@ def api_del_proxy(proxy_id: str):
     db_exec("DELETE FROM proxies WHERE id = ?", (proxy_id,))
     event_bus.publish({"type": "proxy_removed", "proxy_id": proxy_id})
     return {"deleted": True}
+
+
+# ── 2026 Knowledge Base ───────────────────────────────────────────────────────
+# Live-updatable snapshot of the 2026 model/protocol landscape. Edit this dict
+# to keep the dashboard current without touching the UI.
+KNOWLEDGE_2026 = {
+    "refresh": "2026-08",
+    "models": {
+        "default": os.environ.get("AGENCY_MODEL", os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")),
+        "provider": os.environ.get("AGENCY_PROVIDER", "auto (first configured cloud key)"),
+        "anthropic": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5"),
+        "openai": os.environ.get("OPENAI_MODEL", "gpt-5.1"),
+        "gemini": os.environ.get("GEMINI_MODEL", "gemini-3-flash"),
+        "note": "Cloud models only — no local Ollama runtime. Keys: ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY.",
+    },
+    "protocols": {
+        "mcp": "Model Context Protocol — the standard tool interface for agents",
+        "a2a": "Agent2Agent (A2A) v0.3 — cross-agent interoperability",
+        "memory": "Titans-inspired surprise-weighted memory (NeurIPS 2025)",
+    },
+    "trends": [
+        "Eval-driven development — every model/prompt/tool change is scored before shipping",
+        "Cloud-native agent stacks — Anthropic / OpenAI / Gemini backbones with provider auto-switching",
+        "Agentic observability — traces, spans, and cost attribution per tool call",
+        "AI safety gates — red-teaming and constitutional review before GO verdicts",
+    ],
+}
+
+
+@app.get("/api/knowledge")
+def api_knowledge():
+    return KNOWLEDGE_2026
+
+
+# ── Builder.io CMS Bridge ──────────────────────────────────────────────────────
+# Visual headless CMS (Figma-to-code, A/B testing). Reads published content
+# models via the Content Delivery API. Requires BUILDER_API_KEY (public key).
+BUILDER_API_KEY = os.environ.get("BUILDER_API_KEY", "")
+BUILDER_CDN = "https://cdn.builder.io/api/v3/content"
+
+
+@app.get("/api/integrations")
+def api_integrations():
+    """Status of every registered third-party integration."""
+    return integration_summary()
+
+
+@app.get("/api/builder")
+def api_builder(model: str = "page", limit: int = 20):
+    """List published Builder.io content entries for a model."""
+    if not BUILDER_API_KEY:
+        return {"configured": False, "entries": [], "error": "BUILDER_API_KEY not set"}
+    import urllib.request
+    url = f"{BUILDER_CDN}/{model}?apiKey={BUILDER_API_KEY}&limit={int(limit)}&fields=name,published,lastUpdated,firstPublished"
+    try:
+        with urllib.request.urlopen(url, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+        entries = [
+            {
+                "name": e.get("name"),
+                "published": e.get("published"),
+                "updated": e.get("lastUpdated"),
+                "first_published": e.get("firstPublished"),
+                "model": model,
+            }
+            for e in data.get("results", [])
+        ]
+        return {"configured": True, "model": model, "entries": entries, "count": len(entries)}
+    except Exception as e:
+        return {"configured": True, "model": model, "entries": [], "error": f"Builder.io request failed: {type(e).__name__}: {e}"}
+
+
+# ── JARVIS Operator ───────────────────────────────────────────────────────────
+# JARVIS is the brain, memory, and main operator of the harness. All endpoints
+# degrade gracefully when Ollama is unreachable or a JARVIS module is missing.
+from jarvis_bridge import get_operator
+
+class JarvisAsk(BaseModel):
+    prompt: str
+
+
+class JarvisMemoryOp(BaseModel):
+    action: str  # remember | recall | forget
+    key: str = ""
+    value: str = ""
+    category: str = "general"
+
+
+class JarvisPersonality(BaseModel):
+    mode: str
+
+
+@app.get("/api/jarvis")
+def api_jarvis_status():
+    """JARVIS operator status: brain, memory, personality, learning."""
+    try:
+        return get_operator().status()
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"operator": "JARVIS", "error": f"{type(e).__name__}: {e}"}, status_code=500)
+
+
+@app.post("/api/jarvis/ask")
+def api_jarvis_ask(payload: JarvisAsk):
+    """Ask JARVIS — routes, thinks with the brain, replies with personality."""
+    try:
+        return get_operator().ask(payload.prompt)
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"reply": f"JARVIS error: {type(e).__name__}: {e}", "source": "error"}, status_code=200)
+
+
+@app.post("/api/jarvis/memory")
+def api_jarvis_memory(payload: JarvisMemoryOp):
+    """JARVIS persistent memory — remember / recall / forget facts."""
+    op = get_operator()
+    if payload.action == "remember":
+        return op.remember(payload.key, payload.value, payload.category)
+    if payload.action == "recall":
+        return op.recall(payload.key)
+    if payload.action == "forget":
+        return op.forget(payload.key)
+    return JSONResponse({"ok": False, "error": f"Unknown memory action: {payload.action}"}, status_code=400)
+
+
+@app.post("/api/jarvis/personality")
+def api_jarvis_personality(payload: JarvisPersonality):
+    """Switch JARVIS personality mode."""
+    return get_operator().set_personality(payload.mode)
 
 
 # ── SSE Stream ───────────────────────────────────────────────────────────────
@@ -512,6 +647,10 @@ label{display:block;font-size:.65rem;font-weight:700;text-transform:uppercase;co
     <button class="sidebar-btn" data-label="Jobs" onclick="nav('jobs')">▣</button>
     <button class="sidebar-btn" data-label="Results" onclick="nav('results')">◊</button>
     <button class="sidebar-btn" data-label="Proxies" onclick="nav('proxies')">◐</button>
+    <button class="sidebar-btn" data-label="Knowledge" onclick="nav('knowledge')">✦</button>
+    <button class="sidebar-btn" data-label="JARVIS Operator" onclick="nav('jarvis')">🤖</button>
+    <button class="sidebar-btn" data-label="CMS Content" onclick="nav('builder')">✎</button>
+    <button class="sidebar-btn" data-label="Integrations" onclick="nav('integrations')">⚡</button>
     <div style="flex:1"></div>
     <button class="sidebar-btn" data-label="Command (Ctrl+K)" onclick="toggleCmd()">⌘</button>
   </nav>
@@ -600,6 +739,81 @@ label{display:block;font-size:.65rem;font-weight:700;text-transform:uppercase;co
       </div>
       <div class="glass"><table><thead><tr><th>Host</th><th>Port</th><th>Location</th><th>Type</th><th>Status</th></tr></thead><tbody id="pTable"></tbody></table></div>
     </div>
+
+    <!-- KNOWLEDGE -->
+    <div class="content" id="knowledge">
+      <div class="glass" style="margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0">🧠 2026 Knowledge Base</h3>
+        <span style="font-size:.7rem;color:var(--muted)">Snapshot <span id="kRefresh">…</span></span>
+      </div>
+      <div class="content-grid" id="kGrid"></div>
+    </div>
+
+    <!-- JARVIS OPERATOR -->
+    <div class="content" id="jarvis">
+      <div class="stat-row" style="margin-bottom:1rem">
+        <div class="stat-item glass"><div class="stat-num" id="jModel" style="font-size:1.1rem">—</div><div class="stat-label">Brain</div></div>
+        <div class="stat-item glass"><div class="stat-num" id="jFacts">—</div><div class="stat-label">Memory Facts</div></div>
+        <div class="stat-item glass"><div class="stat-num" id="jPersona" style="font-size:1.1rem">—</div><div class="stat-label">Personality</div></div>
+        <div class="stat-item glass"><div class="stat-num" id="jRoute" style="font-size:1.1rem">—</div><div class="stat-label">Last Route</div></div>
+      </div>
+      <div class="content-grid">
+        <div class="glass" style="grid-column:span 2">
+          <h3>🗣️ Operator Console</h3>
+          <div class="terminal" style="height:260px">
+            <div class="terminal-header">● jarvis.operator</div>
+            <div class="terminal-body" id="jChat"></div>
+          </div>
+          <div style="display:flex;gap:.75rem;margin-top:.75rem">
+            <input type="text" id="jPrompt" placeholder="Ask JARVIS — e.g. research the 2026 AI trends" onkeydown="if(event.key==='Enter')askJarvis()">
+            <button class="btn btn-cyan" onclick="askJarvis()" style="white-space:nowrap">Ask JARVIS</button>
+          </div>
+          <div style="display:flex;gap:.75rem;margin-top:.75rem;align-items:center;flex-wrap:wrap">
+            <label style="margin:0">Personality</label>
+            <select id="jPersonaSel" style="max-width:160px" onchange="setJarvisPersonality()"></select>
+            <span style="font-size:.7rem;color:var(--muted)">route: <span id="jRouteBadge" style="color:var(--cyan)">—</span> · source: <span id="jSource" style="color:var(--gold)">—</span></span>
+          </div>
+        </div>
+        <div class="glass">
+          <h3>🧠 JARVIS Memory</h3>
+          <div class="form-row">
+            <div class="form-group"><label>Key</label><input type="text" id="jMemKey" placeholder="favorite_color"></div>
+            <div class="form-group"><label>Category</label><input type="text" id="jMemCat" value="general"></div>
+          </div>
+          <div class="form-group"><label>Value</label><input type="text" id="jMemVal" placeholder="blue"></div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn btn-cyan btn-sm" onclick="jarvisMem('remember')">Remember</button>
+            <button class="btn btn-ghost btn-sm" onclick="jarvisMem('recall')">Recall</button>
+            <button class="btn btn-ghost btn-sm" onclick="jarvisMem('forget')">Forget</button>
+          </div>
+          <div id="jMemOut" style="margin-top:.75rem;font-size:.75rem;color:var(--emerald)"></div>
+        </div>
+        <div class="glass" style="grid-column:span 2">
+          <h3>📚 Stored Facts</h3>
+          <div id="jFactsList" style="font-size:.75rem;color:var(--muted)">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUILDER.IO CMS -->
+    <div class="content" id="builder">
+      <div class="glass" style="margin-bottom:1rem;display:flex;gap:1rem;align-items:flex-end">
+        <div class="form-group" style="flex:1;margin:0"><label>Content Model</label><input type="text" id="bModel" value="page"></div>
+        <button class="btn btn-cyan" onclick="loadBuilder()">Fetch Content</button>
+      </div>
+      <div id="bStatus" style="margin-bottom:1rem;font-size:.75rem;color:var(--muted)"></div>
+      <div class="glass"><table><thead><tr><th>Entry</th><th>Model</th><th>Published</th><th>Updated</th></tr></thead><tbody id="bTable"></tbody></table></div>
+    </div>
+
+    <!-- INTEGRATIONS -->
+    <div class="content" id="integrations">
+      <div class="stat-row" style="margin-bottom:1rem">
+        <div class="stat-item glass"><div class="stat-num" id="iConfigured">—</div><div class="stat-label">Configured</div></div>
+        <div class="stat-item glass"><div class="stat-num" id="iTotal">—</div><div class="stat-label">Total</div></div>
+        <div class="stat-item glass"><div class="stat-num" id="iMissing">—</div><div class="stat-label">Missing Keys</div></div>
+      </div>
+      <div class="glass"><table><thead><tr><th>Integration</th><th>Category</th><th>Status</th><th>Missing Keys</th><th>Purpose</th></tr></thead><tbody id="iTable"></tbody></table></div>
+    </div>
   </div>
 </div>
 
@@ -609,6 +823,38 @@ label{display:block;font-size:.65rem;font-weight:700;text-transform:uppercase;co
   <input type="text" id="cmdInput" placeholder="Type a command..." oninput="filterCmd()" onkeydown="cmdKey(event)">
   <div id="cmdResults"></div>
 </div>
+
+<script>
+// JARVIS Operator palette entry — merged at load so the Ctrl+K command palette
+// stays in sync with the sidebar. Keeps the static filterCmd() array untouched
+// (that function lives later in this page and is the source of truth for the
+// other entries; this override re-applies the same rendering with JARVIS added).
+window.addEventListener('load',function(){
+  try{
+    if(typeof window.filterCmd==='function'){
+      window.filterCmd=function(){
+        var q=document.getElementById('cmdInput').value.toLowerCase();
+        var items=[
+          {name:'Dashboard',action:function(){nav('dashboard')},icon:'◈',desc:'Overview'},
+          {name:'View Agents',action:function(){nav('agents')},icon:'◉',desc:'Agent registry'},
+          {name:'New Crawl',action:function(){nav('crawls')},icon:'◆',desc:'Start a crawl'},
+          {name:'View Jobs',action:function(){nav('jobs')},icon:'▣',desc:'Job history'},
+          {name:'View Results',action:function(){nav('results')},icon:'◊',desc:'Scraped data'},
+          {name:'View Proxies',action:function(){nav('proxies')},icon:'◐',desc:'Proxy pool'},
+          {name:'Knowledge Base',action:function(){nav('knowledge')},icon:'✦',desc:'2026 models & trends'},
+          {name:'CMS Content',action:function(){nav('builder')},icon:'✎',desc:'Builder.io entries'},
+          {name:'Fetch CMS',action:function(){loadBuilder()},icon:'⚡',desc:'Pull Builder.io content'},
+          {name:'Integrations',action:function(){nav('integrations')},icon:'⚡',desc:'All services & keys'},
+          {name:'JARVIS Operator',action:function(){nav('jarvis')},icon:'🤖',desc:'Brain · memory · operator console'},
+          {name:'Quick Crawl HN',action:function(){document.getElementById('qUrl').value='https://news.ycombinator.com';document.getElementById('qSel').value='.titleline';quickCrawl()},icon:'⚡',desc:'Scrape Hacker News'}
+        ];
+        var f=items.filter(function(i){return i.name.toLowerCase().indexOf(q)!==-1||i.desc.toLowerCase().indexOf(q)!==-1});
+        document.getElementById('cmdResults').innerHTML=f.map(function(i,idx){return '<div class="cmd-item '+(idx===0?'active':'')+'" onclick="'+i.action.toString().replace(/"/g,'&quot;')+';toggleCmd()"><span class="cmd-icon">'+i.icon+'</span><span class="cmd-name">'+i.name+'</span><span class="cmd-desc">'+i.desc+'</span></div>'}).join('')||'<div style="padding:1rem;color:var(--muted)">No commands found</div>';
+      };
+    }
+  }catch(e){}
+});
+</script>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -672,7 +918,7 @@ function nav(id){
   document.querySelectorAll('.sidebar-btn').forEach(b=>b.classList.remove('active'));
   $(id).classList.add('active');
   event.target.classList.add('active');
-  if(id==='agents')renderAgents();if(id==='crawls')renderCrawls();if(id==='jobs')renderJobs();if(id==='results')renderResults();if(id==='proxies')renderProxies();
+  if(id==='agents')renderAgents();if(id==='crawls')renderCrawls();if(id==='jobs')renderJobs();if(id==='results')renderResults();if(id==='proxies')renderProxies();if(id==='knowledge')loadKnowledge();if(id==='jarvis')loadJarvis();if(id==='builder')loadBuilder();if(id==='integrations')loadIntegrations();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -720,7 +966,92 @@ function renderProxies(){
   $('pTable').innerHTML=proxies.map(p=>`<tr><td>${p.host}</td><td>${p.port}</td><td>${p.location}</td><td>${p.proxy_type}</td><td><span class="status-badge status-${p.status}">${p.status}</span></td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:2rem">No proxies</td></tr>';
 }
 
-function loadAll(){loadStats();loadAgents();loadCrawls();loadJobs();loadResults();loadProxies();}
+async function loadKnowledge(){
+  const k=await api('/knowledge');
+  $('kRefresh').textContent=k.refresh||'';
+  const m=(k.models||{}),p=(k.protocols||{}),t=(k.trends||[]);
+  const cards=[];
+  cards.push(`<div class="glass"><h3>🤖 Models</h3><ul style="font-size:.8rem;line-height:1.9;list-style:none;padding:0">`+
+    Object.entries(m).map(([key,val])=>`<li><strong style="color:var(--cyan)">${key.replace(/_/g,' ')}</strong>: ${Array.isArray(val)?val.join(' · '):val}</li>`).join('')+`</ul></div>`);
+  cards.push(`<div class="glass"><h3>🔌 Protocols</h3><ul style="font-size:.8rem;line-height:1.9;list-style:none;padding:0">`+
+    Object.entries(p).map(([key,val])=>`<li><strong style="color:var(--violet)">${key.toUpperCase()}</strong><br><span style="color:var(--muted)">${val}</span></li>`).join('')+`</ul></div>`);
+  cards.push(`<div class="glass" style="grid-column:span 2"><h3>📈 2026 Agent Trends</h3><ul style="font-size:.8rem;line-height:1.9;list-style:none;padding:0">`+
+    t.map(x=>`<li style="margin-bottom:.4rem">▸ ${x}</li>`).join('')+`</ul></div>`);
+  $('kGrid').innerHTML=cards.join('');
+}
+
+async function loadBuilder(){
+  const m=$('bModel').value||'page';
+  $('bStatus').textContent='Fetching Builder.io content…';
+  const d=await api('/builder?model='+encodeURIComponent(m));
+  if(!d.configured){$('bStatus').innerHTML='⚠️ <code style="color:var(--rose)">BUILDER_API_KEY</code> not set — add it in the Freebuff Keys tab to enable CMS content.';$('bTable').innerHTML='';return}
+  if(d.error){$('bStatus').textContent='⚠️ '+d.error;$('bTable').innerHTML='';return}
+  $('bStatus').textContent=`✅ ${d.count} published ${d.model} entries from Builder.io`;
+  $('bTable').innerHTML=d.entries.map(e=>`<tr><td><strong>${e.name||'—'}</strong></td><td><span style="color:var(--cyan);font-size:.75rem">${e.model}</span></td><td style="font-size:.75rem">${e.published?new Date(e.published).toLocaleDateString():'—'}</td><td style="font-size:.75rem">${e.updated?new Date(e.updated).toLocaleDateString():'—'}</td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:2rem">No content in this model</td></tr>';
+}
+async function loadIntegrations(){
+  const d=await api('/integrations');
+  $('iConfigured').textContent=d.configured||0;
+  $('iTotal').textContent=d.total||0;
+  $('iMissing').textContent=(d.missing_keys||[]).length;
+  $('iTable').innerHTML=(d.services||[]).map(s=>`<tr><td><strong>${s.name}</strong></td><td><span style="color:var(--violet);font-size:.75rem">${s.category}</span></td><td>${s.configured?'<span class="status-badge status-done">Configured</span>':'<span class="status-badge status-queued">Needs key</span>'}</td><td style="font-family:var(--mono);font-size:.7rem;color:${s.missing.length?'var(--gold)':'var(--muted)'}">${s.missing.join(', ')||'—'}</td><td style="font-size:.72rem;color:var(--muted)">${s.purpose}</td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:2rem">No integrations</td></tr>';
+}
+// ═══════════════════════════════════════════════════════════════════════════════
+//  JARVIS OPERATOR
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadJarvis(){
+  const d=await api('/jarvis');
+  if(d.error){$('jModel').textContent='ERR';$('jFacts').textContent='—';$('jPersona').textContent='—';return}
+  $('jModel').textContent=(d.brain||{}).model||'—';
+  $('jFacts').textContent=(d.memory||{}).facts||0;
+  $('jPersona').textContent=(d.personality||{}).mode||'—';
+  const sel=$('jPersonaSel');
+  sel.innerHTML=(d.personality||{}).modes.map(m=>`<option value="${m}" ${m===(d.personality||{}).mode?'selected':''}>${m}</option>`).join('');
+  const rows=(d.memory||{}).rows||[];
+  $('jFactsList').innerHTML=rows.length?rows.map(r=>`<span style="display:inline-block;margin:.2rem .4rem .2rem 0;padding:.3rem .6rem;background:var(--card);border:1px solid var(--border);border-radius:8px"><strong style="color:var(--cyan)">${r.key}</strong> <span style="color:var(--muted)">=</span> ${r.value} <span style="color:var(--violet);font-size:.65rem">[${r.category}]</span></span>`).join(''):'<span>No facts stored yet — use Remember above.</span>';
+  jChatLine('JARVIS online · brain ' + ((d.brain||{}).available?'ready':'degraded (Ollama unreachable)'), (d.brain||{}).available?'ok':'info');
+}
+
+function jChatLine(text,type='info'){
+  const d=document.createElement('div');d.className='terminal-line '+type;d.textContent=`[${new Date().toLocaleTimeString()}] ${text}`;
+  $('jChat').appendChild(d);$('jChat').scrollTop=$('jChat').scrollHeight;
+}
+
+async function askJarvis(){
+  const p=$('jPrompt').value.trim();
+  if(!p)return;
+  jChatLine('You: '+p,'info');
+  $('jPrompt').value='';
+  const r=await api('/jarvis/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p})});
+  jChatLine('JARVIS ['+(r.source||'?')+']: '+r.reply, r.source==='ollama'?'ok':(r.source==='error'?'err':'info'));
+  $('jRouteBadge').textContent=r.route||'—';
+  $('jSource').textContent=r.source||'—';
+  $('jPersona').textContent=r.personality||'—';
+  $('jRoute').textContent=(r.route||'—').toUpperCase();
+  loadJarvis();
+}
+
+async function jarvisMem(action){
+  const body={action,key:$('jMemKey').value.trim(),value:$('jMemVal').value.trim(),category:$('jMemCat').value.trim()||'general'};
+  if(!body.key){$('jMemOut').innerHTML='<span style="color:var(--rose)">Key required</span>';return}
+  const r=await api('/jarvis/memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.ok){
+    $('jMemOut').textContent= action==='remember'?`✅ Stored ${body.key}` : action==='forget'?`🗑️ Forgotten ${body.key}` : `🔍 ${body.key} = ${r.value??'<not found>'}`;
+  } else {
+    $('jMemOut').innerHTML='<span style="color:var(--rose)">'+ (r.error||'Failed') +'</span>';
+  }
+  if(action!=='recall'){$('jMemVal').value='';$('jMemKey').value=''}
+  loadJarvis();
+}
+
+async function setJarvisPersonality(){
+  const mode=$('jPersonaSel').value;
+  const r=await api('/jarvis/personality',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode})});
+  if(r.ok){$('jPersona').textContent=mode;jChatLine('Personality → '+mode,'ok')}
+  else jChatLine('Personality error: '+(r.error||'?'),'err');
+}
+
+function loadAll(){loadStats();loadAgents();loadCrawls();loadJobs();loadResults();loadProxies();loadKnowledge();}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  ACTIONS
@@ -781,6 +1112,10 @@ function filterCmd(){
     {name:'View Jobs',action:()=>nav('jobs'),icon:'▣',desc:'Job history'},
     {name:'View Results',action:()=>nav('results'),icon:'◊',desc:'Scraped data'},
     {name:'View Proxies',action:()=>nav('proxies'),icon:'◐',desc:'Proxy pool'},
+    {name:'Knowledge Base',action:()=>nav('knowledge'),icon:'✦',desc:'2026 models & trends'},
+    {name:'CMS Content',action:()=>nav('builder'),icon:'✎',desc:'Builder.io entries'},
+    {name:'Fetch CMS',action:()=>loadBuilder(),icon:'⚡',desc:'Pull Builder.io content'},
+    {name:'Integrations',action:()=>nav('integrations'),icon:'⚡',desc:'All services & keys'},
     {name:'Quick Crawl HN',action:()=>{$('qUrl').value='https://news.ycombinator.com';$('qSel').value='.titleline';quickCrawl()},icon:'⚡',desc:'Scrape Hacker News'},
   ];
   const f=items.filter(i=>i.name.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q));
@@ -809,4 +1144,4 @@ def index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=9999)
+    uvicorn.run(app, host="0.0.0.0", port=_port())

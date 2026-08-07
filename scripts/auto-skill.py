@@ -14,20 +14,15 @@ Usage:
 """
 
 import argparse
-import json
 import os
 import re
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 SKILLS_DIR = REPO_ROOT / "skills"
-
-MODEL = os.environ.get("AGENCY_MODEL", "deepseek-v4-flash:cloud")
-OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://localhost:11434") + "/api/chat"
 
 DOMAIN_KEYWORDS = {
     "engineering": ["code", "build", "develop", "api", "backend", "frontend", "database", "devops", "security", "test", "bug", "debug", "deploy", "server", "app", "software", "system", "architecture", "python", "javascript", "react", "node", "cloud", "infra", "ci/cd", "git", "review", "refactor", "optimize", "performance", "scalable", "microservice", "container", "docker", "kubernetes", "program", "function", "class", "library", "framework", "compile", "runtime", "error", "exception", "traceback", "script", "crashes", "memory leak"],
@@ -92,18 +87,13 @@ def llm_select_skill(goal: str, candidates: list[tuple[str, str]]) -> str | None
         f"Which single skill is the BEST match for this goal? "
         f"Respond with ONLY the exact skill name (before the colon). No explanation."
     )
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "stream": False,
-        "options": {"temperature": 0.1},
-    }
     try:
-        data = json.dumps(payload).encode()
-        req = urllib.request.Request(OLLAMA_URL, data=data, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            obj = json.loads(resp.read())
-        reply = obj.get("message", {}).get("content", "").strip()
+        sys.path.insert(0, str(REPO_ROOT))
+        from langchain_core.messages import HumanMessage
+        from providers import get_cloud_llm
+        llm = get_cloud_llm()
+        response = llm.invoke([HumanMessage(content=prompt)], temperature=0.1)
+        reply = str(response.content).strip()
         for name, _ in candidates:
             if name in reply or reply == name:
                 return name
@@ -122,9 +112,7 @@ def run_skill(skill_name: str, task: str, *, chat: bool = False, tools: bool = F
         cmd.extend(["--task", task])
     if tools:
         cmd.append("--tools")
-    env = os.environ.copy()
-    env["AGENCY_MODEL"] = MODEL
-    subprocess.run(cmd, env=env)
+    subprocess.run(cmd)
 
 
 def main():

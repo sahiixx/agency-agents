@@ -32,7 +32,7 @@ Environment variables:
                             If set, voice→text input is routed through the SHADOW swarm
                             (Whisper → Shadow → Reviewer → Notion → Slack pipeline)
   VOICE_TTS_ENGINE        — TTS engine: 'pyttsx3' (default, offline), 'edge-tts', 'openai'
-  OLLAMA_BASE_URL           — for the Agency mission backend (Ollama)
+  ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY — cloud LLM keys for the Agency mission backend
 """
 
 from __future__ import annotations
@@ -257,7 +257,7 @@ def run_realtime_mode():
         client    = openai.OpenAI(api_key=OPENAI_API_KEY)
         SYSTEM    = (REPO_ROOT / "specialized/specialized-claude-reasoning-core.md").read_text()[:2000]
 
-        with client.beta.realtime.connect(model="gpt-4o-realtime-preview") as conn:
+        with client.beta.realtime.connect(model="gpt-realtime-2.1") as conn:
             conn.session.update(session={
                 "modalities":   ["text", "audio"],
                 "instructions": SYSTEM,

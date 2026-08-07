@@ -17,8 +17,8 @@ Usage:
   echo "Review this" | python3 scripts/run-skill.py --skill engineering-code-reviewer --stdin
 
 Requires:
-  export OLLAMA_HOST=http://localhost:11434
-  export AGENCY_MODEL=llama3.1
+  export ANTHROPIC_API_KEY=sk-ant-...   # cloud-first (or OPENAI_API_KEY / GEMINI_API_KEY)
+  export ANTHROPIC_MODEL=claude-sonnet-5
   pip install langchain-ollama
 """
 
@@ -35,9 +35,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
 OUTPUTS_DIR = Path("/tmp/agency_outputs")
 
-model = os.environ.get("AGENCY_MODEL", "llama3.1")
-
-# Ollama local inference (free — no token cost)
+model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")  # cloud default; overridden by get_client()
 PRICE_INPUT_PER_M = 3.00
 PRICE_OUTPUT_PER_M = 15.00
 
@@ -340,142 +338,21 @@ OUTPUT_INSTRUCTIONS = {
 
 # ── Core agent runner ────────────────────────────────────────────────────────
 
-# ── Ollama client wrapper (Anthropic-compatible subset) ─────────────────────
-
-class _OllamaStreamCtx:
-    """Context manager that yields text chunks from Ollama's streaming /api/chat."""
-
-    def __init__(self, url: str, payload: dict):
-        self.url = url
-        self.payload = payload
-        self._resp = None
-        self._buf = ""
-        self._input_tokens = 0
-        self._output_tokens = 0
-
-    def __enter__(self):
-        data = json.dumps(self.payload).encode()
-        req = urllib.request.Request(self.url, data=data, headers={"Content-Type": "application/json"})
-        self._resp = urllib.request.urlopen(req)
-        return self
-
-    def __exit__(self, *args):
-        if self._resp:
-            self._resp.close()
-
-    @property
-    def text_stream(self):
-        for line in self._resp:
-            line = line.decode().strip()
-            if not line:
-                continue
-            try:
-                obj = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            msg = obj.get("message", {})
-            chunk = msg.get("content", "")
-            if chunk:
-                self._buf += chunk
-                yield chunk
-            if "prompt_eval_count" in obj:
-                self._input_tokens = obj["prompt_eval_count"]
-            if "eval_count" in obj:
-                self._output_tokens = obj["eval_count"]
-
-    def get_final_message(self):
-        class _U:
-            input_tokens = self._input_tokens
-            output_tokens = self._output_tokens
-        class _M:
-            usage = _U()
-        return _M()
-
-
-class _OllamaMessages:
-    def __init__(self, base_url: str, model: str):
-        self._url = f"{base_url}/api/chat"
-        self._model = model
-
-    def stream(self, *, model=None, max_tokens=None, system=None, messages=None, **kwargs):
-        payload = {
-            "model": self._model,
-            "messages": messages or [],
-            "stream": True,
-        }
-        if system:
-            payload["system"] = system
-        return _OllamaStreamCtx(self._url, payload)
-
-    def create(self, *, model=None, max_tokens=None, system=None, messages=None, tools=None, **kwargs):
-        payload = {
-            "model": self._model,
-            "messages": messages or [],
-            "stream": False,
-        }
-        if system:
-            payload["system"] = system
-        if tools:
-            payload["tools"] = tools
-        data = json.dumps(payload).encode()
-        req = urllib.request.Request(self._url, data=data, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req) as resp:
-            obj = json.loads(resp.read())
-        msg = obj.get("message", {})
-        content_text = msg.get("content", "")
-
-        # Tool calls from Ollama
-        tool_calls = msg.get("tool_calls", [])
-        if tool_calls:
-            class _Block:
-                pass
-            blocks = []
-            for tc in tool_calls:
-                b = _Block()
-                b.type = "tool_use"
-                b.name = tc.get("function", {}).get("name", "")
-                try:
-                    b.input = json.loads(tc.get("function", {}).get("arguments", "{}"))
-                except json.JSONDecodeError:
-                    b.input = {}
-                b.id = tc.get("id", "")
-                blocks.append(b)
-            if content_text:
-                b = _Block()
-                b.type = "text"
-                b.text = content_text
-                blocks.insert(0, b)
-        else:
-            class _Block:
-                pass
-            b = _Block()
-            b.type = "text"
-            b.text = content_text
-            blocks = [b]
-
-        class _R:
-            content = blocks
-            class _U:
-                input_tokens = obj.get("prompt_eval_count", 0)
-                output_tokens = obj.get("eval_count", 0)
-            usage = _U()
-        return _R()
-
-
-class _OllamaClient:
-    def __init__(self, model: str, base_url: str):
-        self.messages = _OllamaMessages(base_url, model)
-
-
 def get_client():
     """
-    Create and return an Ollama client configured from the `OLLAMA_HOST` environment variable.
-
-    Attempts to connect to Ollama at OLLAMA_HOST (default http://localhost:11434).
+    CLOUD-ONLY: return the real Anthropic SDK client. No local model runtime exists —
+    ANTHROPIC_API_KEY is required.
     """
-    _model = os.environ.get("AGENCY_MODEL", "llama3.1")
-    base_url = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-    return _OllamaClient(_model, base_url)
+    global model
+    import anthropic
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        raise EnvironmentError(
+            "ANTHROPIC_API_KEY is required (cloud-only runtime). "
+            "Add it in the Freebuff Keys tab, or set ANTHROPIC_MODEL to pick a model."
+        )
+    model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
+    return anthropic.Anthropic(api_key=api_key)
 
 
 def run_agent(client, system_prompt: str, task: str, *,

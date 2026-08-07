@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
-Deep Research Agent — Claude-powered, with real web-aware tooling stubs.
+Deep Research Agent — cloud-model-powered, with real web-aware tooling stubs.
 """
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+sys.path.insert(0, str(REPO_ROOT))
 
 from deepagents import create_deep_agent
-from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
+from providers import get_cloud_llm
 
 personality = (REPO_ROOT / "design/design-ux-researcher.md").read_text()
 
@@ -38,7 +39,7 @@ def check_competitor_landscape(domain: str) -> str:
             "Mistral, Cohere. Differentiation factors: safety, reasoning depth, "
             "context window, tool use, multimodality.")
 
-llm = ChatOllama(model="llama3.1", base_url="http://localhost:11434")
+llm = get_cloud_llm()
 
 agent = create_deep_agent(
     tools=[search_academic_papers, analyze_market_trends, check_competitor_landscape],

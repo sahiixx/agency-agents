@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 The Agency — Swarm Orchestrator
-Ollama (llama3.1) is the reasoning backbone of every agent in the swarm.
+A cloud LLM (Anthropic / OpenAI / Gemini) is the reasoning backbone of every agent.
 Pipeline: PM → Dev → QA → [Reasoning Core Review] → Ship
 """
 
@@ -12,13 +12,11 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+sys.path.insert(0, str(REPO_ROOT))
 
 from deepagents import create_deep_agent
-from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
-
-OLLAMA_MODEL = "llama3.1"
-OLLAMA_BASE_URL = "http://localhost:11434"
+from providers import get_cloud_llm
 
 SWARM_AGENTS = {
     "pm":       "project-management/project-manager-senior.md",
@@ -31,7 +29,7 @@ SWARM_AGENTS = {
 
 
 def get_llm():
-    return ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
+    return get_cloud_llm()
 
 
 def load(path: str) -> str:
@@ -57,7 +55,7 @@ class AgencySwarm:
     def run_mission(self, mission_goal: str, mode: str = "full"):
         print(f"\n{'═'*65}")
         print(f"  🚀  MISSION: {mission_goal}")
-        print(f"  🧠  Engine: Ollama ({OLLAMA_MODEL})")
+        print(f"  🧠  Engine: Cloud (auto — Anthropic/OpenAI/Gemini)")
         print(f"  🔁  Mode: {mode}")
         print(f"{'═'*65}\n")
 
@@ -142,7 +140,7 @@ Your job:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="🧠 Agency Swarm Orchestrator (Ollama-Powered)")
+    parser = argparse.ArgumentParser(description="🧠 Agency Swarm Orchestrator (Cloud-Powered)")
     parser.add_argument("--mission", "-m", type=str, required=True, help="Mission goal")
     parser.add_argument("--mode", choices=["full", "fast"], default="full",
                         help="full=all agents, fast=PM+Dev+QA+Core only")

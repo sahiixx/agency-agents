@@ -144,10 +144,10 @@ The `get_provider(name)` factory in `providers/__init__.py` (line 23) returns th
 
 | Provider | Class | LLM returned | Notes |
 |---|---|---|---|
-| `anthropic` / `claude` | `AnthropicProvider` | `ChatAnthropic` | Default. Claude Sonnet 4.6 |
-| `ollama` | `OllamaProvider` | `ChatOllama` | Local models (llama3.1, etc.) |
-| `openai` | `OpenAIProvider` | `ChatOpenAI` | GPT-4o, o3, etc. |
-| `adk` | `ADKProvider` | `ChatGoogleGenerativeAI` | Gemini 2.0 Flash |
+| `anthropic` / `claude` | `AnthropicProvider` | `ChatAnthropic` | **Default cloud backbone** — Claude Sonnet 5 (env `ANTHROPIC_MODEL`) |
+| `ollama` | `OllamaProvider` | `ChatOllama` | Local models — **opt-in only** (`--provider ollama`), never a default |
+| `openai` | `OpenAIProvider` | `ChatOpenAI` | GPT-5.x, o-series (env `OPENAI_MODEL`) — cloud alternative |
+| `adk` | `ADKProvider` | `ChatGoogleGenerativeAI` | Gemini 3 (env `GEMINI_MODEL`) — cloud alternative |
 | `autogen` | `AutoGenProvider` | Claude backbone | AutoGen manages its own LLM |
 | `rasa` | `RasaProvider` | Claude backbone | External dialog service |
 | `n8n` | `N8NProvider` | Claude backbone | Webhook trigger only |
@@ -442,11 +442,12 @@ Key exports:
 
 ### 6.1 Environment Variables
 
-**Required:**
+**Required (cloud-first — no local models):**
 
 | Variable | Purpose |
 |---|---|
-| `ANTHROPIC_API_KEY` | All agent calls via Claude |
+| `ANTHROPIC_API_KEY` | All agent calls via Claude (default backbone; alternatives `OPENAI_API_KEY`, `GEMINI_API_KEY`) |
+| `AGENCY_PROVIDER` | `auto` (default) → first configured cloud key; or `anthropic` / `openai` / `adk` |
 | `PYTHONPATH` | Must include `./deepagents/libs/deepagents` |
 
 **Integration services (optional, with defaults):**
@@ -501,7 +502,8 @@ Key exports:
 
 | Constant | Value | File |
 |---|---|---|
-| `CLAUDE_MODEL` | `"claude-sonnet-4-6"` | `agency.py:65` |
+| `DEFAULT_PROVIDER` | `"auto"` (env `AGENCY_PROVIDER`) — first configured cloud key: Anthropic → OpenAI → Gemini | `agency.py` |
+| `DEFAULT_MODEL` | `claude-sonnet-5` (env `ANTHROPIC_MODEL`) | `providers/anthropic_provider.py` |
 | `MEMORY_FILE` | `"memory/AGENTS.md"` | `agency.py:66` |
 | `BASE_PORT` | `8100` | `a2a_protocol.py` |
 | `PRICE_INPUT_PER_M` | `$3.00` | `observability.py:34` |
@@ -532,8 +534,8 @@ python3 agency.py --mission "Audit security" --agents security,qa,core
 python3 agency.py --mission "Ship feature" --dry-run
 
 # Different provider
-python3 agency.py --mission "Plan sprint" --provider ollama --ollama-model llama3.1
-python3 agency.py --mission "Build API" --provider openai --openai-model gpt-4o
+python3 agency.py --mission "Plan sprint" --provider ollama --ollama-model qwen3:8b
+python3 agency.py --mission "Build API" --provider openai --openai-model gpt-5.1
 
 # Extra tools
 python3 agency.py --mission "Scout targets" --tools airecon,trufflehog
@@ -654,7 +656,7 @@ Written to `/tmp/agency_outputs/trace_<YYYYMMDD_HHMMSS>.json`:
   "total_cost_usd": 0.0234,
   "total_input_tokens": 5000,
   "total_output_tokens": 3000,
-  "model": "claude-sonnet-4-6",
+  "model": "claude-sonnet-5",
   "spans": [
     {
       "agent": "pm",
@@ -699,7 +701,7 @@ Written to `/tmp/agency_outputs/trace_<YYYYMMDD_HHMMSS>.json`:
 ### 9.2 Structural Tests (no API key)
 
 - **`TestAgentFiles`**: Required `.md` files exist, have frontmatter (`---`), are not empty (>500 chars), total count >50, reasoning core has required sections (`Core Mission`, `Non-Negotiables`, `Honesty`, `Constitutional`)
-- **`TestScripts`**: Required `.py` scripts exist, parse cleanly (`py_compile`), no `langchain_openai`/`ChatOpenAI` imports (Claude-native), `ChatAnthropic` present in swarm scripts, reasoning core referenced in all swarms
+- **`TestScripts`**: Required `.py` scripts exist, parse cleanly (`py_compile`), no `ChatOllama`/`ChatOpenAI`/`langchain_openai` imports (all LLM resolution goes through `providers.get_cloud_llm()`), reasoning core referenced in all swarms
 - **`TestReadme`**: `README.md` and `README_CLAUDE.md` exist, Claude README has setup instructions
 
 ### 9.3 Live LLM Tests (API key required)
@@ -831,7 +833,7 @@ Each skill lives in `skills/<name>/` with `SKILL.md` + `scripts/run.sh`.
 |---|---|---|
 | Anthropic API | HTTPS | `ANTHROPIC_API_KEY` |
 | DuckDuckGo | HTTPS (no key) | Built into `web_search` tool |
-| Ollama | HTTP | `--ollama-url` (default `localhost:11434`) |
+| Ollama | HTTP | `--provider ollama` (opt-in only; never the default) |
 | OpenAI | HTTPS | `OPENAI_API_KEY` (optional) |
 | Google Gemini | HTTPS | Google credentials (for ADK provider) |
 | Perplexica | HTTP | `PERPLEXICA_URL` |

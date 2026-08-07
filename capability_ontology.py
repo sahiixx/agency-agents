@@ -294,7 +294,7 @@ class Crawler:
         # 3. Subsystems
         for subsys, meta in {
             "claude_agency": "High-stakes Claude-powered missions with A2A messaging and safety",
-            "ollama_swarm": "Local fast dev swarm using Ollama llama3.1 pipeline",
+            "dev_swarm": "Fast dev swarm on cloud LLMs (Anthropic/OpenAI/Gemini) pipeline",
             "omni_analysis": "Reverse engineering, binary analysis, CRM sync, Frida sensing",
             "tool_fabrication": "Runtime synthesis of new LangChain-compatible tools",
             "agent_spawn": "Dynamic creation of new specialist agent personas",

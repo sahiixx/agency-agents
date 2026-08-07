@@ -25,7 +25,7 @@ EXPECTED_AGENTS = [
     "CRM Pipeline Orchestrator",
     "Investor Pitch Specialist",
     "Post-Sale Referral Engine",
-    "Ollama Reasoning Core",
+    "Claude Reasoning Core",
 ]
 
 EXPECTED_OUTPUTS = [
@@ -117,7 +117,6 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--mission", "Test pipeline", "--dry-run"],
             capture_output=True, text=True,
-            env={**os.environ, "OLLAMA_BASE_URL": ""},
         )
         self.assertEqual(result.returncode, 0, f"Dry run failed: {result.stderr}")
         self.assertIn("DRY RUN", result.stdout)
@@ -127,7 +126,6 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--mission", "Test leads", "--scope", "leads", "--dry-run"],
             capture_output=True, text=True,
-            env={**os.environ, "OLLAMA_BASE_URL": ""},
         )
         self.assertEqual(result.returncode, 0, f"Dry run (leads) failed: {result.stderr}")
         self.assertIn("DRY RUN", result.stdout)
@@ -139,7 +137,7 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
         match_pos = content.index('"Property Matching Engine"')
         deal_pos = content.index('"Deal Negotiation Strategist"')
         crm_pos = content.index('"CRM Pipeline Orchestrator"')
-        core_pos = content.index('"Ollama Reasoning Core"')
+        core_pos = content.index('"Claude Reasoning Core"')
         self.assertLess(lead_pos, match_pos, "Stage 1 must precede Stage 2")
         self.assertLess(match_pos, deal_pos, "Stage 2 must precede Stage 3")
         self.assertLess(deal_pos, crm_pos, "Stage 3 must precede Stage 4")
@@ -298,10 +296,11 @@ class TestDubaiBusinessAgents(unittest.TestCase):
         for key in ["biz-sales", "biz-mkt", "biz-content", "biz-analytics", "biz-ops"]:
             self.assertIn(f'"{key}"', content, f"AGENT_REGISTRY missing key: {key}")
 
-    def test_ollama_provider_in_agency(self):
-        """agency.py must support the Ollama provider option."""
+    def test_no_local_model_in_agency(self):
+        """agency.py must be cloud-only — no local (Ollama) provider option."""
         content = AGENCY_SCRIPT.read_text()
-        self.assertIn("ollama", content.lower(), "agency.py must support Ollama provider")
+        self.assertNotIn("ollama", content.lower(), "agency.py must not reference local models")
+        self.assertNotIn("qwen3", content.lower(), "agency.py must not reference local models")
         self.assertIn("--provider", content, "agency.py must have --provider CLI argument")
 
     def test_scrape_ae_leads_tool_exists(self):

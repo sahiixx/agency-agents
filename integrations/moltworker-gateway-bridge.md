@@ -117,7 +117,7 @@ SLACK_APP_TOKEN=xapp-your-app-token
   },
   "agents": {
     "defaults": {
-      "model": { "primary": "claude-sonnet-4-6" }  // must be object, not string
+      "model": { "primary": "claude-sonnet-5" }  // must be object, not string
     }
   },
   "channels": {

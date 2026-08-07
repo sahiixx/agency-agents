@@ -1,39 +1,33 @@
 #!/usr/bin/env python3
 """
-Evolve the 3 lowest-scoring agents using Ollama (llama3.1) + Reasoning Core.
-Uses curl subprocess to call Ollama API.
+Evolve the 3 lowest-scoring agents using a cloud LLM + Reasoning Core (no local models).
+Uses providers.get_cloud_llm (Anthropic default) instead of a local Ollama API.
 """
 import sys
 import os
-import json
 import subprocess
 from pathlib import Path
 from datetime import datetime
 
 REPO_ROOT = Path(__file__).parent.resolve()
-OLLAMA_MODEL = "llama3.1"
+sys.path.insert(0, str(REPO_ROOT))
 
-def ollama_chat(messages: list[dict], temperature: float = 0.7) -> str:
-    """Call Ollama API via curl subprocess."""
-    payload = json.dumps({
-        "model": OLLAMA_MODEL,
-        "messages": messages,
-        "options": {"temperature": temperature},
-        "stream": False,
-    })
-    
-    result = subprocess.run(
-        ["curl", "-s", "--max-time", "600", 
-         "-X", "POST", "http://localhost:11434/api/chat",
-         "-d", payload],
-        capture_output=True, text=True, timeout=620,
+from langchain_core.messages import SystemMessage, HumanMessage
+from providers import get_cloud_llm
+
+def cloud_chat(messages: list[dict], temperature: float = 0.7) -> str:
+    """Call a cloud LLM (Anthropic default; ANTHROPIC_MODEL env) for the evolution cycle."""
+    llm = get_cloud_llm(
+        model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5"),
+        temperature=temperature,
     )
-    
-    if result.returncode != 0:
-        raise RuntimeError(f"curl failed (exit {result.returncode}): {result.stderr[:500]}")
-
-    data = json.loads(result.stdout)
-    return data["message"]["content"]
+    lc_messages = [
+        SystemMessage(content=m["content"]) if m.get("role") == "system"
+        else HumanMessage(content=m["content"])
+        for m in messages
+    ]
+    resp = llm.invoke(lc_messages)
+    return resp.content
 
 
 def evolve_agent(agent_path: Path, agent_name: str) -> str | None:
@@ -69,7 +63,7 @@ Your task:
 Be surgical. Preserve what works. Improve what doesn't."""},
     ]
 
-    improved = ollama_chat(messages, temperature=0.7).strip()
+    improved = cloud_chat(messages, temperature=0.7).strip()
 
     # Remove code fences if present
     if improved.startswith("```"):
@@ -171,7 +165,7 @@ def main():
 
     print(f"\n{'═'*65}")
     print(f"  🧬  Agency Evolution Cycle — {ts}")
-    print(f"  🧠  Engine: Ollama ({OLLAMA_MODEL})")
+    print(f"  🧠  Engine: Cloud (auto — Anthropic/OpenAI/Gemini)")
     print(f"  🎯  Targets: 3 lowest-scoring agents")
     print(f"{'═'*65}\n")
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-SaaS Dominance Swarm — Ollama-powered 4-agent pipeline.
-PM → Copywriter → Frontend Dev → QA → Ollama Reasoning Core verdict
+SaaS Dominance Swarm — cloud-powered 4-agent pipeline (no local models).
+PM → Copywriter → Frontend Dev → QA → Claude Reasoning Core verdict
 """
 import os
 import sys
@@ -9,16 +9,14 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+sys.path.insert(0, str(REPO_ROOT))
 
 from deepagents import create_deep_agent
-from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
+from providers import get_cloud_llm
 
-OLLAMA_MODEL = "llama3.1"
-OLLAMA_BASE_URL = "http://localhost:11434"
-
-def get_ollama() -> object:
-    return ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
+def get_llm() -> object:
+    return get_cloud_llm()
 
 def load(path: str) -> str: return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
 
@@ -32,7 +30,7 @@ def run_agent(llm, prompt: str, query: str, name: str) -> str:
 
 class SaasSwarm:
     def __init__(self):
-        self.llm = get_ollama()
+        self.llm = get_llm()
         self.agents = {
             "pm":     load("project-management/project-manager-senior.md"),
             "copy":   load("marketing/marketing-growth-hacker.md"),
@@ -42,7 +40,7 @@ class SaasSwarm:
         }
 
     def run_mission(self, goal: str):
-        print(f"\n{'═'*60}\n  🚀  SaaS Dominance Mission: {goal}\n  🧠  Engine: Ollama {OLLAMA_MODEL}\n{'═'*60}\n")
+        print(f"\n{'═'*60}\n  🚀  SaaS Dominance Mission: {goal}\n  🧠  Engine: Cloud (auto: Anthropic/OpenAI/Gemini)\n{'═'*60}\n")
 
         print("  📋  [1/5] PM — Strategic Planning...")
         plan = run_agent(self.llm, self.agents["pm"], f"Create a SaaS architecture plan for: {goal}", "pm")
@@ -64,7 +62,7 @@ class SaasSwarm:
         qa = run_agent(self.llm, self.agents["qa"], f"Audit for SEO, accessibility, and conversion:\n{code}", "qa")
         print("  ✅  QA done\n")
 
-        print("  🧠  [5/5] Ollama Reasoning Core — Final Verdict...")
+        print("  🧠  [5/5] Claude Reasoning Core — Final Verdict...")
         verdict = run_agent(self.llm, self.agents["core"],
             f"Mission: {goal}\n\nPlan:\n{plan[:800]}\n\nCopy:\n{copy[:800]}\n\nCode:\n{code[:800]}\n\nQA:\n{qa[:600]}\n\nGive GO/NO-GO verdict with key findings.", "core")
 

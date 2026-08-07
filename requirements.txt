@@ -7,9 +7,17 @@ anthropic>=0.84.0
 langchain>=1.2.12
 langchain-core>=1.2.18
 langchain-anthropic>=1.4.1
+langchain-ollama>=0.3.0
+langchain-openai>=0.3.0
 langchain-google-genai>=4.2.1
 langgraph>=1.1.2
 langsmith>=0.7.33
+pydantic>=2.7.0
+
+# Optional third-party integrations (auto-enabled when keys are set)
+sentry-sdk>=2.0.0
+# traceloop-sdk is optional — install separately: pip install traceloop-sdk
+# langsmith is pulled in by langchain-core
 
 # Security-pinned transitive deps
 certifi>=2026.1.4

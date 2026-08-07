@@ -21,6 +21,7 @@ Usage:
 """
 
 import json
+import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -30,7 +31,7 @@ from typing import Optional
 OUTPUTS_DIR = Path("/tmp/agency_outputs")
 OUTPUTS_DIR.mkdir(exist_ok=True)
 
-# Ollama local inference
+# Cloud LLM inference (Sonnet-class pricing)
 PRICE_INPUT_PER_M  = 3.00   # $3.00 / 1M input tokens
 PRICE_OUTPUT_PER_M = 15.00  # $15.00 / 1M output tokens
 
@@ -141,7 +142,7 @@ class AgencyTracer:
             "total_cost_usd": self.total_cost_usd,
             "total_input_tokens":  tin,
             "total_output_tokens": tout,
-            "model":          "llama3.1",
+            "model":          os.environ.get("AGENCY_MODEL", os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")),
             "spans": [
                 {
                     "agent":         s.agent,

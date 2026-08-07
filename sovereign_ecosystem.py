@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Sovereign Ecosystem — Ollama-powered self-evolution cycle.
-Observer audits an agent → Refiner rewrites it → Ollama Core approves → DevOps verifies.
+Sovereign Ecosystem — cloud-powered self-evolution cycle (no local models).
+Observer audits an agent → Refiner rewrites it → Claude Core approves → DevOps verifies.
 """
 import os
 import sys
@@ -10,19 +10,14 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+sys.path.insert(0, str(REPO_ROOT))
 
 from deepagents import create_deep_agent
-from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
+from providers import get_cloud_llm
 
-OLLAMA_MODEL = "llama3.1"
-
-def get_ollama_client():
-    base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-    if not base_url:
-        print("❌  OLLAMA_BASE_URL not set.")
-        sys.exit(1)
-    return ChatOllama(model=OLLAMA_MODEL, base_url=base_url)
+def get_cloud_llm_client():
+    return get_cloud_llm()
 
 def load(path): return (REPO_ROOT / path).read_text() if (REPO_ROOT / path).exists() else ""
 
@@ -36,7 +31,7 @@ def run_agent(llm, prompt, query, name):
 
 class SovereignEcosystem:
     def __init__(self):
-        self.llm = get_ollama_client()
+        self.llm = get_cloud_llm_client()
         self.agents = {
             "observer": load("testing/testing-reality-checker.md"),
             "refiner":  load("specialized/specialized-perfect-agent-orchestrator.md"),
@@ -54,7 +49,7 @@ class SovereignEcosystem:
         print(f"\n{'═'*60}")
         print("  🌌  Sovereign Ecosystem — Evolution Cycle")
         print(f"  🎯  Target: {target_agent_path}")
-        print(f"  🧠  Engine: Ollama {OLLAMA_MODEL}")
+        print(f"  🧠  Engine: Cloud (auto: Anthropic/OpenAI/Gemini)")
         print(f"{'═'*60}\n")
 
         # Phase 1: Observer audits
@@ -74,11 +69,11 @@ class SovereignEcosystem:
             print("  ⚠️   Refiner output too short — aborting")
             return False
 
-        # Phase 3: Ollama Reasoning Core approves
-        print("  🧠  [3/4] Ollama Reasoning Core — Constitutional review...")
+        # Phase 3: Claude Reasoning Core approves
+        print("  🧠  [3/4] Claude Reasoning Core — Constitutional review...")
         verdict = run_agent(self.llm, self.agents["core"],
             f"Review this rewritten agent personality. Is it safe to deploy? GO/NO-GO.\n\nOriginal:\n{current[:800]}\n\nOptimized:\n{optimized[:800]}",
-            "ollama-reasoning-core")
+            "claude-reasoning-core")
 
         if "no-go" in verdict.lower() or "no go" in verdict.lower():
             print(f"  ❌  Core says NO-GO — aborting\n  Reason: {verdict[:300]}")

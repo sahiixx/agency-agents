@@ -12,7 +12,7 @@ encounters tasks for which no specialist exists.
 How it works:
   1. Observer monitors mission descriptions and outcomes
   2. When a novel task type is detected (no existing agent matches), it's flagged
-  3. MetaSpawner uses Ollama to generate a new agent persona .md file
+  3. MetaSpawner uses a cloud LLM to generate a new agent persona .md file
   4. Agent is validated (frontmatter, non-empty, proper sections)
   5. Agent is registered in the appropriate directory
   6. Agency registry is updated with the new agent key
@@ -127,14 +127,15 @@ class MetaSpawner:
         self.existing_descriptions = get_existing_agent_descriptions()
 
     def _call_llm(self, system_prompt: str, user_prompt: str) -> str:
-        """Call Ollama to generate agent content."""
+        """Call a cloud LLM to generate agent content."""
         try:
             sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+            sys.path.insert(0, str(REPO_ROOT))
             from deepagents import create_deep_agent
-            from langchain_ollama import ChatOllama
             from langchain_core.messages import HumanMessage
+            from providers import get_cloud_llm
 
-            llm = ChatOllama(model="llama3.1", base_url="http://localhost:11434")
+            llm = get_cloud_llm()
             agent = create_deep_agent(
                 model=llm, tools=[],
                 system_prompt=system_prompt,

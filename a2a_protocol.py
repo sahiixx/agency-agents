@@ -139,7 +139,7 @@ def make_agent_card(
         "defaultOutputModes": ["text/plain"],
         "securitySchemes":    {},
         "metadata": {
-            "model":     "llama3.1",
+            "model":     os.environ.get("AGENCY_MODEL", os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")),
             "framework": "deepagents+langgraph",
             "memory":    "titans-v1",
         },

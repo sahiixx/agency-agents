@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 The Agency — Mission Control CLI
-Powered by Ollama (local) as the Reasoning Core.
+Powered by cloud LLMs (Anthropic / OpenAI / Gemini) as the Reasoning Core.
 """
 
 import os
@@ -12,15 +12,14 @@ from pathlib import Path
 # Ensure deepagents SDK is on the path
 REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+sys.path.insert(0, str(REPO_ROOT))
 
 from deepagents import create_deep_agent
-from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
+from providers import get_cloud_llm
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
-OLLAMA_MODEL = "llama3.1"
-OLLAMA_BASE_URL = "http://localhost:11434"
 REASONING_CORE_PATH = "specialized/specialized-claude-reasoning-core.md"
 
 AGENT_DIRS = [
@@ -31,8 +30,8 @@ AGENT_DIRS = [
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
-def get_ollama():
-    return ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
+def get_llm():
+    return get_cloud_llm()
 
 
 def parse_frontmatter(path: str) -> dict:
@@ -103,7 +102,7 @@ def cmd_list(args):
 
 
 def cmd_launch(args):
-    llm = get_ollama()
+    llm = get_llm()
     agent_prompt = load_agent_prompt(args.agent)
     meta = parse_frontmatter(str(REPO_ROOT / args.agent))
 
@@ -115,7 +114,7 @@ def cmd_launch(args):
 
     print(f"\n{'─'*60}")
     print(f"  {meta.get('emoji','🤖')}  Launching: {meta.get('name', args.agent)}")
-    print(f"  🧠  Model: {OLLAMA_MODEL} (Ollama)")
+    print(f"  🧠  Model: Cloud (auto — Anthropic/OpenAI/Gemini)")
     print(f"  📋  Query: {args.query}")
     print(f"{'─'*60}\n")
 
@@ -128,11 +127,11 @@ def cmd_launch(args):
 
 
 def cmd_reason(args):
-    llm = get_ollama()
+    llm = get_llm()
     core_prompt = load_reasoning_core_prompt()
 
     print(f"\n{'─'*60}")
-    print("  🧠  Ollama Reasoning Core — Direct Mode")
+    print("  🧠  Cloud Reasoning Core — Direct Mode")
     print(f"  📋  Query: {args.query}")
     print(f"{'─'*60}\n")
 
@@ -160,7 +159,7 @@ def cmd_info(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="🧠 The Agency — Mission Control (Ollama-Powered)",
+        description="🧠 The Agency — Mission Control (Cloud-Powered)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

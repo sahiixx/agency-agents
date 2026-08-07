@@ -130,7 +130,7 @@ def explore(topic: str, use_llm: bool = True) -> dict:
 
     Args:
         topic: The topic to explore
-        use_llm: If True, uses Ollama for synthesis. If False, uses web_search only.
+        use_llm: If True, uses a cloud LLM for synthesis. If False, uses web_search only.
 
     Returns:
         Dict with findings, sources, and recommendations.
@@ -174,12 +174,13 @@ def explore(topic: str, use_llm: bool = True) -> dict:
     if use_llm:
         try:
             sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+            sys.path.insert(0, str(REPO_ROOT))
             from deepagents import create_deep_agent
-            from langchain_ollama import ChatOllama
             from langchain_core.messages import HumanMessage
+            from providers import get_cloud_llm
 
             explorer_prompt = (REPO_ROOT / "specialized/specialized-autonomous-explorer.md").read_text()
-            llm = ChatOllama(model="llama3.1", base_url="http://localhost:11434")
+            llm = get_cloud_llm()
 
             search_results = "\n".join(findings[:10]) if findings else "No search results found."
             query = textwrap.dedent(f"""\

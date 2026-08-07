@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
-Run a single agent with a custom tool — Claude-powered example.
+Run a single agent with a custom tool — cloud-model-powered example (no local models).
 """
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+sys.path.insert(0, str(REPO_ROOT))
 
 from deepagents import create_deep_agent
-from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
+from providers import get_cloud_llm
 
 # Load agent personality
 personality_path = REPO_ROOT / "engineering/engineering-frontend-developer.md"
@@ -24,7 +25,7 @@ def get_tech_stack_recommendation(project_type: str) -> str:
         return "Next.js 15, Tailwind CSS, Shadcn UI, and TanStack Query."
     return "Vite, React, and Tailwind CSS."
 
-llm = ChatOllama(model="llama3.1", base_url="http://localhost:11434")
+llm = get_cloud_llm()
 
 agent = create_deep_agent(
     tools=[get_tech_stack_recommendation],

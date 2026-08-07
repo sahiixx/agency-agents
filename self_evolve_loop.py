@@ -13,8 +13,8 @@ How it works per cycle:
   1. Score all agents (prompt quality metrics)
   2. Select the N lowest-scoring agents for evolution
   3. For each selected agent:
-     a. Ollama critiques the current prompt
-     b. Ollama generates an improved version
+     a. The cloud Reasoning Core critiques the current prompt
+     b. The cloud Reasoning Core generates an improved version
      c. Original is backed up
      d. New prompt replaces the old one
   4. Run test suite
@@ -187,7 +187,7 @@ def score_agent(prompt_path: Path, now: datetime) -> dict:
 
 def evolve_agent(agent_path: Path, agent_name: str, dry_run: bool = False) -> Optional[str]:
     """
-    Use Ollama to critique and improve a single agent prompt.
+    Use the cloud Reasoning Core to critique and improve a single agent prompt.
     Returns the improved text, or None on failure.
 
     In dry_run mode, returns expected improvement without calling LLM.
@@ -199,12 +199,13 @@ def evolve_agent(agent_path: Path, agent_name: str, dry_run: bool = False) -> Op
 
     try:
         sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+        sys.path.insert(0, str(REPO_ROOT))
         from deepagents import create_deep_agent
-        from langchain_ollama import ChatOllama
         from langchain_core.messages import HumanMessage
+        from providers import get_cloud_llm
 
         core_prompt = (REPO_ROOT / "specialized/specialized-claude-reasoning-core.md").read_text()
-        llm = ChatOllama(model="llama3.1", base_url="http://localhost:11434")
+        llm = get_cloud_llm()
 
         query = textwrap.dedent(f"""\
         You are reviewing and improving an agent personality file.

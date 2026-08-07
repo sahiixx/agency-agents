@@ -4,15 +4,41 @@ This file is loaded by all agents at startup via MemoryMiddleware.
 Every agent in the swarm has this shared situational awareness.
 
 ## Who We Are
-The Agency is a swarm of 130+ specialized AI agents built on Claude Sonnet 4.6.
-Every agent has access to this shared memory and can spawn subagents via the `task` tool.
+The Agency is a swarm of 150+ specialized AI agents. Runs on a multi-model stack:
+**local Ollama by default** (`qwen3:8b`, overridable via `OLLAMA_MODEL`), with
+Claude (`ANTHROPIC_MODEL`), OpenAI (`OPENAI_MODEL`), and Gemini (`GEMINI_MODEL`)
+available per provider. Every agent has access to this shared memory and can spawn
+subagents via the `task` tool.
 
 ## Active Architecture
-- Model: llama3.1 (Ollama)
+- Model: qwen3:8b via Ollama (default; see env vars above)
 - Orchestration: deepagents SDK (LangGraph-based)
 - Memory: This file, injected at startup by MemoryMiddleware (FilesystemBackend)
 - Reasoning Gate: specialized/specialized-claude-reasoning-core.md
-- Entry point: agency.py --mission "..." --preset [full|saas|research]
+- Entry point: agency.py --mission "..." --preset [full|saas|research|aiops]
+- Eval gate: specialized/specialized-agent-evaluator.md
+- Safety gate: specialized/specialized-ai-safety-reviewer.md
+
+## 2026 Knowledge Refresh (what changed, and why it matters)
+- **Local model lineup (Ollama)**: qwen3 (8b/14b/32b — strong general default),
+  qwen3-coder:30b (agentic coding), llama3.3:70b (flagship chat), deepseek-r1
+  (reasoning/math), gemma3 (multimodal), mistral-small (multilingual). Prefer the
+  smallest model that clears the eval bar.
+- **Claude (Anthropic)**: sonnet class remains the workhorse for agentic coding;
+  model IDs are pinned via `ANTHROPIC_MODEL` — do not hardcode new model names
+  from memory; verify against the API first.
+- **OpenAI**: gpt-5.x class; pin via `OPENAI_MODEL`.
+- **MCP (Model Context Protocol)** is the standard agent tool interface — this
+  repo's `mcp_tools.py` + `mcp_registry.py` already follow it. Assume any new
+  integration is MCP-first.
+- **A2A (agent-to-agent)** is the standard for cross-agent interoperability —
+  `a2a_protocol.py` implements v0.3. Prefer A2A for external agent calls.
+- **Eval-driven development**: every model/prompt/tool change should pass the
+  eval harness (`--preset aiops` runs evaluate → observe → safety-review).
+- **Agent memory**: Titans-style surprise-weighted memory remains the pattern;
+  keep ledger writes small and high-signal.
+- **Local-first / privacy**: fine-tuning, memory, and inference should stay local
+  (`--provider ollama`) unless the user opts into a hosted provider.
 
 ## How Memory Works (Titans-inspired design)
 The agency memory architecture is informed by the Titans paper (Google, NeurIPS 2025).
@@ -43,9 +69,11 @@ stable shared state.
 ## Key Lessons (updated from live runs)
 - FilesystemBackend required for local memory file access (not StateBackend)
 - SubAgentMiddleware injects agent names+descriptions into orchestrator's system prompt
-- task tool routes by agent name — use exact registry keys: pm, backend, frontend, qa, security, core
+- task tool routes by agent name — use exact registry keys: pm, backend, frontend, qa,
+  security, core, spy, docs, cloudflare, trust, wpscan, linux, learn, re-*, biz-*,
+  llm-finetuner, agent-observability, agent-evaluator, safety-reviewer
 - Context budget: ~13,500 tokens across all agent prompts (6.8% of 200k limit)
-- task tool routes by agent name — exact registry keys: pm, backend, frontend, qa, security, core, spy, docs, cloudflare, trust, wpscan, linux, learn, re-*, biz-*
+- Model defaults come from env: OLLAMA_MODEL, ANTHROPIC_MODEL, OPENAI_MODEL, GEMINI_MODEL
 
 ## Repo Ecosystem (sahiixx — 42 confirmed public repos)
 
@@ -115,6 +143,14 @@ Poke, Traycer AI, Xcode, Z.ai Code, dia, Comet Assistant, v0 Prompts.
 | `docs` | pm, docs, core | Documentation generation |
 | `moltbot` | pm, backend, frontend, core | Deliver via Moltbot channels |
 | `trust` | trust, re-comply, core | UAE entity trust vetting |
+| `lead-machine` | re-capture, re-qual, re-geo, re-sched, re-report, core | RE lead E2E chain |
+| `voice` | pm, backend, core | Voice-driven missions |
+| `n8n` | pm, devops, backend, core | n8n workflow automation |
+| `sovereign` | pm + 6 eng + 3 biz + 2 RE + core | Full ecosystem |
+| `explore` | explorer, ai, core | Autonomous exploration |
+| `agi` | explorer + build + verify + core | AGI pipeline |
+| `aiops` | llm-finetuner, agent-observability, agent-evaluator, safety-reviewer, ai, core | Agent platform ops: tune, observe, eval, gate |
+| `all` | every registered agent + core | Maximum coverage |
 
 ## Mission Memory (Titans-weighted, most memorable first)
 - [2026-04-30] GO — Say hello (surprise=0.80, weight=0.80)

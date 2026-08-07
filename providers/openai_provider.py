@@ -9,7 +9,7 @@ Environment variables required:
 
 Optional:
   OPENAI_BASE_URL  — override base URL (e.g. Azure OpenAI endpoint)
-  OPENAI_MODEL     — default model name (default: gpt-4o)
+  OPENAI_MODEL     — default model name (default: gpt-5.1)
 """
 
 from __future__ import annotations
@@ -25,11 +25,11 @@ for p in (str(SDK_PATH), str(REPO_ROOT)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.1")
 
 
 class OpenAIProvider(BaseProvider):
-    """OpenAI GPT-4o / o3 / o1 via LangChain ChatOpenAI."""
+    """OpenAI GPT-5.x / o-series via LangChain ChatOpenAI."""
 
     name = "openai"
 

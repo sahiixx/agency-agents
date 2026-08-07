@@ -84,7 +84,7 @@ class ToolFabricator:
     Synthesizes new LangChain-compatible tools from natural language descriptions.
 
     The fabricator:
-    1. Uses Ollama (via provided LLM) to generate tool code
+    1. Uses a cloud LLM (via provided LLM) to generate tool code
     2. Validates the generated code (syntax, safety checks)
     3. Tests the tool with sample input
     4. Registers it for immediate use by all agents
@@ -96,16 +96,17 @@ class ToolFabricator:
 
     def _call_llm(self, system_prompt: str, user_prompt: str) -> str:
         """
-        Call Ollama to generate tool code.
-        Falls back to a template-based generator if Ollama is unavailable.
+        Call a cloud LLM to generate tool code.
+        Falls back to a template-based generator if no cloud key is configured.
         """
         try:
             sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+            sys.path.insert(0, str(REPO_ROOT))
             from deepagents import create_deep_agent
-            from langchain_ollama import ChatOllama
             from langchain_core.messages import HumanMessage
+            from providers import get_cloud_llm
 
-            llm = ChatOllama(model="llama3.1", base_url="http://localhost:11434")
+            llm = get_cloud_llm()
             agent = create_deep_agent(model=llm, tools=[],
                                       system_prompt=system_prompt,
                                       name="tool-fabricator")

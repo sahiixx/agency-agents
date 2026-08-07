@@ -49,6 +49,9 @@ jarvis/data/*.log
 node_modules/
 .next/
 
+# Root package.json only configures Freebuff preview commands — lockfile is noise
+package-lock.json
+
 # Memory runtime files
 memory/
 *.db

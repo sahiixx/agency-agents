@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Real Estate Investment Swarm
-Ollama (llama3.1) — The Agency Multi-Agent Framework
+Cloud LLMs (Anthropic / OpenAI / Gemini) — The Agency Multi-Agent Framework
 
 9-agent pipeline (UAE-specific, RERA-compliant):
   Stage 1: [Lead Qualification + Market Intelligence]     — parallel intake
   Stage 2: [Property Matching + Outreach Copywriter]      — parallel matching/outreach
   Stage 3: [Deal Negotiation + RERA Compliance]            — parallel deal/compliance
   Stage 4: [CRM Pipeline + Investor Pitch + Post-Sale]    — parallel CRM/pitch/referral
-  Stage 5: [Ollama Reasoning Core]                         — final verdict
+  Stage 5: [Claude Reasoning Core]                        — final verdict
 
 Produces 10 timestamped reports in scaffold/real-estate-ops/:
   1. lead-scorecard.md        (Lead Qualification Specialist)
@@ -20,10 +20,10 @@ Produces 10 timestamped reports in scaffold/real-estate-ops/:
   7. pipeline-report.md       (CRM Pipeline Orchestrator)
   8. investor-pitch.md        (Investor Pitch Specialist)
   9. referral-plan.md         (Post-Sale Referral Engine)
- 10. final-verdict.md         (Ollama Reasoning Core)
+ 10. final-verdict.md         (Claude Reasoning Core)
 
 Usage:
-  export OLLAMA_BASE_URL="http://localhost:11434"
+  export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
   python3 real_estate_swarm.py --mission "Qualify 50 Bayut leads" --scope leads
   python3 real_estate_swarm.py --mission "Match properties for GCC investors" --scope matching
   python3 real_estate_swarm.py --mission "Full pipeline: intake to close" --scope full
@@ -191,10 +191,10 @@ AGENTS = [
         "stage": 4,
     },
     {
-        "name": "Ollama Reasoning Core",
+        "name": "Claude Reasoning Core",
         "role": "Constitutional Final Verdict",
         "system": (
-            "You are the Ollama Reasoning Core — the final constitutional gate.\n"
+            "You are the Claude Reasoning Core — the final constitutional gate.\n"
             "You receive ALL specialist outputs from the real estate investment pipeline.\n"
             "1. Verify data accuracy across all agent outputs (AED figures, DLD data, RERA rules)\n"
             "2. Check for regulatory compliance and legal correctness\n"
@@ -227,10 +227,10 @@ SCOPES = {
 
 SCOPE_AGENTS = {
     "full": [a["name"] for a in AGENTS],
-    "leads": ["Lead Qualification Specialist", "Market Intelligence Analyst", "Ollama Reasoning Core"],
-    "matching": ["Property Matching Engine", "Outreach Copywriter", "Ollama Reasoning Core"],
-    "deals": ["Deal Negotiation Strategist", "RERA Compliance Guardian", "Ollama Reasoning Core"],
-    "pitch": ["Investor Pitch Specialist", "CRM Pipeline Orchestrator", "Ollama Reasoning Core"],
+    "leads": ["Lead Qualification Specialist", "Market Intelligence Analyst", "Claude Reasoning Core"],
+    "matching": ["Property Matching Engine", "Outreach Copywriter", "Claude Reasoning Core"],
+    "deals": ["Deal Negotiation Strategist", "RERA Compliance Guardian", "Claude Reasoning Core"],
+    "pitch": ["Investor Pitch Specialist", "CRM Pipeline Orchestrator", "Claude Reasoning Core"],
 }
 
 PIPELINE_STAGES = {
@@ -238,7 +238,7 @@ PIPELINE_STAGES = {
     2: ["Property Matching Engine", "Outreach Copywriter"],
     3: ["Deal Negotiation Strategist", "RERA Compliance Guardian"],
     4: ["CRM Pipeline Orchestrator", "Investor Pitch Specialist", "Post-Sale Referral Engine"],
-    5: ["Ollama Reasoning Core"],
+    5: ["Claude Reasoning Core"],
 }
 
 
@@ -251,7 +251,7 @@ def run_agent(client, model: str, agent: dict, mission: str, scope: str, prior_o
             for name, text in prior_outputs.items()
         )
 
-    is_core = agent["name"] == "Ollama Reasoning Core"
+    is_core = agent["name"] == "Claude Reasoning Core"
     if is_core:
         user_msg = (
             f"REAL ESTATE MISSION: {mission}\n"
@@ -289,7 +289,8 @@ def main():
         default="full",
         help="Pipeline scope (default: full)",
     )
-    parser.add_argument("--model", default="llama3.1", help="Ollama model")
+    parser.add_argument("--model", default=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5"),
+                        help="Cloud model name (default: ANTHROPIC_MODEL or claude-sonnet-5)")
     parser.add_argument("--dry-run", action="store_true", help="Print pipeline without calling API")
     args = parser.parse_args()
 
@@ -320,19 +321,14 @@ def main():
             print(f"  Stage {stage}: {agent['name']} ({agent['role']}) → {agent['output']}")
         return
 
-    # Check OLLAMA_BASE_URL
-    base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-    if not base_url:
-        print("ERROR: Set OLLAMA_BASE_URL environment variable.")
+    # Cloud-only: Anthropic SDK (no local models)
+    import anthropic
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        print("ERROR: Set ANTHROPIC_API_KEY (Freebuff Keys tab). No local models are used.")
         sys.exit(1)
-
-    try:
-        from langchain_ollama import ChatOllama
-    except ImportError:
-        print("ERROR: pip install langchain-ollama")
-        sys.exit(1)
-
-    client = ChatOllama(model=args.model, base_url=base_url)
+    client = anthropic.Anthropic(api_key=api_key)
+    args.model = os.environ.get("ANTHROPIC_MODEL", args.model or "claude-sonnet-5")
     outputs: dict[str, str] = {}
     total_start = datetime.now(timezone.utc)
 
@@ -359,7 +355,7 @@ def main():
 
         # Parse verdict if core
         verdict_str = ""
-        if name == "Ollama Reasoning Core":
+        if name == "Claude Reasoning Core":
             match = re.search(r"VERDICT\s*:\s*(GO|CONDITIONAL GO|NO-GO)", text, re.IGNORECASE)
             if match:
                 verdict_str = f" — VERDICT: {match.group(1).upper()}"

@@ -10,7 +10,7 @@ Environment variables required:
   GOOGLE_GENAI_USE_VERTEXAI=true + GOOGLE_CLOUD_PROJECT / GOOGLE_CLOUD_LOCATION
 
 Optional:
-  ADK_MODEL        — model name (default: gemini-2.0-flash)
+  ADK_MODEL        — model name (default: gemini-3-flash)
 
 ADK install: pip install google-adk
 """
@@ -28,7 +28,7 @@ for p in (str(SDK_PATH), str(REPO_ROOT)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-DEFAULT_ADK_MODEL = os.getenv("ADK_MODEL", "gemini-2.0-flash")
+DEFAULT_ADK_MODEL = os.getenv("ADK_MODEL", "gemini-3-flash")
 
 
 class ADKProvider(BaseProvider):

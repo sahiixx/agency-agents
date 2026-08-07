@@ -1,6 +1,12 @@
-# The Agency — Ollama Integration
+# The Agency — Cloud LLM Integration
 
-A swarm of 150+ specialized AI agents running on **Ollama (llama3.1)**.
+A swarm of 150+ specialized AI agents running on **cloud models only** (no local
+LLM runtime). The default backbone is **Anthropic Claude** (`claude-sonnet-5`;
+override with `ANTHROPIC_MODEL`), with **OpenAI** (`OPENAI_MODEL`) and **Google
+Gemini** (`GEMINI_MODEL`) available. Provider selection is automatic: the first
+configured cloud API key wins (`auto` mode), or you can pin it with
+`AGENCY_PROVIDER=anthropic|openai|adk`.
+
 Each agent is a `.md` file. Python scripts chain them into multi-agent pipelines.
 
 ---
@@ -13,12 +19,18 @@ bash setup.sh
 
 # Or manually:
 pip install -e deepagents/libs/deepagents
-pip install langchain-ollama
+pip install langchain-anthropic anthropic langchain langchain-core
+pip install langchain-openai langchain-google-genai   # optional alternatives
 
-# 2. Run (no API key needed — runs locally)
+# 2. Configure a cloud key (Freebuff: Keys tab; locally: export)
+export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
+
+# 3. Run
 python3 agency.py --list-agents
 python3 agency.py --mission "Build a REST API for user auth"
 ```
+
+Local Ollama is **opt-in only** (`--provider ollama`) and is never used by default.
 
 ---
 
@@ -31,6 +43,12 @@ agency.py                    ← Unified entry point (use this)
 ├── FilesystemBackend         ← Reads local agent files
 └── TitansMemory              ← Surprise-weighted memory across runs
 
+providers/
+├── __init__.py               ← get_cloud_llm() cloud factory (auto provider pick)
+├── anthropic_provider.py     ← Claude (default backbone)
+├── openai_provider.py        ← OpenAI GPT
+└── adk_provider.py           ← Google Gemini
+
 memory/
 ├── AGENTS.md                 ← Shared context injected into every agent
 └── titans_memory.py          ← Titans-inspired memory manager (NeurIPS 2025)
@@ -38,7 +56,7 @@ memory/
 specialized/
 └── specialized-claude-reasoning-core.md  ← Final GO/NO-GO gate
 
-Other scripts (sequential pipelines):
+Other scripts (sequential pipelines, all cloud-powered):
   swarm_orchestrator.py       ← PM → Dev → QA → Security → Core
   saas_dominance_swarm.py     ← PM → Copy → Frontend → QA → Core
   sovereign_agency_swarm.py   ← PM → Backend → AI → Frontend → QA → Core
@@ -64,6 +82,7 @@ Other scripts (sequential pipelines):
 python3 agency.py --mission "Design a SaaS landing page" --preset saas
 python3 agency.py --mission "Research AI memory" --preset research
 python3 agency.py --mission "Audit security" --agents security,qa,core
+python3 agency.py --mission "Build an API" --provider openai --openai-model gpt-5.1
 ```
 
 ---
@@ -115,5 +134,5 @@ memorable outcomes back into `AGENTS.md` — agents learn across runs.
 
 ```bash
 python3 tests/agent_tests.py          # 19 structural tests (offline)
-python3 tests/agent_tests.py          # + 4 live LLM tests (if Ollama is running)
+python3 tests/agent_tests.py          # + 4 live LLM tests (if a cloud API key is set)
 ```

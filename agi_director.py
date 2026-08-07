@@ -2,7 +2,7 @@
 """
 agi_director.py — AGI Meta-Director for The Agency
 
-Sits above all subsystems (Claude Agency, Ollama Swarm, OMNI, Tool Fabricator,
+Sits above all subsystems (Claude Agency, Swarm Pipelines, OMNI, Tool Fabricator,
 Meta Spawner, Self-Evolution) and coordinates them toward long-horizon goals.
 
 Cognitive Loop:
@@ -92,13 +92,13 @@ SUBSYSTEMS = {
         },
         "best_for": "High-stakes missions requiring Claude's reasoning and safety layers.",
     },
-    "ollama_swarm": {
+    "dev_swarm": {  # dev swarm pipeline (cloud backbone via swarm_orchestrator.py)
         "cmd": ["python3", str(REPO_ROOT / "swarm_orchestrator.py"), "--mission"],
         "capabilities": {
-            "local_execution", "code_generation", "frontend_dev",
+            "cloud_execution", "code_generation", "frontend_dev",
             "backend_dev", "qa_testing", "rapid_iteration",
         },
-        "best_for": "Local, fast, iterative dev tasks using Ollama (llama3.1).",
+        "best_for": "Fast iterative dev tasks on cloud LLMs (Anthropic/OpenAI/Gemini).",
     },
     "omni_analysis": {
         "cmd": None,  # Use bus / direct import
@@ -368,9 +368,9 @@ def decompose_goal(goal: str) -> list[SubMission]:
 
     # Build / SaaS pattern
     if "build" in goal_lower or "saas" in goal_lower or "app" in goal_lower:
-        sub_missions.append(SubMission(id=f"{mid}-pm", goal=f"Project plan and architecture for: {goal}", subsystem="ollama_swarm"))
-        sub_missions.append(SubMission(id=f"{mid}-dev", goal=f"Implement code for: {goal}", subsystem="ollama_swarm", depends_on=[f"{mid}-pm"]))
-        sub_missions.append(SubMission(id=f"{mid}-qa", goal=f"Test and verify: {goal}", subsystem="ollama_swarm", depends_on=[f"{mid}-dev"]))
+        sub_missions.append(SubMission(id=f"{mid}-pm", goal=f"Project plan and architecture for: {goal}", subsystem="dev_swarm"))
+        sub_missions.append(SubMission(id=f"{mid}-dev", goal=f"Implement code for: {goal}", subsystem="dev_swarm", depends_on=[f"{mid}-pm"]))
+        sub_missions.append(SubMission(id=f"{mid}-qa", goal=f"Test and verify: {goal}", subsystem="dev_swarm", depends_on=[f"{mid}-dev"]))
         sub_missions.append(SubMission(id=f"{mid}-security", goal=f"Security audit: {goal}", subsystem="claude_agency", depends_on=[f"{mid}-dev"]))
         return sub_missions
 
@@ -542,7 +542,7 @@ class AGIDirector:
             matches = self.capabilities.resolve(goal, top_n=3)
             top_caps = [f"{m['name']}({m['source_project']})={m['score']:.2f}" for m in matches if m["score"] > 0.15]
         if self.self_model:
-            for sub in ["claude_agency", "ollama_swarm", "omni_analysis", "tool_fabrication", "agent_spawn"]:
+            for sub in ["claude_agency", "dev_swarm", "omni_analysis", "tool_fabrication", "agent_spawn"]:
                 prob = self.self_model.predict_success(goal, sub)
                 if prob != 0.5:
                     predictions.append(f"P(success|{sub})={prob:.0%}")
@@ -570,8 +570,8 @@ class AGIDirector:
         try:
             if sm.subsystem == "claude_agency":
                 result = self._run_claude_agency(sm)
-            elif sm.subsystem == "ollama_swarm":
-                result = self._run_ollama_swarm(sm)
+            elif sm.subsystem == "dev_swarm":
+                result = self._run_dev_swarm(sm)
             elif sm.subsystem == "omni_analysis":
                 result = self._run_omni(sm)
             elif sm.subsystem == "tool_fabrication":
@@ -619,8 +619,8 @@ class AGIDirector:
         except subprocess.TimeoutExpired:
             return {"status": "failed", "error": "Timeout after 120s"}
 
-    def _run_ollama_swarm(self, sm: SubMission) -> dict:
-        """Invoke swarm_orchestrator.py."""
+def _run_dev_swarm(self, sm: SubMission) -> dict:
+    """Invoke swarm_orchestrator.py (cloud backbone)."""
         cmd = [sys.executable, str(REPO_ROOT / "swarm_orchestrator.py"), "--mission", sm.goal]
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)

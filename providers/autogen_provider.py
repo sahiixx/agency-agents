@@ -6,7 +6,7 @@ AutoGen's multi-agent conversation framework with --provider autogen.
 
 Environment variables:
   OPENAI_API_KEY   — required for AutoGen's default LLM config
-  AUTOGEN_MODEL    — model to use (default: gpt-4o)
+  AUTOGEN_MODEL    — model to use (default: gpt-5.1)
   ANTHROPIC_API_KEY — if AUTOGEN_MODEL is claude-* AutoGen will use Anthropic
 
 Install: pip install pyautogen
@@ -21,7 +21,7 @@ from providers.base import BaseProvider, ProviderResult
 
 REPO_ROOT = Path(__file__).parent.parent.resolve()
 
-DEFAULT_MODEL = os.getenv("AUTOGEN_MODEL", "gpt-4o")
+DEFAULT_MODEL = os.getenv("AUTOGEN_MODEL", "gpt-5.1")
 
 
 class AutoGenProvider(BaseProvider):

@@ -14,16 +14,14 @@ REPO_ROOT = Path(__file__).parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
 
 from deepagents import create_deep_agent
-from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
+from providers import get_cloud_llm
 
-OLLAMA_MODEL = "llama3.1"
-OLLAMA_BASE_URL = "http://localhost:11434"
 EXCLUDED = {'.git', 'node_modules', 'deepagents', 'integrations', 'scaffold', 'tests', 'scripts'}
 SKIP_FILES = {'README.md', 'CONTRIBUTING.md', 'LICENSE.md', 'AGENTS.md', 'README_DEEPAGENTS.md', 'README_CLAUDE.md'}
 
 def get_llm():
-    return ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
+    return get_cloud_llm()
 
 def get_all_agents():
     agents = []
@@ -67,7 +65,7 @@ def commit(agent_path: Path):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     cmds = [
         ["git", "add", str(agent_path.relative_to(REPO_ROOT))],
-        ["git", "commit", "-m", f"🧠 Ollama Evolution: {name} [{ts}]"],
+        ["git", "commit", "-m", f"🧠 Cloud Evolution: {name} [{ts}]"],
     ]
     for cmd in cmds:
         subprocess.run(cmd, check=True, cwd=REPO_ROOT)
@@ -85,7 +83,7 @@ def main():
     print(f"\n{'═'*60}")
     print(f"  🧬  Evolution Cycle — {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print(f"  🎯  Target: {target.relative_to(REPO_ROOT)}")
-    print(f"  🧠  Engine: Ollama ({OLLAMA_MODEL})")
+    print(f"  🧠  Engine: Cloud (auto — Anthropic/OpenAI/Gemini)")
     print(f"{'═'*60}\n")
 
     original = target.read_text()

@@ -4,12 +4,12 @@ live_server.py — Watch The Agency run live in your browser.
 
 Starts a local HTTP server on port 7777 that:
   - Serves the live viewer UI at http://localhost:7777
-  - Streams real Ollama output via Server-Sent Events (SSE)
+  - Streams real cloud-LLM output via Server-Sent Events (SSE)
   - Runs actual missions via agency.py with your API key
   - Shows per-agent status, token counts, cost, A2A activity in real time
 
 Usage:
-  OLLAMA_BASE_URL="http://localhost:11434" python3 live_server.py
+  ANTHROPIC_API_KEY="sk-ant-..." python3 live_server.py   # or OPENAI_API_KEY / GEMINI_API_KEY
   Then open: http://localhost:7777
 """
 
@@ -81,12 +81,12 @@ def run_mission_live(mission: str, preset: str, api_key: str):
     try:
         import warnings
         warnings.filterwarnings("ignore")
-        os.environ["OLLAMA_BASE_URL"] = api_key
+        os.environ["ANTHROPIC_API_KEY"] = api_key
 
         from deepagents import create_deep_agent
         from deepagents.backends import FilesystemBackend
-        from langchain_ollama import ChatOllama
         from langchain_core.messages import HumanMessage
+        from providers import get_cloud_llm
         from memory.titans_memory import TitansMemory
         from mcp_tools import MCP_TOOLS
         from observability import AgencyTracer
@@ -94,10 +94,10 @@ def run_mission_live(mission: str, preset: str, api_key: str):
         import agency
 
         log("SYSTEM", f"Mission: {mission[:80]}", "system")
-        log("SYSTEM", f"Preset: {preset} | Model: llama3.1", "system")
+        log("SYSTEM", f"Preset: {preset} | Model: cloud (auto)", "system")
         broadcast("mission_start", {"mission": mission, "preset": preset})
 
-        llm    = ChatOllama(model="llama3.1", base_url=f"http://{api_key}",
+        llm    = get_cloud_llm("anthropic", model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5"),
                                streaming=True)
         tracer = AgencyTracer(mission=mission, preset=preset)
         groups = agency.PARALLEL_GROUPS.get(preset, [["pm"], ["core"]])
@@ -251,15 +251,16 @@ async def launch(request: Request):
     body     = await request.json()
     mission  = body.get("mission", "").strip()
     preset   = body.get("preset",  "full")
-    api_key  = body.get("api_key", os.environ.get("OLLAMA_BASE_URL", "")).strip()
-    base_url = api_key or "http://localhost:11434"
+    api_key  = body.get("api_key", os.environ.get("ANTHROPIC_API_KEY", "")).strip()
 
     if not mission:
         return JSONResponse({"error": "Mission required"}, status_code=400)
+    if not api_key:
+        return JSONResponse({"error": "API key required — paste your ANTHROPIC_API_KEY (or set it in the environment)"}, status_code=400)
 
     t = threading.Thread(
         target=run_mission_live,
-        args=(mission, preset, base_url),
+        args=(mission, preset, api_key),
         daemon=True,
     )
     t.start()
@@ -271,7 +272,7 @@ async def health(request: Request):
         "status":   "ok",
         "running":  _mission_running,
         "clients":  len(_clients),
-        "model":    "llama3.1",
+        "model":    os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5"),
     })
 
 
@@ -420,11 +421,11 @@ textarea::placeholder{color:var(--muted)}
 <div class="top">
   <div style="display:flex;align-items:center;gap:12px">
     <div class="logo">The Agency</div>
-    <div class="logo-tag">Live Watch · Ollama llama3.1</div>
+    <div class="logo-tag">Live Watch · Cloud LLMs</div>
   </div>
   <div class="live-badge"><div class="live-dot"></div><span id="live-label">OFFLINE</span></div>
   <div class="top-right">
-    <div class="badge">Model: <span>llama3.1</span></div>
+    <div class="badge">Model: <span>claude-sonnet-5 (cloud)</span></div>
     <div class="badge">A2A: <span id="a2a-badge">—</span></div>
     <div class="badge">Tools: <span id="tools-badge">—</span></div>
   </div>
@@ -439,7 +440,7 @@ textarea::placeholder{color:var(--muted)}
       <div class="form-area">
         <div class="form-label">// Goal</div>
         <textarea id="mission-input" rows="3" placeholder="Describe the mission...">Design a production-ready gold loan LTV calculator API for UAE lenders with tiered ratios for 18K/21K/22K/24K gold, real-time price feed, and CBUAE compliance checks.</textarea>
-        <input class="key-input" id="key-input" type="password" placeholder="http://localhost:11434 (your Ollama base URL)">
+        <input class="key-input" id="key-input" type="password" placeholder="sk-ant-... (your Anthropic API key)">
         <div class="presets">
           <button class="preset-btn active" onclick="setPreset('full',this)">Full</button>
           <button class="preset-btn" onclick="setPreset('saas',this)">SaaS</button>
@@ -462,7 +463,7 @@ textarea::placeholder{color:var(--muted)}
         <div class="td" style="background:#ff5f57"></div>
         <div class="td" style="background:#febc2e"></div>
         <div class="td" style="background:#28c840"></div>
-        <div class="term-label">LIVE STREAM — Real Ollama Output</div>
+        <div class="term-label">LIVE STREAM — Real Cloud LLM Output</div>
         <div class="term-count" id="log-count">0 lines</div>
       </div>
       <div class="term-body" id="terminal">
@@ -649,7 +650,7 @@ async function launch() {
   const key     = document.getElementById('key-input').value.trim()
                   || (window.__INJECTED_KEY||'');
   if (!mission) { addLog(new Date().toTimeString().slice(0,8),'SYSTEM','Mission required','warn'); return; }
-  if (!key)     { addLog(new Date().toTimeString().slice(0,8),'SYSTEM','Ollama base URL required — paste http://localhost:11434 above','warn'); return; }
+  if (!key)     { addLog(new Date().toTimeString().slice(0,8),'SYSTEM','Anthropic API key required — paste your sk-ant-... key above','warn'); return; }
 
   document.getElementById('launch-btn').disabled = true;
   document.getElementById('launch-btn').textContent = '⏳ RUNNING...';
@@ -688,14 +689,14 @@ app = Starlette(routes=[
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     print(f"""
 ╔══════════════════════════════════════════════════════════════╗
 ║  THE AGENCY — Live Watch Server                              ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Open in browser:  http://localhost:7777                     ║
-║  Ollama URL:       {'SET ✓' if base_url else 'NOT SET — paste in browser UI':<44} ║
-║  Model:            llama3.1                                  ║
+║  API key:          {'SET ✓' if api_key else 'NOT SET — paste in browser UI':<44} ║
+║  Model:            {os.environ.get('ANTHROPIC_MODEL', 'claude-sonnet-5'):<44} ║
 ║  Press Ctrl+C to stop                                        ║
 ╚══════════════════════════════════════════════════════════════╝
 """)

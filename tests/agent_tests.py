@@ -12,6 +12,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO_ROOT / "deepagents/libs/deepagents"))
+sys.path.insert(0, str(REPO_ROOT))
 
 AGENT_DIRS = [
     "engineering", "design", "marketing", "specialized", "sales",
@@ -103,8 +104,9 @@ class TestScripts(unittest.TestCase):
                 self.fail(f"Syntax error in {script}: {e}")
 
     def test_no_openai_imports_in_scripts(self):
-        """Ensure no script still imports OpenAI (we're Claude-native now).
-        Note: tests/agent_tests.py is excluded — it references OpenAI in assertion strings only."""
+        """Ensure scripts never import OpenAI/ChatOllama directly — they must go
+        through the shared cloud provider factory (providers.get_cloud_llm).
+        Note: tests/agent_tests.py is excluded — it references these names in assertion strings only."""
         exclude = {"tests/agent_tests.py"}
         for script in REQUIRED_SCRIPTS:
             if script in exclude:
@@ -112,25 +114,28 @@ class TestScripts(unittest.TestCase):
             content = (REPO_ROOT / script).read_text()
             self.assertNotIn(
                 "langchain_openai", content,
-                f"OpenAI import found in {script} — should be Claude-native"
+                f"OpenAI import found in {script} — use providers.get_cloud_llm instead"
             )
             self.assertNotIn(
                 "ChatOpenAI", content,
-                f"ChatOpenAI found in {script} - should use ChatOllama"
+                f"ChatOpenAI found in {script} — use providers.get_cloud_llm instead"
+            )
+            self.assertNotIn(
+                "ChatOllama", content,
+                f"ChatOllama found in {script} — no local models; use providers.get_cloud_llm"
             )
 
-    def test_scripts_use_ollama(self):
-        """Verify scripts import langchain_ollama."""
-        for script in REQUIRED_SCRIPTS:
+    def test_scripts_use_cloud_providers(self):
+        """Verify the orchestrator + swarm scripts resolve LLMs via the cloud factory."""
+        cloud_scripts = ["mission_control.py", "swarm_orchestrator.py",
+                         "saas_dominance_swarm.py", "sovereign_agency_swarm.py",
+                         "evolution_scheduler.py", "agency.py"]
+        for script in cloud_scripts:
             content = (REPO_ROOT / script).read_text()
-            # mission_control and swarm scripts must use Ollama
-            if script in ["mission_control.py", "swarm_orchestrator.py",
-                          "saas_dominance_swarm.py", "sovereign_agency_swarm.py",
-                          "evolution_scheduler.py"]:
-                self.assertIn(
-                    "ChatOllama", content,
-                    f"Missing ChatOllama in {script}"
-                )
+            self.assertIn(
+                "get_cloud_llm", content,
+                f"Missing cloud LLM factory (get_cloud_llm) in {script}"
+            )
 
     def test_reasoning_core_integrated_in_swarms(self):
         """Verify swarms reference the reasoning core."""
@@ -157,27 +162,29 @@ class TestReadme(unittest.TestCase):
 
     def test_claude_readme_has_setup_instructions(self):
         content = (REPO_ROOT / "README_CLAUDE.md").read_text()
-        self.assertIn("langchain-ollama", content)
+        self.assertIn("langchain-anthropic", content)
+        self.assertIn("ANTHROPIC_API_KEY", content)
         self.assertIn("pip install", content)
 
 
-# ─── Live LLM Tests (only if Ollama is running) ───────────────────────
+# ─── Live LLM Tests (only if a cloud API key is configured) ──────────────────
 
-LIVE = bool(os.environ.get("OLLAMA_HOST"))
+LIVE = bool(
+    os.environ.get("ANTHROPIC_API_KEY")
+    or os.environ.get("OPENAI_API_KEY")
+    or os.environ.get("GEMINI_API_KEY")
+)
 
-@unittest.skipUnless(LIVE, "Skipping live LLM tests — no Ollama connection")
+@unittest.skipUnless(LIVE, "Skipping live LLM tests — no cloud API key configured")
 class TestAgentIdentityLive(unittest.TestCase):
-    """Live tests that actually call Claude to verify agent personas."""
+    """Live tests that actually call a cloud LLM to verify agent personas."""
 
     @classmethod
     def setUpClass(cls):
         from deepagents import create_deep_agent
-        from langchain_ollama import ChatOllama
+        from providers import get_cloud_llm
         cls.create_agent = create_deep_agent
-        cls.llm = ChatOllama(
-            model="llama3.1",
-            base_url=os.environ["OLLAMA_HOST"]
-        )
+        cls.llm = get_cloud_llm()
 
     def _ask(self, agent_path: str, question: str) -> str:
         from langchain_core.messages import HumanMessage
@@ -233,6 +240,6 @@ class TestAgentIdentityLive(unittest.TestCase):
 if __name__ == "__main__":
     print(f"\n{'═'*60}")
     print("  🧪  The Agency — Test Suite")
-    print(f"  🧠  Claude-Powered | Structural + {'Live LLM' if LIVE else 'Offline only'}")
+    print(f"  🧠  Cloud-Powered | Structural + {'Live LLM' if LIVE else 'Offline only'}")
     print(f"{'═'*60}\n")
     unittest.main(verbosity=2)
