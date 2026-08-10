@@ -1,377 +1,141 @@
-# The Agency — Cloud-Powered Multi-Agent Swarm
+# agency-agents
 
-> 152 specialized AI agents · Cloud LLMs (Anthropic / OpenAI / Gemini) · Titans Memory · Production Ready
-
-[![CI](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiixx/agency-agents/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/agent__tests-19%2F19-brightgreen)](tests/agent_tests.py)
-[![Lint](https://img.shields.io/badge/lint-ruff%20clean-success)](https://docs.astral.sh/ruff/)
-[![Score](https://img.shields.io/badge/system%20score-90%2F90-gold)](agency.py)
-[![Model](https://img.shields.io/badge/model-cloud-green)](https://console.anthropic.com)
-
----
-
-## 2026 Refresh
+![Python](https://img.shields.io/badge/python-3.11+-blue) ![Node](https://img.shields.io/badge/node-20+-green) ![Docker](https://img.shields.io/badge/docker-ready-blue) ![Agentic](https://img.shields.io/badge/agentic-harness-purple)
 
 Brought fully up to date with the mid-2026 AI stack:
-- **Models**: **cloud only** — no local model runtime. Default backbone is `claude-sonnet-5` (`ANTHROPIC_MODEL`), with `gpt-5.1` (`OPENAI_MODEL`) and `gemini-3-flash` (`GEMINI_MODEL`) as alternatives. The runtime auto-picks the first configured cloud API key (`AGENCY_PROVIDER=auto`); local Ollama is opt-in via `--provider ollama`.
-- **New agents**: `llm-finetuner`, `agent-observability`, `agent-evaluator`, and `safety-reviewer` — covering local fine-tuning, agentic observability, eval-driven development, and AI safety gates. New `--preset aiops` runs them together.
-- **Agency-OS dashboard**: now includes a live **2026 Knowledge Base** panel (models, protocols, trends) and a **Builder.io CMS** panel — fetch published headless-CMS content from any content model via the Content Delivery API.
-- **Protocols**: MCP-first tool integration and A2A v0.3 agent interoperability remain the standard interfaces.
 
----
+## Table of Contents
 
-## What This Is
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+- [Agentic Architecture](#agentic-architecture)
+- [Model Routing](#model-routing)
+- [Project Layout](#project-layout)
+- [Development](#development)
+- [Related Repositories](#related-repositories)
 
-A swarm of **152 specialized AI agents** — each a `.md` file containing a system prompt and persona — orchestrated by a fully-wired Python runtime on **cloud LLMs only** (Anthropic / OpenAI / Gemini; see `integrations.py`).
+## Overview
 
-Every mission passes through a sequential delegation pipeline and ends with a **Reasoning Core** GO / CONDITIONAL GO / NO-GO verdict. Outcomes are stored in a **Titans-inspired surprise-weighted memory** that persists lessons across runs.
+Brought fully up to date with the mid-2026 AI stack:
 
----
+| | |
+|---|---|
+| **Stack** | node, python |
+| **Frameworks** | anthropic, docker, fastapi, langchain, langgraph, openai, pydantic |
+| **Tests** | yes |
+| **Commits** | 2 |
+| **Last activity** | 2026-08-10 |
+| **Visibility** | public |
 
 ## Quick Start
 
+### Install
+
 ```bash
-# 1. Clone
-git clone https://github.com/sahiixx/agency-agents
-cd agency-agents
-
-# 2. Install (one command)
-bash setup.sh
-
-# 3. Configure a cloud API key (Freebuff: Keys tab; locally: export)
-export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
-
-# 4. Run
-python3 agency.py --list-agents
-python3 agency.py --mission "Build a REST API for user authentication"
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt   # or: pip install -e .
 ```
 
----
-
-## Architecture
-
-```
-agency.py                        ← Unified entry point (start here)
-├── FilesystemBackend            ← Reads agent files from local disk
-├── MemoryMiddleware             ← Injects memory/AGENTS.md at startup
-├── SubAgentMiddleware           ← Core delegates via task tool
-└── TitansMemory                 ← Surprise-weighted memory across runs
-
-memory/
-├── AGENTS.md                    ← Shared context, all agents see this
-└── titans_memory.py             ← NeurIPS 2025 memory architecture
-
-specialized/
-└── specialized-claude-reasoning-core.md  ← Final GO/NO-GO gate
-
-agency_ui.html                   ← Mission Control UI (open in browser)
-setup.sh                         ← One-command install
-tests/agent_tests.py             ← 19 tests (offline + live LLM)
-tests/test_security_audit_swarm.py ← 15 structural tests
-tests/test_real_estate_swarm.py  ← 38 structural tests
+```bash
+npm install
 ```
 
-**Other pipeline scripts:**
+### Run
 
-| Script | Pipeline |
+```bash
+npm run dev
+npm start
+```
+
+## Agentic Architecture
+
+This repository participates in the [sahiixx agentic harness](https://github.com/sahiixx/agentic-harness) — a shared
+contract for how agents plan, act, verify, and recover across all repos in this account.
+
+**Signal strength:** agentic density score `3576` (references to agent,
+tool-call, LLM, RAG and orchestration primitives across the source tree).
+
+### Patterns in play
+
+| Pattern | Role here |
 |---|---|
-| `swarm_orchestrator.py` | PM → Dev → QA → Security → Core |
-| `saas_dominance_swarm.py` | PM → Copy → Frontend → QA → Core |
-| `sovereign_agency_swarm.py` | PM → Backend → AI → Frontend → QA → Core |
-| `sovereign_ecosystem.py` | Observer → Refiner → Core → DevOps |
-| `security_audit_swarm.py` | PM → Security → Compliance → QA → Core |
-| `real_estate_swarm.py` | Leads → Matching → Deals → CRM/Pitch/Referral → Core |
-| `evolution_scheduler.py` | Self-improvement — critiques and rewrites agents |
-| `mission_control.py` | CLI — list and launch any single agent |
+| **Prompt Chaining** | Deterministic multi-step pipelines where subtasks are known upfront |
+| **Routing** | Classify input, dispatch to the specialist path (cheap model for easy work) |
+| **Parallelization** | Independent subtasks fan out; results aggregated programmatically |
+| **Orchestrator–Workers** | Central planner decomposes dynamically when subtasks can't be predicted |
+| **Evaluator–Optimizer** | Generator/judge split with explicit rubric; bounded retry |
+| **ReAct** | Interleaved reason → act → observe for adaptive tool use |
+| **Reflection** | Self-critique before emitting a final answer |
 
----
+> Escalation rule: start with the simplest pattern that solves the problem. Add
+> Reflection only when verification fails, Planning only when dependencies emerge,
+> Multi-Agent only when work exceeds a single role or context window.
 
-## Agent Presets
+### Reliability envelope
 
-```bash
-# Full stack (default)
-python3 agency.py --mission "..." --preset full
-# pm, backend, frontend, qa, security, core
+- **Bounded execution** — every loop has a max-iteration and wall-clock ceiling.
+- **Tool sandboxing** — filesystem/network side effects are isolated and reversible.
+- **Guardrail layering** — validate at input, mid-loop, and output.
+- **Context engineering** — select, compress, isolate; never let raw history grow unbounded.
+- **Self-verification** — check intermediate output against constraints before continuing.
 
-# SaaS / marketing
-python3 agency.py --mission "..." --preset saas
-# pm, copywriter, frontend, qa, core
+## Model Routing
 
-# Research
-python3 agency.py --mission "..." --preset research
-# pm, ai, qa, core
+Agent work in this repo routes through Azure AI Foundry. See [`AGENTS.md`](./AGENTS.md)
+for the full contract.
 
-# Real estate
-python3 agency.py --mission "..." --preset realestate
-# re-leads, re-match, re-copy, re-deal, re-intel, re-comply, re-crm, re-pitch, re-refer, core
-
-# Custom
-python3 agency.py --mission "..." --agents security,qa,core
-```
-
----
-
-## Agent Roster — 161 Agents
-
-| Directory | Agents | Domain |
+| Purpose | Deployment | Endpoint |
 |---|---|---|
-| `engineering/` | 22 | Frontend, backend, DevOps, security, AI, data |
-| `marketing/` | 19 | SEO, content, growth, social, paid media |
-| `game-development/` | 19 | Godot, Roblox, Unity, Unreal Engine |
-| `specialized/` | 25 | Orchestrators, Reasoning Core, compliance, identity |
-| `integrations/` | 9 | Cursor, Claude Code, Windsurf, OpenClaw, Gemini CLI, bridges |
-| `design/` | 8 | UX, brand, visual, inclusive design |
-| `sales/` | 8 | Account, pipeline, proposals, coaching |
-| `testing/` | 8 | QA, accessibility, performance, API |
-| `paid-media/` | 7 | PPC, display, social ads, tracking |
-| `project-management/` | 6 | Planning, Jira, sprint, delivery |
-| `support/` | 6 | Analytics, finance, legal, infrastructure |
-| `spatial-computing/` | 6 | VisionOS, XR, spatial interfaces |
-| `real-estate/` | 9 | Lead gen, property matching, compliance, CRM, negotiation |
-| `product/` | 4 | Strategy, research, prioritization |
-| `business/` | 5 | Analytics, operations, marketing, sales, content |
-| `.cursor/rules/` | 128 | Cursor IDE agent rules (`.mdc` format) |
-| `skills/` | 152 | [skills.sh](https://skills.sh) compatible skills |
-
-### Install via skills.sh
+| Default / general | `gpt-5.6-sol` | `/openai/v1/chat/completions` |
+| Deep reasoning | `claude-opus-5` | `/openai/v1/responses` **only** |
+| Embeddings | `text-embedding-3-small` | `/openai/v1/embeddings` |
 
 ```bash
-npx skills add sahiixx/agency-agents
+export AZURE_FOUNDRY_API_KEY=...        # never commit this
+export AZURE_FOUNDRY_BASE_URL=https://<resource>.openai.azure.com/openai/v1
 ```
 
----
+> **Gotcha:** Claude deployments on Azure return `404 api_not_supported` on
+> `/chat/completions`. They answer **only** via the Responses API.
 
-## How Memory Works
-
-Based on [Titans: Learning to Memorize at Test Time](https://arxiv.org/abs/2501.00663) (Google, NeurIPS 2025):
-
-- **Attention** = short-term memory — precise, limited to context window
-- **AGENTS.md** = long-term memory — persists across every run
-- **Surprise metric** — unexpected verdicts (NO-GO, new patterns) decay slower and stay in memory longer
-- **Forgetting gate** — routine outcomes decay and are pruned automatically
-
-After every mission, `TitansMemory` records the verdict, computes a surprise score, and writes the most memorable outcomes back into `AGENTS.md`. The next mission's agents start informed.
-
----
-
-## Commit History
-
-| Commit | Description |
-|---|---|
-| `82191bd` | 🎨 Add Agency Mission Control UI |
-| `584b0d4` | ✅ 98% → 100% — type hints, final eval clean |
-| `a506c26` | 🔒 Regenerate all uv.lock files — resolves 18 Dependabot alerts |
-| `9fab761` | 🔒 Bump stale lower bounds across all pyproject.toml files |
-| `71e9ec8` | 🔒 Fix all 18 Dependabot security alerts |
-| `f5d337c` | ✅ Finalized — error-free, full running setup |
-| `fc47294` | ✅ Code review — all HIGH/MED issues resolved |
-| `1e8084c` | 🧠 Integrate Titans memory architecture (NeurIPS 2025) |
-| `3c322ec` | 🔧 Fix agency.py wiring — FilesystemBackend for MemoryMiddleware |
-| `855202e` | 🏁 Complete system — all gaps closed |
-| `2bddeb0` | 🏗️ Infrastructure: CI, CLAUDE.md, setup, env template |
-| `0e81afb` | 🧠 Model Integration: Full Anthropic migration + Reasoning Core |
-
----
-
-## Branches
-
-| Branch | Status | Description |
-|---|---|---|
-| `main` | ✅ **production** | Stable — all tests passing, fully wired |
-| `dependabot/uv/deepagents/libs/cli/uv-c51c02f1a9` | ⏳ auto-PR | Dependabot security update — will merge to main |
-
----
-
-## System Health
+## Project Layout
 
 ```
-Tests:          72/72 passing (4 need live API key)
-Graph:          6 nodes — MemoryMiddleware.before_agent wired
-Registry:       161 agents across 15 directories + 128 Cursor rules
-Lock files:     10 checked — 0 stale vulnerable pins
-Security:       dependabot.yml active — weekly auto-updates
-Score:          90/90 — Grade A, Production Ready
+AGENTS.md
+ARCHITECTURE.md
+Agency-OS.html
+CLAUDE.md
+CONTRIBUTING.md
+Dockerfile
+LICENSE
+PR_TRIAGE_ANALYSIS.md
+README.md
+README_CLAUDE.md
+REAL_ESTATE_SWARM.md
+SAHIL_ORCHESTRATOR_MANIFEST.md
+SECURITY.md
+SECURITY_AUDIT_QUICK_REFERENCE.md
 ```
 
----
-
-## Tech Stack
-
-- **Model**: **cloud only**. Default `claude-sonnet-5` via `langchain-anthropic` (env `ANTHROPIC_MODEL`); alternatives `gpt-5.1` (`OPENAI_MODEL`) and `gemini-3-flash` (`GEMINI_MODEL`). Provider auto-selection via `AGENCY_PROVIDER` (default `auto`) — the first configured cloud key wins. Local Ollama is opt-in only (`--provider ollama`).
-- **SDK**: `deepagents` v0.4.10 — LangGraph-based agent harness
-- **Memory**: `FilesystemBackend` + `MemoryMiddleware` + `TitansMemory`
-- **Providers**: all scripts resolve LLMs through `providers.get_cloud_llm()` — no direct `ChatOllama`/`ChatOpenAI`/`ChatAnthropic` imports outside `providers/`
-
----
-
-## Mission Control UI
-
-Open `agency_ui.html` in any browser for a full mission control dashboard:
-- Live pipeline animation per agent
-- Real-time terminal stream
-- Titans memory visualization
-- Mission history with surprise scores
-- Preset switcher and custom agent input
-
----
-
-## Setup Details
+## Development
 
 ```bash
-# Manual install
-pip install -e deepagents/libs/deepagents
-pip install langchain-anthropic anthropic langchain langchain-core
-pip install langchain-openai langchain-google-genai   # optional cloud alternatives
+# lint / format before committing
+ruff check . && ruff format .
 
-# Environment (cloud keys — Freebuff Keys tab)
-export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
-
-# Builder.io (optional — Agency-OS dashboard CMS panel)
-# Public API key from Builder.io Space Settings → API Keys.
-# The dashboard fetches published content models at /api/builder?model=<model>.
-export BUILDER_API_KEY=your_public_api_key
-
-# Tests
-python3 tests/agent_tests.py                        # structural (offline)
-python3 tests/test_security_audit_swarm.py          # security swarm (offline)
-python3 tests/test_real_estate_swarm.py             # real estate swarm (offline)
-python3 tests/agent_tests.py  # + live LLM (needs a cloud API key: ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY)
+# run the CI check locally
+gh workflow run hermes-azure-check.yml
 ```
+
+Secrets live in environment variables and CI secrets — never in tracked files.
+
+## Related Repositories
+
+Part of a 84-repository workspace sharing one agentic contract:
+
+- **[agentic-harness](https://github.com/sahiixx/agentic-harness)** — patterns, contracts, and reference implementations
+- `AGENTS.md` in every repo pins identical model routing
 
 ---
 
-## CI/CD
-
-`.github/workflows/ci.yml` runs on every push and PR:
-- **Structural tests** — always run, no API key needed
-- **Live LLM tests** — run on push to `main` only when `ANTHROPIC_API_KEY` secret is set
-- **JARVIS Quality Gates** — run on every PR and push to `main`: `ruff` lint, `mypy` type check, `pytest`, `bandit` security scan, and Docker image build
-- **Security gate** — `security-gate.yml` validates the security audit swarm on every push/PR (syntax check, test suite, dry-run)
-- **Real estate gate** — `security-gate.yml` validates the real estate swarm on every push/PR (syntax check, test suite, dry-run)
-- **Dependabot** — weekly pip and GitHub Actions updates, grouped by package family
-
----
-
-*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Cloud-models-only migration and orchestration layer by sahiix.*
-
-## JARVIS v3
-
-A full desktop assistant scaffold now lives in [/jarvis](jarvis/README.md).
-
----
-
-## JARVIS v2.0 (2026) — Local Voice Assistant Stack
-
-The repository now includes a `jarvis/` package with offline-first modules for:
-- **AI Brain** (`jarvis/modules/ai_brain.py`) — Ollama local LLM chat, code-generation prompts, summarization, multi-turn memory, and keyword fallback.
-- **Whisper STT** (`jarvis/core/whisper_stt.py`) — faster-whisper transcription with fallback callback support.
-- **Advanced TTS** (`jarvis/core/advanced_tts.py`) — Piper-first speech engine with pyttsx3 fallback, profile/emotion/SSML-safe output.
-- **Vision stack** (`jarvis/modules/vision/`) — face auth, gestures, OCR screen reading, YOLO object detection wrappers.
-- **Knowledge Base** (`jarvis/modules/knowledge_base.py`) — local SQLite index with FAISS-aware local RAG scaffolding.
-- **Security/Privacy** (`jarvis/modules/security/`) — encryption vault and privacy report + redaction guard.
-- **Smart Home** (`jarvis/modules/smart_home.py`) — Home Assistant REST controls.
-- **System Dashboard** (`jarvis/modules/system_dashboard.py`) — CPU/RAM/disk/GPU metric snapshots, alert thresholds, and history persistence.
-- **Media/Comms/Translation/Coding/Clipboard** modules in `jarvis/modules/`.
-- **Plugin system** (`jarvis/plugins/`) — plugin base, manager, and example plugin.
-- **Web Dashboard** (`jarvis/dashboard/`) — FastAPI app + template/static assets.
-- **Automation upgrades** (`jarvis/automation/`) — smart routines and voice macro recording/import/export.
-
-### JARVIS Config
-
-`jarvis/config.py` includes:
-- `OLLAMA_MODEL`, `OLLAMA_URL`, `USE_LOCAL_LLM`
-- `WHISPER_MODEL`, `USE_WHISPER`
-- `TTS_ENGINE`
-- `FACE_AUTH_ENABLED`, `GESTURE_CONTROL_ENABLED`
-- `HOME_ASSISTANT_URL`, `HOME_ASSISTANT_TOKEN`
-- `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`
-- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
-- `DASHBOARD_PORT`, `DASHBOARD_ENABLED`
-- `ENCRYPTION_ENABLED`
-- `KNOWLEDGE_BASE_DIR`, `AUTO_INDEX_ON_STARTUP`
-
-### Ollama Setup Guide
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull qwen3:8b
-ollama pull llama3.3:70b
-ollama pull deepseek-r1:32b
-ollama pull gemma3
-```
-Run local server: `ollama serve` (default `http://localhost:11434`).
-
-### Whisper Setup Guide
-```bash
-pip install faster-whisper
-```
-Set `USE_WHISPER=True` and choose `WHISPER_MODEL` from `tiny/base/small/medium/large-v3`.
-
-### Face Recognition Setup
-- Install: `pip install face-recognition opencv-python`
-- Use `FaceAuth.register_face(user_id, encoding)` to enroll users.
-- Start background checks with `start_background_auth()`.
-
-### Smart Home Integration
-- Add `HOME_ASSISTANT_URL` and `HOME_ASSISTANT_TOKEN`.
-- Use `SmartHomeController.call_service(domain, service, payload)`.
-
-### Spotify API Setup
-- Create app at Spotify Developer Dashboard.
-- Fill `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET`.
-- Install: `pip install spotipy`.
-
-### Telegram Bot Setup
-- Create bot via BotFather.
-- Set `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`.
-- Install: `pip install python-telegram-bot`.
-
-### Plugin Development Guide
-- Create plugin in `jarvis/plugins/*.py`
-- Inherit `PluginBase`
-- Implement `execute(command: str) -> str`
-- Load plugins via `PluginManager.discover()`
-
-### Web Dashboard Usage
-```bash
-uvicorn jarvis.dashboard.app:app --host 127.0.0.1 --port 8080
-```
-Open `http://localhost:8080`.
-
-### Updated Command Surface (100+ intents via module mapping)
-Command groups now include:
-- Conversation, summarization, and code prompts
-- STT/TTS controls
-- Face auth + gesture control + OCR + object detection
-- RAG document search/add/remove
-- Privacy report/redaction/encryption actions
-- Smart-home actions and status checks
-- System status and performance alerts
-- Spotify/YouTube media commands
-- Telegram remote controls and notifications
-- Translation and live conversation translation
-- Voice coding and git voice actions
-- Clipboard summarize/translate/rewrite/history
-- Plugin list/enable/disable/execute
-- Smart routine and macro record/replay/export/import
-
-### JARVIS Architecture (text diagram)
-```
-Speech In (Whisper) -> Intent Layer -> AI Brain (Ollama) -> Action Router
-                                         |-> RAG Knowledge Base (SQLite/FAISS)
-                                         |-> Vision (Face/Gesture/OCR/YOLO)
-                                         |-> Security/Privacy (Fernet/PII Guard)
-                                         |-> Smart Home / Media / Comms / Translation
-                                         |-> Coding Assistant / Clipboard AI / Plugins
-Action Router -> TTS (Piper/pyttsx3) -> Speech Out
-Background Threads: Vision + Metrics + Dashboard
-Persistent Storage: SQLite (metrics/docs/history)
-```
-
-### Performance Tips
-- Prefer `tiny/base` Whisper for low-latency CPUs; use `large-v3` with GPU.
-- Use smaller Ollama model for fast response (`qwen3:4b`) and larger models for reasoning quality.
-- Enable GPU for `faster-whisper`, YOLO, and embeddings when available.
-- Keep dashboard and heavy vision loops on separate threads.
-- Trim document index scope for faster local RAG response times.
-
-*Built on the original [The Agency](https://github.com/sahiixx/agency-agents) agent collection. Orchestration layer by Sonnet 4.6, plus JARVIS local assistant modules.*
+<sub>README maintained by the agentic harness · last regenerated 2026-08-10</sub>
