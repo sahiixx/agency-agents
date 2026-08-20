@@ -97,7 +97,7 @@ bleak>=0.22.0
 screeninfo>=0.8.0
 
 # Network Security
-scapy>=2.5.0
+scapy>=2.7.0
 
 # Vision
 mediapipe>=0.10.14
