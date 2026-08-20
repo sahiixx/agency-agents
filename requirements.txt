@@ -38,7 +38,7 @@ pytesseract>=0.3.10
 Pillow>=12.2.0
 
 # JARVIS v2.0 — TTS
-piper-tts>=1.2.0
+piper-tts>=1.4.2
 pyttsx3>=2.90
 
 # JARVIS v2.0 — Media & Communication
