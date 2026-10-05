@@ -29,5 +29,5 @@ class EmailSender:
                 smtp.login(username, password)
                 smtp.send_message(msg)
             return f"Email sent to {to_email}."
-        except Exception as exc:
+        except (OSError, smtplib.SMTPException, ValueError) as exc:
             return f"Email send failed: {exc}"

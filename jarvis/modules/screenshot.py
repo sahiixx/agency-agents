@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from config import DATA_DIR
+from jarvis.config import DATA_DIR
 
 try:
     from PIL import ImageGrab  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     ImageGrab = None
 
 
@@ -20,11 +20,11 @@ class ScreenshotModule:
             if ImageGrab is None:
                 return "Pillow ImageGrab is unavailable on this system."
             DATA_DIR.mkdir(parents=True, exist_ok=True)
-            file_path = DATA_DIR / f"screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+            file_path = DATA_DIR / f"screenshot_{datetime.now().astimezone().strftime('%Y%m%d_%H%M%S')}.png"
             shot = ImageGrab.grab()
             shot.save(file_path)
             return f"Screenshot saved to {file_path}."
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             return f"Screenshot failed: {exc}"
 
     def start_recording(self) -> str:

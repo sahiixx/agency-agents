@@ -19,5 +19,5 @@ class NewsModule:
             resp = requests.get(url, params={"country": country, "apiKey": key}, timeout=10)
             data = resp.json() if resp.ok else {}
             return [a.get("title", "Untitled") for a in data.get("articles", [])[:5]]
-        except Exception as exc:
+        except (requests.RequestException, ValueError) as exc:
             return [f"News lookup failed: {exc}"]

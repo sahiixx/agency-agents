@@ -6,12 +6,12 @@ import threading
 
 try:
     import cv2  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     cv2 = None
 
 try:
     import face_recognition  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     face_recognition = None
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 try:
     from telegram import Bot  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     Bot = None
 
 

@@ -23,7 +23,7 @@ class AutoUpdater:
             with urlopen(url, timeout=5) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
             latest = data.get("tag_name", "")
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             return {"ok": False, "reason": str(exc), "current": version.CURRENT_VERSION}
 
         return {

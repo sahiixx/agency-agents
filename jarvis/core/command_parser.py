@@ -11,7 +11,7 @@ from jarvis.utils.helpers import load_json
 
 try:
     from fuzzywuzzy import process  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     process = None
 
 

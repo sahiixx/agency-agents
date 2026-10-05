@@ -17,6 +17,6 @@ class MeetingAssistant:
 
     def summarize(self, transcript: str) -> MeetingSummary:
         lines = [line.strip() for line in transcript.splitlines() if line.strip()]
-        action_items = [line for line in lines if re.search(r"\b(todo|action|follow up|next step)\b", line, re.I)]
+        action_items = [line for line in lines if re.search(r"\b(todo|action|follow up|next step)\b", line, re.IGNORECASE)]
         summary = lines[0] if lines else "No transcript available"
         return MeetingSummary(summary=summary, action_items=action_items)

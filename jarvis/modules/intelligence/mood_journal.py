@@ -18,5 +18,5 @@ class MoodJournal:
 
     def log(self, mood: str) -> None:
         values = json.loads(self.path.read_text(encoding="utf-8"))
-        values.append({"timestamp": datetime.now().isoformat(timespec="seconds"), "mood": mood})
+        values.append({"timestamp": datetime.now().astimezone().isoformat(timespec="seconds"), "mood": mood})
         self.path.write_text(json.dumps(values, indent=2), encoding="utf-8")

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import logging
+
 try:
     import argostranslate.translate  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     argos_translate = None
 else:
     argos_translate = argostranslate.translate
@@ -35,4 +37,5 @@ class Translator:
                 f"No local translation model for {source_code}->{language_code} installed."
             )
         except Exception:
+            logging.getLogger(__name__).debug("Local translation failed", exc_info=True)
             return f"No local translation model for {source_code}->{language_code} installed."

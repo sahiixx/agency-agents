@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
-from config import WORKFLOWS_FILE
-from utils.helpers import load_json, save_json
+from jarvis.config import WORKFLOWS_FILE
+from jarvis.utils.helpers import load_json, save_json
 
 
 class WorkflowEngine:

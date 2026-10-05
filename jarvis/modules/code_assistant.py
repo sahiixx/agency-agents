@@ -21,5 +21,5 @@ class CodeAssistant:
         try:
             result = subprocess.run(["git", "commit", "-m", message], capture_output=True, text=True, check=False)
             return result.returncode == 0, result.stdout + result.stderr
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return False, str(exc)

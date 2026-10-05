@@ -6,7 +6,7 @@ from collections import deque
 
 try:
     import pyperclip  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     pyperclip = None
 
 from .ai_brain import AIBrain

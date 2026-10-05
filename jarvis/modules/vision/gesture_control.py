@@ -4,15 +4,16 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import ClassVar
 
 try:
     import mediapipe as mp  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     mp = None
 
 
 class GestureControl:
-    DEFAULT_MAP = {
+    DEFAULT_MAP: ClassVar[dict[str, str]] = {
         "thumbs_up": "confirm",
         "palm": "stop",
         "victory": "screenshot",

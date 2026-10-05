@@ -4,12 +4,12 @@ from __future__ import annotations
 
 try:
     import pytesseract  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     pytesseract = None
 
 try:
     from PIL import ImageGrab  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     ImageGrab = None
 
 from ..ai_brain import AIBrain

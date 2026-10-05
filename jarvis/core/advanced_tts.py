@@ -7,12 +7,12 @@ from dataclasses import dataclass
 
 try:
     import piper  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     piper = None
 
 try:
     import pyttsx3  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     pyttsx3 = None
 
 

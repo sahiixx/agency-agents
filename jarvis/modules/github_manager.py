@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import requests  # type: ignore[import-untyped]
 
-from config import GITHUB_TOKEN, GITHUB_USERNAME
+from jarvis.config import GITHUB_TOKEN, GITHUB_USERNAME
 
 
 class GitHubManager:
@@ -24,7 +24,7 @@ class GitHubManager:
             if not resp.ok:
                 return [f"Failed to fetch repos: {resp.status_code}"]
             return [repo.get("full_name", "unknown") for repo in resp.json()]
-        except Exception as exc:
+        except (requests.RequestException, ValueError) as exc:
             return [f"GitHub error: {exc}"]
 
     def repo_status(self, owner: str, repo: str) -> str:
@@ -38,7 +38,7 @@ class GitHubManager:
                 f"issues {data.get('open_issues_count', 0)}, "
                 f"forks {data.get('forks_count', 0)}"
             )
-        except Exception as exc:
+        except (requests.RequestException, ValueError) as exc:
             return f"GitHub error: {exc}"
 
     def create_issue(self, owner: str, repo: str, title: str, body: str) -> str:
@@ -55,5 +55,5 @@ class GitHubManager:
                 return f"Issue creation failed: {resp.status_code} {resp.text[:120]}"
             issue = resp.json()
             return f"Issue created: {issue.get('html_url', '')}"
-        except Exception as exc:
+        except (requests.RequestException, ValueError) as exc:
             return f"GitHub error: {exc}"

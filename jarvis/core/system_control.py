@@ -22,5 +22,5 @@ class SystemControl:
         try:
             subprocess.run(self.lock_command(), check=False, capture_output=True)
             return True
-        except Exception:
+        except (OSError, subprocess.SubprocessError):
             return False

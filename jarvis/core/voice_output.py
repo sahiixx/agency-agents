@@ -11,7 +11,7 @@ from jarvis.utils.logger import setup_logger
 
 try:
     import pyttsx3  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     pyttsx3 = None
 
 
@@ -39,8 +39,8 @@ class VoiceOutput:
                 index = max(0, min(VOICE_INDEX, len(voices) - 1))
                 self._engine.setProperty("voice", voices[index].id)
             self._ready = True
-        except Exception as exc:
-            self.logger.exception("Failed to initialize speech engine: %s", exc)
+        except Exception:
+            self.logger.exception("Failed to initialize speech engine")
 
     def say(self, text: str) -> None:
         """Queue text to be spoken."""
@@ -56,5 +56,5 @@ class VoiceOutput:
                     self._engine.runAndWait()
                 else:
                     print(f"JARVIS: {text}")
-            except Exception as exc:
-                self.logger.exception("TTS error: %s", exc)
+            except Exception:
+                self.logger.exception("TTS error")

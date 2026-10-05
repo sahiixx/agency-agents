@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any
 
 import requests  # type: ignore[import-untyped]
 
@@ -18,9 +19,9 @@ class AIResponse:
 class AIBrain:
     model: str = "qwen3:8b"
     base_url: str = "http://localhost:11434"
-    history: List[Dict[str, str]] = field(default_factory=list)
+    history: list[dict[str, str]] = field(default_factory=list)
 
-    KEYWORD_FALLBACKS: Dict[str, str] = field(
+    KEYWORD_FALLBACKS: dict[str, str] = field(
         default_factory=lambda: {
             "quantum": "Quantum computing uses qubits that can represent multiple states at once.",
             "summarize": "Please provide text to summarize.",
@@ -46,7 +47,7 @@ class AIBrain:
                 self.history.append({"role": "assistant", "content": message})
                 return AIResponse(text=message, source="ollama")
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("AI backend unavailable; using keyword fallback", exc_info=True)
 
         lowered = prompt.lower()
         for key, fallback in self.KEYWORD_FALLBACKS.items():

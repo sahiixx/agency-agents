@@ -14,7 +14,7 @@ def load_json(path: Path, default: Any) -> Any:
     try:
         if path.exists():
             return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
+    except (OSError, ValueError):
         return default
     return default
 
@@ -27,7 +27,7 @@ def save_json(path: Path, payload: Any) -> None:
 
 def greeting_for_hour(hour: int | None = None) -> str:
     """Return a contextual greeting."""
-    hour = datetime.now().hour if hour is None else hour
+    hour = datetime.now().astimezone().hour if hour is None else hour
     if hour < 12:
         return "Good morning"
     if hour < 18:

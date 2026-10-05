@@ -6,7 +6,7 @@ import socket
 
 try:
     import speedtest  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     speedtest = None
 
 
@@ -18,7 +18,7 @@ class NetworkInfo:
             hostname = socket.gethostname()
             ip = socket.gethostbyname(hostname)
             return f"Local IP address is {ip}."
-        except Exception as exc:
+        except OSError as exc:
             return f"Could not determine IP: {exc}"
 
     def speed_test(self) -> str:
@@ -29,5 +29,5 @@ class NetworkInfo:
             down = test.download() / 1_000_000
             up = test.upload() / 1_000_000
             return f"Download speed {down:.2f} Mbps and upload speed {up:.2f} Mbps."
-        except Exception as exc:
+        except (OSError, speedtest.SpeedtestException) as exc:
             return f"Speed test failed: {exc}"

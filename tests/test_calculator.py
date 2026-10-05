@@ -1,5 +1,6 @@
-from jarvis.core.calculator import Calculator
 import pytest
+
+from jarvis.core.calculator import Calculator
 
 
 def test_calculator_evaluate() -> None:

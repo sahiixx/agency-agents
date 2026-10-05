@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from config import WAKE_WORD
+from jarvis.config import WAKE_WORD
 
 
 class HotwordDetector:
@@ -11,4 +11,4 @@ class HotwordDetector:
     def is_wake_word_present(self, text: str) -> bool:
         """Return True when command includes wake word."""
         normalized = text.lower().strip()
-        return normalized.startswith(WAKE_WORD) or normalized.startswith("hey jarvis")
+        return normalized.startswith((WAKE_WORD, "hey jarvis"))

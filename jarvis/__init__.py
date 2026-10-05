@@ -3,4 +3,4 @@
 from . import config
 from .version import CURRENT_VERSION
 
-__all__ = ["config", "CURRENT_VERSION"]
+__all__ = ["CURRENT_VERSION", "config"]

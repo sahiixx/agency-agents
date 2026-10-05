@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Basic smoke tests for the JARVIS package."""
 
 from __future__ import annotations
