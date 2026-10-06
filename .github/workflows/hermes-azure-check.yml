@@ -2,11 +2,16 @@ name: hermes-azure-check
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main, master]
+    inputs:
+      run_live:
+        description: Run the live Azure Foundry verification
+        required: true
+        default: false
+        type: boolean
 
 jobs:
   verify:
+    if: inputs.run_live == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,14 +21,18 @@ jobs:
           AZURE_FOUNDRY_API_KEY: ${{ secrets.AZURE_FOUNDRY_API_KEY }}
           AZURE_FOUNDRY_BASE_URL: ${{ secrets.AZURE_FOUNDRY_BASE_URL }}
         run: |
-          if [ -z "$AZURE_FOUNDRY_API_KEY" ]; then
-            echo "AZURE_FOUNDRY_API_KEY not set - skipping live check"
-            exit 0
-          fi
-          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+          test -n "$AZURE_FOUNDRY_API_KEY" || { echo 'AZURE_FOUNDRY_API_KEY is required when run_live=true' >&2; exit 1; }
+          case "$AZURE_FOUNDRY_BASE_URL" in
+            https://*) ;;
+            *) echo 'AZURE_FOUNDRY_BASE_URL must be an https URL when run_live=true' >&2; exit 1 ;;
+          esac
+          code=$(curl -sS -o /tmp/azure-response.json -w '%{http_code}' \
             -H "api-key: $AZURE_FOUNDRY_API_KEY" \
             -H 'Content-Type: application/json' \
             "$AZURE_FOUNDRY_BASE_URL/chat/completions" \
             -d '{"model":"gpt-5.6-sol","messages":[{"role":"user","content":"ping"}],"max_completion_tokens":16}')
-          echo "HTTP $code"
-          test "$code" = "200"
+          if [ "$code" != "200" ]; then
+            echo "Azure Foundry verification failed with HTTP $code" >&2
+            exit 1
+          fi
+          echo 'Azure Foundry verification passed'
