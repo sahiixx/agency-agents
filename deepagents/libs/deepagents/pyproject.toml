@@ -26,7 +26,7 @@ dependencies = [
     "langchain-google-genai>=4.2.1,<5.0.0",
     "langgraph>=1.1.2,<2.0.0",
     "langsmith>=0.7.16,<2.0.0",
-    "anthropic>=0.84.0",
+    "anthropic>=1.8.0",
     "certifi>=2026.1.4",
     "wcmatch",
 ]
