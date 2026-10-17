@@ -18,7 +18,7 @@ class FileManager:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.touch(exist_ok=True)
             return f"Created {'directory' if is_dir else 'file'} at {target}."
-        except Exception as exc:
+        except (OSError, ValueError, RuntimeError) as exc:
             return f"Create failed: {exc}"
 
     def delete(self, path: str) -> str:
@@ -31,14 +31,14 @@ class FileManager:
             else:
                 return f"Path not found: {target}"
             return f"Deleted {target}."
-        except Exception as exc:
+        except (OSError, ValueError, RuntimeError) as exc:
             return f"Delete failed: {exc}"
 
     def move(self, src: str, dst: str) -> str:
         try:
             result = shutil.move(str(Path(src).expanduser()), str(Path(dst).expanduser()))
             return f"Moved to {result}."
-        except Exception as exc:
+        except (OSError, ValueError, RuntimeError, shutil.Error) as exc:
             return f"Move failed: {exc}"
 
     def copy(self, src: str, dst: str) -> str:
@@ -51,7 +51,7 @@ class FileManager:
                 dst_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src_path, dst_path)
             return f"Copied {src_path} to {dst_path}."
-        except Exception as exc:
+        except (OSError, ValueError, RuntimeError, shutil.Error) as exc:
             return f"Copy failed: {exc}"
 
     def search(self, root: str, name: str, limit: int = 25) -> list[str]:
@@ -62,6 +62,6 @@ class FileManager:
                 results.append(str(path))
                 if len(results) >= limit:
                     break
-        except Exception:
+        except (OSError, ValueError, RuntimeError):
             return []
         return results

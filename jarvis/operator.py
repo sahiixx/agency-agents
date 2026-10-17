@@ -10,11 +10,11 @@ call cloud LLMs, set environment variable JARVIS_OPERATOR_ALLOW_LIVE=1.
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
-import threading
 import time
-from typing import Optional
+from importlib import import_module
 
 
 def _log(msg: str) -> None:
@@ -31,7 +31,7 @@ class JarvisOperator:
       JARVIS_OPERATOR_ALLOW_LIVE=1 to enable live runs.
     """
 
-    def __init__(self, allow_live: Optional[bool] = None) -> None:
+    def __init__(self, allow_live: bool | None = None) -> None:
         self.allow_live = (
             allow_live
             if allow_live is not None
@@ -46,10 +46,10 @@ class JarvisOperator:
             # instantiate a brain instance with default config if available
             try:
                 self._brain = AIBrain()
-            except Exception as e:  # fallback if AIBrain requires args
+            except TypeError as e:  # fallback if AIBrain requires args
                 _log(f"AIBrain constructor failed, continuing without brain: {e}")
                 self._brain = None
-        except Exception:
+        except ImportError:
             _log("Jarvis AIBrain not available — falling back to stdin operator")
 
     def _parse_command(self, text: str) -> dict:
@@ -90,8 +90,8 @@ class JarvisOperator:
 
         # Lazy import agency.run_mission to avoid top-level circular imports
         try:
-            from agency import run_mission  # type: ignore
-        except Exception as e:
+            run_mission = import_module("agency").run_mission
+        except ImportError as e:
             _log(f"Failed to import agency.run_mission: {e}")
             return
 
@@ -102,8 +102,9 @@ class JarvisOperator:
                     # ask for a natural-language mission via the AIBrain
                     prompt = "Listen for a mission (or say 'exit' to quit):"
                     try:
-                        text = self._brain.ask(prompt)
+                        text = self._brain.ask(prompt).text
                     except Exception as e:
+                        logging.getLogger(__name__).debug("AIBrain capture failed", exc_info=True)
                         _log(f"AIBrain ask failed: {e}")
                         # fallback to stdin
                         text = input("Mission: ")
@@ -131,6 +132,7 @@ class JarvisOperator:
                     _log("Interrupted by user")
                     break
                 except Exception as e:
+                    logging.getLogger(__name__).debug("Operator loop failed", exc_info=True)
                     _log(f"Operator loop error: {e}")
                     time.sleep(1)
         else:
@@ -161,6 +163,7 @@ class JarvisOperator:
                     )
                     _log("Mission completed — result below:\n" + (result or "[no result]"))
                 except Exception as e:
+                    logging.getLogger(__name__).debug("Mission dispatch failed", exc_info=True)
                     _log(f"Mission failed to run: {e}")
 
 
@@ -179,8 +182,8 @@ def cli() -> None:
 
     if args.mission:
         try:
-            from agency import run_mission  # type: ignore
-        except Exception as e:
+            run_mission = import_module("agency").run_mission
+        except ImportError as e:
             _log(f"Failed to import agency.run_mission: {e}")
             sys.exit(1)
 

@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 import tempfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 try:
     from faster_whisper import WhisperModel  # type: ignore
-except Exception:  # pragma: no cover - optional dependency
+except ImportError:  # pragma: no cover - optional dependency
     WhisperModel = None
 
 
 class WhisperSTT:
     """Transcribes audio with faster-whisper when available."""
 
-    SUPPORTED_MODELS = {"tiny", "base", "small", "medium", "large-v3"}
+    SUPPORTED_MODELS = frozenset({"tiny", "base", "small", "medium", "large-v3"})
 
     def __init__(self, model_name: str = "base", use_whisper: bool = True):
         self.model_name = model_name if model_name in self.SUPPORTED_MODELS else "base"

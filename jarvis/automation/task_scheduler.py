@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Callable
+from collections.abc import Callable
 
-from utils.logger import setup_logger
+from jarvis.utils.logger import setup_logger
 
 try:
     import schedule  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     schedule = None
 
 
@@ -41,8 +41,8 @@ class TaskScheduler:
         while self._running:
             try:
                 schedule.run_pending()
-            except Exception as exc:
-                self.logger.exception("Scheduled task failed: %s", exc)
+            except Exception:
+                self.logger.exception("Scheduled task failed")
             time.sleep(1)
 
     def stop(self) -> None:

@@ -1,13 +1,11 @@
-#!/usr/bin/env python3
 """
 Test suite for real_estate_swarm.py
 Runs offline structural tests — no API key needed.
 """
 
-import os
+import subprocess
 import sys
 import unittest
-import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -72,6 +70,7 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, "-m", "py_compile", str(SCRIPT)],
             capture_output=True, text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, f"Syntax error: {result.stderr}")
 
@@ -117,6 +116,7 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--mission", "Test pipeline", "--dry-run"],
             capture_output=True, text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, f"Dry run failed: {result.stderr}")
         self.assertIn("DRY RUN", result.stdout)
@@ -126,6 +126,7 @@ class TestRealEstateSwarmStructure(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--mission", "Test leads", "--scope", "leads", "--dry-run"],
             capture_output=True, text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, f"Dry run (leads) failed: {result.stderr}")
         self.assertIn("DRY RUN", result.stdout)
@@ -330,6 +331,7 @@ class TestDubaiBusinessAgents(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, "-m", "py_compile", str(AGENCY_SCRIPT)],
             capture_output=True, text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, f"Syntax error in agency.py: {result.stderr}")
 
@@ -338,6 +340,7 @@ class TestDubaiBusinessAgents(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, "-m", "py_compile", str(MCP_TOOLS_SCRIPT)],
             capture_output=True, text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, f"Syntax error in mcp_tools.py: {result.stderr}")
 

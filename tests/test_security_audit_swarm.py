@@ -1,13 +1,11 @@
-#!/usr/bin/env python3
 """
 Test suite for security_audit_swarm.py
 Runs offline structural tests + optional live LLM tests.
 """
 
-import os
+import subprocess
 import sys
 import unittest
-import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -31,6 +29,7 @@ class TestSecurityAuditStructure(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, "-m", "py_compile", str(SCRIPT)],
             capture_output=True, text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, f"Syntax error: {result.stderr}")
 
@@ -64,6 +63,7 @@ class TestSecurityAuditStructure(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--mission", "Test audit", "--dry-run"],
             capture_output=True, text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, f"Dry run failed: {result.stderr}")
         self.assertIn("DRY RUN", result.stdout)

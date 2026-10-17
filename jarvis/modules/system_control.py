@@ -18,7 +18,7 @@ class SystemControl:
             if IS_LINUX and command_exists("amixer"):
                 ok, out = run_command(["amixer", "-D", "pulse", "sset", "Master", "5%+"])
                 return "Volume increased." if ok else out
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Failed to raise volume: {exc}"
         return "Volume control not available on this system."
 
@@ -29,7 +29,7 @@ class SystemControl:
             if IS_LINUX and command_exists("amixer"):
                 ok, out = run_command(["amixer", "-D", "pulse", "sset", "Master", "5%-"])
                 return "Volume decreased." if ok else out
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Failed to lower volume: {exc}"
         return "Volume control not available on this system."
 
@@ -40,7 +40,7 @@ class SystemControl:
             if IS_LINUX and command_exists("amixer"):
                 ok, out = run_command(["amixer", "-D", "pulse", "set", "Master", "1+", "toggle"])
                 return "Mute toggled." if ok else out
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Failed to toggle mute: {exc}"
         return "Mute control not available on this system."
 
@@ -50,7 +50,7 @@ class SystemControl:
                 return "Brightness increase requested. Install screen-brightness-control for direct support."
             if IS_LINUX and command_exists("xrandr"):
                 return "Brightness adjustment on Linux requires monitor-specific setup."
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Failed to adjust brightness: {exc}"
         return "Brightness control not available on this system."
 
@@ -66,7 +66,7 @@ class SystemControl:
             else:
                 return "Shutdown unsupported on this platform."
             return "Shutting down the system."
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Failed to shutdown: {exc}"
 
     def restart(self) -> str:
@@ -78,7 +78,7 @@ class SystemControl:
             else:
                 return "Restart unsupported on this platform."
             return "Restarting the system."
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Failed to restart: {exc}"
 
     def sleep(self) -> str:
@@ -90,7 +90,7 @@ class SystemControl:
             else:
                 return "Sleep unsupported on this platform."
             return "Putting system to sleep."
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Failed to sleep: {exc}"
 
     def lock(self) -> str:
@@ -102,5 +102,5 @@ class SystemControl:
             else:
                 return "Lock unsupported on this platform."
             return "Locking the screen."
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Failed to lock screen: {exc}"

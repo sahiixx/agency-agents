@@ -4,7 +4,7 @@ from __future__ import annotations
 
 try:
     import psutil  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     psutil = None
 
 
@@ -28,5 +28,5 @@ class ProcessManager:
             proc = psutil.Process(pid)
             proc.terminate()
             return f"Sent terminate signal to process {pid}."
-        except Exception as exc:
+        except psutil.Error as exc:
             return f"Could not kill process {pid}: {exc}"

@@ -21,7 +21,7 @@ class ChatPanel:
     history: list[ChatMessage] = field(default_factory=list)
 
     def add(self, role: str, text: str) -> None:
-        self.history.append(ChatMessage(datetime.now().isoformat(timespec="seconds"), role, text))
+        self.history.append(ChatMessage(datetime.now().astimezone().isoformat(timespec="seconds"), role, text))
 
     def search(self, query: str) -> list[ChatMessage]:
         q = query.lower()

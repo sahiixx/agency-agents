@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 _MODE_PREFIX = {
     "professional": "Certainly.",
     "casual": "Sure thing!",

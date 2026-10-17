@@ -14,5 +14,5 @@ class WeatherModule:
             if response.ok:
                 return response.text.strip()
             return f"Could not fetch weather for {city}."
-        except Exception as exc:
+        except requests.RequestException as exc:
             return f"Weather lookup failed: {exc}"

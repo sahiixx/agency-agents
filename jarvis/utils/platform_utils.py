@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-from typing import Sequence
+from collections.abc import Sequence
 
-from config import IS_LINUX, IS_WINDOWS
+from jarvis.config import IS_LINUX, IS_WINDOWS
 
 
 def command_exists(command: str) -> bool:
@@ -20,7 +20,7 @@ def run_command(command: Sequence[str]) -> tuple[bool, str]:
         result = subprocess.run(command, capture_output=True, text=True, check=False)
         output = (result.stdout or "") + (result.stderr or "")
         return result.returncode == 0, output.strip()
-    except Exception as exc:
+    except (OSError, subprocess.SubprocessError) as exc:
         return False, str(exc)
 
 

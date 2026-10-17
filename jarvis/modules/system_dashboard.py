@@ -12,7 +12,7 @@ import psutil
 
 try:
     import GPUtil  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     GPUtil = None
 
 

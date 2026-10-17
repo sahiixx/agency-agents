@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import urllib.parse
 import webbrowser
+from typing import ClassVar
 
 
 class WebBrowser:
     """Open websites and perform web searches."""
 
-    shortcuts = {
+    shortcuts: ClassVar[dict[str, str]] = {
         "youtube": "https://www.youtube.com",
         "google": "https://www.google.com",
         "wikipedia": "https://www.wikipedia.org",
@@ -23,7 +24,7 @@ class WebBrowser:
                 target = f"https://{target}"
             webbrowser.open(target)
             return f"Opening {target}."
-        except Exception as exc:
+        except (OSError, webbrowser.Error) as exc:
             return f"Failed to open website: {exc}"
 
     def google_search(self, query: str) -> str:

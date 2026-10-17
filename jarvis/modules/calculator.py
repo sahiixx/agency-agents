@@ -5,7 +5,6 @@ from __future__ import annotations
 import ast
 import operator
 
-
 _ALLOWED = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
@@ -23,7 +22,7 @@ class Calculator:
         try:
             value = self._eval(ast.parse(expression, mode="eval").body)
             return f"The result is {value}."
-        except Exception as exc:
+        except (ArithmeticError, SyntaxError, ValueError, TypeError) as exc:
             return f"Calculation failed: {exc}"
 
     def _eval(self, node):

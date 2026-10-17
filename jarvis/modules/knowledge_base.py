@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List, Tuple
 
 try:
     import faiss  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     faiss = None
 
 
@@ -36,7 +36,7 @@ class KnowledgeBase:
         self.conn.execute("DELETE FROM docs WHERE path = ?", (path,))
         self.conn.commit()
 
-    def search(self, query: str, limit: int = 5) -> List[Tuple[str, str]]:
+    def search(self, query: str, limit: int = 5) -> list[tuple[str, str]]:
         rows = self.conn.execute(
             "SELECT path, content FROM docs WHERE content LIKE ? LIMIT ?",
             (f"%{query}%", limit),

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from config import IS_LINUX, IS_WINDOWS
-from utils.platform_utils import run_command
+from jarvis.config import IS_LINUX, IS_WINDOWS
+from jarvis.utils.platform_utils import run_command
 
 
 class MediaPlayer:
@@ -16,7 +16,7 @@ class MediaPlayer:
             if IS_LINUX:
                 ok, out = run_command(["playerctl", "play-pause"])
                 return "Toggled playback." if ok else out
-        except Exception as exc:
+        except OSError as exc:
             return f"Media control failed: {exc}"
         return "Media control unavailable."
 

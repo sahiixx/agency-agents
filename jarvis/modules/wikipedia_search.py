@@ -4,7 +4,7 @@ from __future__ import annotations
 
 try:
     import wikipedia  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     wikipedia = None
 
 
@@ -16,5 +16,5 @@ class WikipediaSearch:
             return "Wikipedia package is not installed."
         try:
             return wikipedia.summary(topic, sentences=2)
-        except Exception as exc:
+        except (wikipedia.exceptions.WikipediaException, OSError, ValueError) as exc:
             return f"Wikipedia lookup failed: {exc}"

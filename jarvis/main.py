@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-from jarvis.modules.ai.personality_engine import PersonalityEngine
-
 import os
-try:
-    from core.engine import JarvisEngine  # type: ignore
-except Exception:  # pragma: no cover
-    JarvisEngine = None
 
 from jarvis.core.command_parser import CommandParser
+from jarvis.modules.ai.personality_engine import PersonalityEngine
+
+try:
+    from jarvis.core.engine import JarvisEngine as _JarvisEngine
+
+    JarvisEngine: type[_JarvisEngine] | None = _JarvisEngine
+except ImportError:  # pragma: no cover
+    JarvisEngine = None
 
 BANNER = r"""
       ██╗ █████╗ ██████╗ ██╗   ██╗██╗███████╗

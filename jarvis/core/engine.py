@@ -39,7 +39,7 @@ from jarvis.utils.logger import setup_logger
 class JarvisEngine:
     """Drive listen → parse → execute → respond loop."""
 
-    EXIT_COMMANDS = {"goodbye", "exit", "shutdown jarvis", "quit"}
+    EXIT_COMMANDS = frozenset({"goodbye", "exit", "shutdown jarvis", "quit"})
 
     def __init__(self) -> None:
         self.logger = setup_logger("jarvis.engine")
@@ -104,3 +104,84 @@ class JarvisEngine:
             if intent == "system_control":
                 if "volume up" in lowered:
                     return self.system_control.volume_up()
+                if "volume down" in lowered:
+                    return self.system_control.volume_down()
+                if "mute" in lowered:
+                    return self.system_control.mute()
+                if "shutdown" in lowered:
+                    return self.system_control.shutdown()
+                if "restart" in lowered:
+                    return self.system_control.restart()
+                if "sleep" in lowered:
+                    return self.system_control.sleep()
+                if "lock" in lowered:
+                    return self.system_control.lock()
+                if "brightness" in lowered and "up" in lowered:
+                    return self.system_control.brightness_up()
+                if "brightness" in lowered and "down" in lowered:
+                    return self.system_control.brightness_down()
+
+            if intent == "launch_app":
+                return self.app_launcher.open_app(lowered.replace("open", "", 1).strip())
+            if intent == "close_app":
+                return self.app_launcher.close_app(lowered.replace("close", "", 1).strip())
+            if intent == "web":
+                if "youtube" in lowered and "search" in lowered:
+                    query = lowered.replace("search", "", 1).replace("youtube", "", 1).strip()
+                    return self.web.youtube_search(query)
+                if "search" in lowered:
+                    return self.web.google_search(lowered.replace("search", "", 1).strip())
+                return self.web.open_website(lowered.replace("open", "", 1).strip())
+            if intent == "weather":
+                match = re.search(r"(?:what(?:'s| is)\s+)?(?:the\s+)?weather(?:\s+in)?\s*(.*)", lowered)
+                city = match.group(1).strip() if match else ""
+                city = city or "your city"
+                return self.weather.current_weather(city)
+            if intent == "news":
+                return " | ".join(self.news.top_headlines())
+            if intent == "wikipedia":
+                topic = lowered.replace("wikipedia", "").replace("search", "").strip()
+                return self.wiki.summary(topic or "artificial intelligence")
+            if intent == "joke":
+                return self.jokes.random_joke()
+            if intent == "datetime":
+                return self.datetime.now()
+            if intent == "battery":
+                return self.battery.status()
+            if intent == "network":
+                return self.network.local_ip()
+            if intent == "processes":
+                return " | ".join(self.processes.list_processes())
+            if intent == "screenshot":
+                return self.screen.take_screenshot()
+            if intent == "note":
+                text = lowered.replace("note", "", 1).strip()
+                return self.notes.save_note(text or "No content")
+            if intent == "calculate":
+                expr = lowered.replace("calculate", "", 1).strip()
+                return self.calc.evaluate(expr)
+            if intent == "media":
+                if "next" in lowered:
+                    return self.media.next_track()
+                if "previous" in lowered:
+                    return self.media.previous_track()
+                return self.media.play_pause()
+            if intent == "github":
+                if "list repos" in lowered:
+                    return " | ".join(self.github.list_repos())
+                return "Say 'list repos' or 'repo status owner slash repo'."
+
+            return self._random_response("unknown")
+        except Exception:
+            self.logger.exception("Command execution failed")
+            return "I hit an internal error while executing that command, but I am still online."
+
+    def respond(self, text: str) -> None:
+        """Speak and log response text."""
+        self.logger.info("Response: %s", text)
+        self.voice_out.say(text)
+
+    def _random_response(self, key: str) -> str:
+        variants = self.responses.get(key, [])
+        fallback = "At your service."
+        return choose(variants, fallback)

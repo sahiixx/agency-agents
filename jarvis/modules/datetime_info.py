@@ -9,5 +9,5 @@ class DatetimeInfo:
     """Return formatted date and time details."""
 
     def now(self) -> str:
-        current = datetime.now()
+        current = datetime.now().astimezone()
         return current.strftime("It is %I:%M %p on %A, %B %d, %Y.")

@@ -14,7 +14,7 @@ class VoiceJournal:
         self.root.mkdir(parents=True, exist_ok=True)
 
     def add_entry(self, text: str, mood: str = "neutral") -> Path:
-        stamp = datetime.now()
+        stamp = datetime.now().astimezone()
         target = self.root / f"{stamp:%Y-%m-%d}.md"
         with target.open("a", encoding="utf-8") as fp:
             fp.write(f"\n## {stamp:%H:%M:%S} [{mood}]\n{text}\n")

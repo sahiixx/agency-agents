@@ -2,7 +2,7 @@
 
 try:
     from jarvis.plugins.plugin_base import PluginBase
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     from .plugin_base import PluginBase
 
 

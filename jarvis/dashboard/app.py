@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import logging
 import subprocess
 import time
 from pathlib import Path
@@ -39,7 +40,7 @@ _init_state()
 def _read_modules() -> dict:
     try:
         return json.loads(MODULES_FILE.read_text())
-    except Exception:
+    except (OSError, ValueError):
         return {m: True for m in MODULE_NAMES}
 
 
@@ -76,7 +77,7 @@ def _fetch_health(url: str, timeout: float = 2.0) -> dict:
             "response_time_ms": elapsed,
             "body": body[:200],
         }
-    except Exception as e:
+    except (OSError, ValueError, http.client.HTTPException) as e:
         elapsed = round((time.time() - start) * 1000, 1)
         return {"status": "down", "code": None, "response_time_ms": elapsed, "error": str(e)}
 
@@ -88,6 +89,7 @@ def _docker_container_status(name: str) -> dict:
             capture_output=True,
             text=True,
             timeout=3,
+            check=False,
         )
         if result.returncode != 0:
             return {"status": "down", "error": result.stderr.strip() or "not found"}
@@ -97,7 +99,7 @@ def _docker_container_status(name: str) -> dict:
         return {"status": state, "health": health}
     except FileNotFoundError:
         return {"status": "unknown", "error": "docker not found"}
-    except Exception as e:
+    except (OSError, subprocess.SubprocessError) as e:
         return {"status": "unknown", "error": str(e)}
 
 
@@ -167,8 +169,8 @@ def api_history(limit: int = 50):
             if line.strip():
                 try:
                     lines.append(json.loads(line))
-                except Exception:
-                    pass
+                except ValueError:
+                    logging.getLogger(__name__).warning("Skipping malformed history record", exc_info=True)
     return lines[-limit:]
 
 
@@ -209,6 +211,7 @@ def command(payload: dict):
             capture_output=True,
             text=True,
             timeout=10,
+            check=False,
         )
         if result.returncode == 0:
             response["output"] = f"Restarted container: {arg}"
@@ -219,6 +222,7 @@ def command(payload: dict):
                 capture_output=True,
                 text=True,
                 timeout=10,
+                check=False,
             )
             if result2.returncode == 0:
                 response["output"] = f"Restarted service: {arg}"
@@ -231,6 +235,7 @@ def command(payload: dict):
             capture_output=True,
             text=True,
             timeout=10,
+            check=False,
         )
         if result.returncode == 0:
             response["output"] = result.stdout.strip()

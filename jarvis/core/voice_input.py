@@ -7,7 +7,7 @@ from jarvis.utils.logger import setup_logger
 
 try:
     import speech_recognition as sr  # type: ignore
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     sr = None
 
 
@@ -26,7 +26,7 @@ class VoiceInput:
                 with self._microphone as source:
                     self._recognizer.adjust_for_ambient_noise(source, duration=1)
             except Exception as exc:
-                self.logger.warning("Microphone unavailable, using keyboard fallback: %s", exc)
+                self.logger.warning("Microphone unavailable, using keyboard fallback: %s", exc, exc_info=True)
 
     def listen(self, require_wake_word: bool = True) -> str:
         """Listen for a command and optionally enforce wake word."""
@@ -45,7 +45,7 @@ class VoiceInput:
                 return text
             return self._strip_wake_word(text)
         except Exception as exc:
-            self.logger.debug("Voice capture/recognition failed: %s", exc)
+            self.logger.debug("Voice capture/recognition failed: %s", exc, exc_info=True)
             return ""
 
     @staticmethod

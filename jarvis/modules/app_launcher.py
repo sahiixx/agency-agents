@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import subprocess
 
-from config import IS_LINUX, IS_WINDOWS
-from utils.platform_utils import command_exists
+from jarvis.config import IS_LINUX, IS_WINDOWS
+from jarvis.utils.platform_utils import command_exists
 
 
 class AppLauncher:
@@ -26,7 +26,7 @@ class AppLauncher:
                 subprocess.Popen(app_name.split())
                 return f"Opening {app_name}."
             return "Unsupported platform for launching apps."
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Could not open {app_name}: {exc}"
 
     def close_app(self, app_name: str) -> str:
@@ -38,5 +38,5 @@ class AppLauncher:
             else:
                 return "Unsupported platform for closing apps."
             return f"Closed {app_name} if it was running."
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return f"Could not close {app_name}: {exc}"
