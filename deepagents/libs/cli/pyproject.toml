@@ -28,7 +28,7 @@ dependencies = [
     # Framework
     "deepagents==0.4.10",
     "langchain>=1.2.12,<2.0.0",
-    "langgraph-checkpoint-sqlite>=3.0.0,<4.0.0",
+    "langgraph-checkpoint-sqlite>=3.1.1,<4.0.0",
 
     # Require at least one integration package
     "langchain-openai>=1.1.8,<2.0.0",
