@@ -20,7 +20,7 @@ sentry-sdk>=2.0.0
 # langsmith is pulled in by langchain-core
 
 # Security-pinned transitive deps
-certifi>=2026.1.4
+certifi>=2026.10.19
 cryptography>=46.0.0
 
 # JARVIS v2.0 — AI & LLM
@@ -35,7 +35,7 @@ mediapipe>=0.10.0
 face-recognition>=1.3.0
 ultralytics>=8.2.0
 pytesseract>=0.3.10
-Pillow>=12.2.0
+Pillow>=13.0.0
 
 # JARVIS v2.0 — TTS
 piper-tts>=1.2.0
